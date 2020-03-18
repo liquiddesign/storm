@@ -1,0 +1,9 @@
+services:
+	- Nette\Caching\Storages\DevNullStorage
+storm:
+	default:
+		host: localhost
+		dbname: _test_storm
+		user: root
+		password: ""
+		driver: mysql

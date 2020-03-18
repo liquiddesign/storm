@@ -1,0 +1,156 @@
+<?php // @codingStandardsIgnoreLine
+
+namespace Tests;
+
+use DB\IStockRepository;
+use DB\Stock;
+use Nette\DI\Container;
+use Nette\Neon\Neon;
+use StORM\Connection;
+use StORM\SchemaManager;
+use Tester\Assert;
+
+require_once __DIR__ . '/bootstrap.php';
+
+/**
+ * Class ConnectionTest
+ * @package Tests
+ */
+class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
+{
+	/**
+	 * Test connection
+	 * @dataProvider _containers.php single_connection
+	 * @expectedException \Exception
+	 * @param \Nette\DI\Container $container
+	 */
+	public function testConnection(Container $container): void
+	{
+		$connection = $container->getByType(Connection::class);
+		
+		Assert::same('default', $connection->getName());
+		Assert::type(Connection::class, $connection);
+	}
+	
+	/**
+	 * Test multiple connections in one code, creating and changing
+	 * @dataProvider _containers.php multiple_connections
+	 * @param \Nette\DI\Container $container
+	 * @expectedException \Exception
+	 */
+	public function testMultipleConnection(Container $container): void
+	{
+		$connection = $container->getByType(Connection::class);
+		Assert::type(Connection::class, $connection);
+		Assert::same('default', $connection->getName());
+		
+		$connection2 = $container->getService('storm.test');
+		Assert::type(Connection::class, $connection2);
+		Assert::same('test', $connection2->getName());
+		
+		$stocks = $container->getByType(IStockRepository::class);
+		$test = $stocks->getConnection();
+		Assert::same($test, $connection);
+		
+		$stocks->setConnection($connection2);
+		$test = $stocks->getConnection();
+		Assert::same($test, $connection2);
+	}
+	
+	/**
+	 * Advanced connection settings
+	 * @dataProvider _containers.php single_connection
+	 * @param \Nette\DI\Container $container
+	 * @expectedException \Exception
+	 */
+	public function testAdditionalSettings(Container $container): void
+	{
+		$connection = $container->getByType(Connection::class);
+		Assert::type(Connection::class, $connection);
+		Assert::same('mysql', $connection->getDriver());
+		// collate
+		Assert::same('utf8_czech_ci', $connection->query("SHOW VARIABLES LIKE 'collation_connection'")->fetchColumn(1));
+		// charset
+		Assert::same('utf8', $connection->query("SHOW VARIABLES LIKE 'character_set_connection'")->fetchColumn(1));
+		// languages
+		Assert::same(['en'], $connection->getAvailableMutations());
+		// primaryKeyGenerator
+		Assert::notNull($connection->generatePrimaryKey());
+	}
+	
+	/**
+	 * Creating standalone connection
+	 * @dataProvider _containers.php single_connection
+	 * @param \Nette\DI\Container $container
+	 * @expectedException \Exception
+	 */
+	public function testStandalone(Container $container): void
+	{
+		$cacheStorage = new \Nette\Caching\Storages\FileStorage(__DIR__ . '/temp');
+		$neon = Neon::decode(\file_get_contents($container->parameters['appDir'] . '/configs/single_connection.neon'));
+		$name = 'default';
+		
+		$driver = $neon['storm'][$name]['driver'];
+		$dbName = $neon['storm'][$name]['dbname'];
+		$host = $neon['storm'][$name]['host'];
+		$user = $neon['storm'][$name]['user'];
+		$password = $neon['storm'][$name]['password'];
+		
+		$connection = new Connection($container);
+		$connection->connect($name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+		
+		$schemaManager = new SchemaManager($connection, $cacheStorage);
+		$schemaManager->getSqlStructure(Stock::class);
+	}
+	
+	/**
+	 * Connection properities
+	 * @dataProvider _containers.php single_connection
+	 * @param \Nette\DI\Container $container
+	 * @expectedException \Exception
+	 */
+	public function testProperties(Container $container): void
+	{
+		$connection = $container->getByType(Connection::class);
+		
+		$neon = Neon::decode(\file_get_contents($container->parameters['appDir'] . '/configs/single_connection.neon'));
+		$name = 'default';
+		
+		$driver = $neon['storm'][$name]['driver'];
+		$dbName = $neon['storm'][$name]['dbname'];
+		$host = $neon['storm'][$name]['host'];
+		$user = $neon['storm'][$name]['user'];
+		$password = $neon['storm'][$name]['password'];
+		
+		Assert::same($user, $connection->getUser());
+		Assert::same($password, $connection->getPassword());
+		Assert::same($host, $connection->getHost());
+		Assert::same($dbName, $connection->getDatabaseName());
+		Assert::same($driver, $connection->getDriver());
+		Assert::type('array', $connection->getAttributes());
+		Assert::type(\PDO::class, $connection->getLink());
+	}
+	
+	/**
+	 * Connection serializations
+	 * @dataProvider _containers.php multiple_connections
+	 * @param \Nette\DI\Container $container
+	 * @expectedException \Exception
+	 */
+	public function testSerialization(Container $container): void
+	{
+		$connection1 = $container->getByType(Connection::class);
+		$connection2 = $container->getService('storm.test');
+		
+		$aux1 = \serialize($connection1);
+		$aux2 = \serialize($connection2);
+		$newConnection1 = \unserialize($aux1);
+		$newConnection2 = \unserialize($aux2);
+		Assert::equal($connection1, $newConnection1);
+		Assert::equal($connection2, $newConnection2);
+		Assert::same($connection1->getLink(), $newConnection1->getLink());
+		Assert::same($connection2->getLink(), $newConnection2->getLink());
+	}
+}
+
+(new ConnectionTest())->run();

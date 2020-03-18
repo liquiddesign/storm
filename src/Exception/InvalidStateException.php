@@ -1,0 +1,48 @@
+<?php
+
+namespace StORM\Exception;
+
+class InvalidStateException extends \RuntimeException
+{
+	public const COLLECTION_ALREADY_LOADED = 0;
+	public const COLLECTION_INVALID_CONDITION = 1;
+	public const INVALID_IDENTIFIER = 2;
+	public const INTEGER_BINDER = 4;
+	public const INVALID_BINDER_VAR = 5;
+	public const KEY_HOLDER_NOT_ALLOWED = 6;
+	public const PK_IS_NOT_SET = 7;
+	public const GROUP_BY_NOT_ALLOWED = 8;
+	public const INDEX_AND_STAR_WITHOUT_PREFIX = 9;
+	public const ORDER_BY_NOT_ALLOWED = 10;
+	
+	public function __construct(int $propertyCode, ?string $extraMessage = null)
+	{
+		$message = null;
+		
+		if ($propertyCode === self::COLLECTION_ALREADY_LOADED) {
+			$message = "Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops";
+		} elseif ($propertyCode === self::COLLECTION_INVALID_CONDITION) {
+			$message = "Invalid condition: $extraMessage";
+		} elseif ($propertyCode === self::INVALID_IDENTIFIER) {
+			$message = "Invalid identifier: $extraMessage";
+		} elseif ($propertyCode === self::INTEGER_BINDER) {
+			$message = "Cannot bind ? only :var is allowed";
+		} elseif ($propertyCode === self::INVALID_BINDER_VAR) {
+			$message = "Cannot bind: $extraMessage";
+		} elseif ($propertyCode === self::KEY_HOLDER_NOT_ALLOWED) {
+			$message = 'Keyholder relation is not supported in CollectionRelation';
+		} elseif ($propertyCode === self::PK_IS_NOT_SET) {
+			$message = "Primary key $extraMessage is not set";
+		} elseif ($propertyCode === self::GROUP_BY_NOT_ALLOWED) {
+			$message = 'GROUP BY clause is not allowed in delete or update';
+		} elseif ($propertyCode === self::ORDER_BY_NOT_ALLOWED) {
+			$message = 'ORDER BY clause is not allowed in delete, remove by ->orderBy([])';
+		} elseif ($propertyCode === self::INDEX_AND_STAR_WITHOUT_PREFIX) {
+			$message = "Cannot use index '$extraMessage' with '*' without prefix'";
+		}
+		
+		$message = $message ?: $extraMessage;
+		
+		parent::__construct($message, $propertyCode);
+	}
+}

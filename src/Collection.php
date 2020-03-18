@@ -1,0 +1,1544 @@
+<?php
+
+namespace StORM;
+
+use StORM\Exception\AlreadyExistsException;
+use StORM\Exception\InvalidStateException;
+use StORM\Exception\NotFoundException;
+
+class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+{
+	protected const DEFAULT_JOIN = 'LEFT';
+	
+	protected const BINDER_NAME = '__var';
+	
+	protected const UNIQUE_BINDER_PREFIX = '__';
+	
+	protected const MAX_LIMIT = '18446744073709551615'; //according mysql
+	
+	protected const MODIFIER_WHERE = 'WHERE';
+	
+	protected const MODIFIER_FROM = 'FROM';
+	
+	protected const MODIFIER_SELECT = 'SELECT';
+	
+	protected const MODIFIER_LIMIT = 'LIMIT';
+	
+	protected const MODIFIER_OFFSET = 'OFFSET';
+	
+	protected const MODIFIER_ORDER_BY = 'ORDER BY';
+	
+	protected const MODIFIER_GROUP_BY = 'GROUP BY';
+	
+	protected const MODIFIER_HAVING = 'HAVING';
+	
+	protected const MODIFIER_JOIN = 'JOIN';
+	
+	protected const MODIFIER_SELECT_FLAG = 1;
+	
+	protected const MODIFIER_FROM_FLAG = 2;
+	
+	protected const MODIFIER_JOIN_FLAG = 4;
+	
+	protected const MODIFIER_WHERE_FLAG = 8;
+	
+	protected const MODIFIER_ORDER_BY_FLAG = 16;
+	
+	protected const MODIFIER_GROUP_BY_FLAG = 32;
+	
+	protected const REGEXP_AUTOJOIN = '/(?:[A-Za-z0-9]+\.)+/';
+	
+	protected const ITERATOR_WILDCARD = '__iterator';
+	
+	/**
+	 * @var object[]
+	 */
+	protected $items;
+	
+	/**
+	 * @var string[]
+	 */
+	protected $keys;
+	
+	/**
+	 * @var string
+	 */
+	protected $class;
+	
+	/**
+	 * @var mixed[]
+	 */
+	protected $classParameters = [];
+	
+	/**
+	 * @var \PDOStatement
+	 */
+	protected $sth;
+	
+	/**
+	 * @var int
+	 */
+	protected $binderCounter = 0;
+	
+	/**
+	 * @var string[]
+	 */
+	protected $aliases = [];
+	
+	/**
+	 * @var string[]
+	 */
+	protected $tableAliases = [];
+	
+	/**
+	 * @var mixed[]
+	 */
+	protected $modifiers = [];
+	
+	/**
+	 * @var string[]
+	 */
+	protected $baseFrom;
+	
+	/**
+	 * @var string[]
+	 */
+	protected $baseSelect;
+	
+	/**
+	 * @var string
+	 */
+	protected $index;
+	
+	/**
+	 * @var mixed[]
+	 */
+	protected $vars = [];
+	
+	/**
+	 * @var int[]
+	 */
+	protected $varsFlags = [];
+	
+	/**
+	 * @var \StORM\Connection
+	 */
+	protected $connection;
+	
+	/**
+	 * @var int|null
+	 */
+	protected $affectedNumber;
+	
+	/**
+	 * @var string[][]
+	 */
+	protected $possibleValues = [];
+	
+	/**
+	 * Rows constructor.
+	 * @param \StORM\Connection $connection
+	 * @param string[] $from
+	 * @param string[] $select
+	 * @param string $class
+	 * @param mixed[] $classParameters
+	 * @param string|null $index
+	 */
+	public function __construct(Connection $connection, ?array $from, array $select, string $class, array $classParameters = [], ?string $index = null)
+	{
+		$this->connection = $connection;
+		$this->class = $class;
+		$this->index = $index;
+		$this->baseFrom = $from;
+		$this->baseSelect = $select;
+		$this->classParameters = $classParameters;
+		
+		$this->init();
+	}
+	
+	/**
+	 * Get current connection
+	 * @return \StORM\Connection $connection
+	 */
+	public function getConnection(): Connection
+	{
+		return $this->connection;
+	}
+	
+	/**
+	 * Get array of modifiers: WHERE, FROM, SELECT, LIMIT, OFFSET, ORDER BY, GROUP BY, HAVING BY, JOIN
+	 * @return mixed[]
+	 */
+	public function getModifiers(): array
+	{
+		return $this->modifiers;
+	}
+	
+	/**
+	 * Get fetch class
+	 * @param mixed[] $params
+	 * @return string
+	 */
+	public function getFetchClass(array &$params = []): string
+	{
+		$params = $this->classParameters;
+		
+		return $this->class;
+	}
+	
+	/**
+	 * Set last affected number
+	 * @param int|null $affected
+	 * @internal
+	 */
+	public function setAffectedNumber(?int $affected): void
+	{
+		$this->affectedNumber = $affected;
+	}
+	
+	/**
+	 * Get last affected number
+	 * @return int|null
+	 */
+	public function getAffectedNumber(): ?int
+	{
+		return $this->affectedNumber;
+	}
+	
+	/**
+	 * Get possible values of column based by WHERE column IN ($possibleValues)
+	 * @param string $column
+	 * @return string[]
+	 */
+	public function getPossibleValues(string $column): array
+	{
+		return $this->possibleValues[$column] ?? [];
+	}
+	
+	/**
+	 * Load all items and fill keys
+	 */
+	public function load(): ICollection
+	{
+		$this->items = $this->getPDOStatement()->fetchAll(...$this->getFetchParameters());
+		$this->keys = \array_keys($this->items);
+		$this->affectedNumber = null;
+		
+		return $this;
+	}
+	
+	/**
+	 * Tells if collection is fetched
+	 * @return bool
+	 */
+	public function isLoaded(): bool
+	{
+		return $this->items !== null;
+	}
+	
+	/**
+	 * Take 1, fetch and close cursor, if property is not null fetch the property
+	 * @param string|null $property
+	 * @return object|null|string|bool
+	 */
+	public function first(?string $property = null)
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->take(1);
+		
+		if ($property !== null) {
+			isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->select([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->select([$property]);
+			$sth = $this->getPDOStatement();
+			$result = $sth->fetchColumn(0);
+		} else {
+			$sth = $this->getPDOStatement();
+			$sth->setFetchMode(...$this->getFetchParameters());
+			$result = $sth->fetch();
+		}
+		
+		$sth->closeCursor();
+		
+		return $result;
+	}
+	
+	/**
+	 * Fetch object and move cursor
+	 * @return mixed
+	 */
+	public function fetch()
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$stmt = $this->getPDOStatement();
+		$stmt->setFetchMode(...$this->getFetchParameters());
+		$object = $stmt->fetch();
+		
+		return $object === false ? null : $object;
+	}
+	
+	/**
+	 * Delete all record equals condition and return number of affected rows
+	 * @return int
+	 */
+	public function delete(): int
+	{
+		$flags = self::MODIFIER_FROM_FLAG | self::MODIFIER_JOIN_FLAG | self::MODIFIER_WHERE_FLAG;
+		
+		$sth = $this->getConnection()->query($this->getSqlDelete(), $this->getVars($flags));
+		$this->affectedNumber = $sth->rowCount();
+		
+		return $this->affectedNumber;
+	}
+	
+	/**
+	 * Update all record equals condition and return number of affected rows
+	 * @param string[] $values
+	 * @param bool $ignore
+	 * @return int
+	 */
+	public function update(array $values, bool $ignore = false): int
+	{
+		if (\count($values) === 0) {
+			throw new \InvalidArgumentException('No value to update');
+		}
+		
+		$sql = $this->getSqlUpdate($values, $ignore);
+		
+		$flags = self::MODIFIER_FROM_FLAG | self::MODIFIER_JOIN_FLAG | self::MODIFIER_WHERE_FLAG | self::MODIFIER_ORDER_BY_FLAG;
+	
+		$sth = $this->getConnection()->query($sql, $this->getVars($flags) + $values);
+		$this->affectedNumber = $sth->rowCount();
+		
+		return $this->affectedNumber;
+	}
+	
+	/**
+	 * Get sql SELECT string
+	 * @return string
+	 */
+	public function getSql(): string
+	{
+		$indexSelect = $this->index ? [$this->getPrefix() . $this->index] : [];
+		
+		if ($indexSelect && isset($this->modifiers[self::MODIFIER_SELECT][0]) && $this->modifiers[self::MODIFIER_SELECT][0] === '*') {
+			if (\count($this->modifiers[self::MODIFIER_FROM]) > 1) {
+				throw new InvalidStateException(InvalidStateException::INDEX_AND_STAR_WITHOUT_PREFIX, $this->index);
+			}
+			
+			$this->modifiers[self::MODIFIER_SELECT][0] = $this->getPrefix() . $this->modifiers[self::MODIFIER_SELECT][0];
+		}
+		
+		$sql = '';
+		$sql .= Helpers::createSqlClauseString(self::MODIFIER_SELECT, \array_merge($indexSelect, $this->modifiers[self::MODIFIER_SELECT]), ',', ' AS ');
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
+		
+		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
+			$type = $join[0];
+			$aliases = $join[1];
+			$condition = $join[2];
+			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
+		}
+		
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_GROUP_BY, $this->modifiers[self::MODIFIER_GROUP_BY], ',');
+		$sql .= $this->modifiers[self::MODIFIER_HAVING] === null ? '' : ' ' . self::MODIFIER_HAVING . ' ' . $this->modifiers[self::MODIFIER_HAVING];
+		$sql .=  Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
+		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
+		
+		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
+			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
+		}
+		
+		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		
+		$sql = $this->replaceLiterals($sql, $this->vars);
+		
+		return $sql;
+	}
+	
+	/**
+	 * Get sql DELETE string
+	 * @return string
+	 */
+	public function getSqlDelete(): string
+	{
+		if ($this->modifiers[self::MODIFIER_GROUP_BY]) {
+			throw new InvalidStateException(InvalidStateException::GROUP_BY_NOT_ALLOWED);
+		}
+		
+		if ($this->modifiers[self::MODIFIER_ORDER_BY]) {
+			throw new InvalidStateException(InvalidStateException::ORDER_BY_NOT_ALLOWED);
+		}
+		
+		$alias = $this->getPrefix(false);
+		
+		$sql = "DELETE $alias ";
+		$sql .= Helpers::createSqlClauseString(self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
+		
+		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
+			$type = $join[0];
+			$aliases = $join[1];
+			$condition = $join[2];
+			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
+		}
+		
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
+		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
+		
+		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
+			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
+		}
+		
+		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		
+		$sql = $this->replaceLiterals($sql, $this->vars);
+		
+		return $sql;
+	}
+	
+	/**
+	 * Get sql string for sql UPDATE records and bind variables in updates
+	 * @param mixed[] $updates
+	 * @param bool $ignore
+	 * @return string
+	 */
+	public function getSqlUpdate(array &$updates, bool $ignore = false): string
+	{
+		if ($this->modifiers[self::MODIFIER_GROUP_BY]) {
+			throw new InvalidStateException(InvalidStateException::GROUP_BY_NOT_ALLOWED);
+		}
+		
+		$values = $binds = [];
+		$varPrefix = self::UNIQUE_BINDER_PREFIX;
+		
+		foreach ($updates as $property => $rawValue) {
+			$column = \str_replace('.', '_', $property); // cannot bind "."
+			
+			if (\is_array($rawValue)) {
+				foreach ($rawValue as $language => $value) {
+					if (!\in_array($language, $this->connection->getAvailableMutations())) {
+						throw new \InvalidArgumentException("Language $language is not in available languages");
+					}
+					
+					$realProperty = $property . Connection::MUTATION_SEPARATOR . $language;
+					$values["$varPrefix$realProperty"] = (string) $value;
+					$binds[":$varPrefix$realProperty"] = $realProperty;
+				}
+				
+				continue;
+			}
+			
+			if (\is_scalar($rawValue) || $rawValue === null) {
+				$values["$varPrefix$column"] = \is_bool($rawValue) ? (int) $rawValue : $rawValue;
+				$binds[":$varPrefix$column"] = "$property";
+				
+				continue;
+			}
+			
+			if ($rawValue instanceof Literal) {
+				$binds[(string) $rawValue] = $property;
+				
+				continue;
+			}
+			
+			if ($rawValue instanceof ICollection) {
+				$binds[(string)$rawValue] = $property;
+				$values += $rawValue->getVars();
+				
+				continue;
+			}
+			
+			$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
+			
+			throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
+		}
+		
+		$updates = $values;
+		$flags = $ignore ? ' IGNORE' : '';
+		
+		$sql = '';
+		$sql .= Helpers::createSqlClauseString("UPDATE$flags", $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
+		
+		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
+			$type = $join[0];
+			$aliases = $join[1];
+			$condition = $join[2];
+			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
+		}
+		
+		$sql .= Helpers::createSqlClauseString(' SET', $binds, ',', '=') . ' ';
+		
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
+		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
+		
+		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
+			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
+		}
+		
+		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		
+		$sql = $this->replaceLiterals($sql, $updates + $this->vars);
+		
+		return $sql;
+	}
+	
+	/**
+	 * Clear all data in collection, can clear modifiers also
+	 * @param bool $clearModifiers
+	 * @return \StORM\ICollection
+	 */
+	public function clear(bool $clearModifiers = false): ICollection
+	{
+		$this->sth = null;
+		$this->items = null;
+		
+		if ($clearModifiers) {
+			$this->init();
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Convert collection to array of object or strings
+	 * @param string|null $column
+	 * @return string[]|object[]
+	 */
+	public function toArray(?string $column = null): array
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		if ($column === null) {
+			return $this->items;
+		}
+		
+		$return = [];
+		
+		foreach ($this->items as $index => $value) {
+			$return[$index] = $column === null ? $value : $value->$column;
+		}
+		
+		return $return;
+	}
+	
+	/**
+	 * Convert collection to array of sprintf formated strings
+	 * Return sprintf formated array
+	 * @param string $format
+	 * @param string[] $callbacks or $columns
+	 * @return string[]
+	 */
+	public function format(string $format, array $callbacks = []): array
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		$return = [];
+		$i = 1;
+		
+		foreach ($this->items as $index => $value) {
+			$args = [];
+			
+			foreach ($callbacks as $cb) {
+				if (\is_callable($cb)) {
+					$args[] = \call_user_func_array($cb, [$value]);
+				} elseif ($cb === self::ITERATOR_WILDCARD) {
+					$args[] = $i;
+				} else {
+					$args[] = $value->$cb;
+				}
+			}
+			
+			$i++;
+			$return[$index] = \vsprintf($format, $args);
+		}
+		
+		return $return;
+	}
+	
+	/**
+	 * Set collection index of internal array
+	 * @param string|null $index
+	 * @return \StORM\ICollection
+	 */
+	public function useIndex(?string $index): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->index = $index;
+		
+		return $this;
+	}
+	
+	/**
+	 * Count internal array if loaded, otherwise call enum()
+	 * @return int
+	 */
+	public function count(): int
+	{
+		return $this->isLoaded() ? \count($this->items) : $this->enum();
+	}
+	
+	/**
+	 * Call COUNT($column)
+	 * @param string|null $column
+	 * @param bool $unique
+	 * @return int
+	 */
+	public function enum(?string $column = null, bool $unique = true): int
+	{
+		$distinct = $unique ? 'DISTINCT ' : '';
+		
+		return (int) $this->func('COUNT', [$column ? "$distinct$column" : '*']);
+	}
+	
+	/**
+	 * Call SUM($column)
+	 * @param string $column
+	 * @return float
+	 */
+	public function sum(string $column): float
+	{
+		return (float) $this->func('SUM', [$column]);
+	}
+	
+	/**
+	 * Call AVG($column)
+	 * @param string $column
+	 * @return float
+	 */
+	public function avg(string $column): float
+	{
+		return (float) $this->func('AVG', [$column]);
+	}
+	
+	/**
+	 * Call MIN($column)
+	 * @param string $column
+	 * @return float
+	 */
+	public function min(string $column): float
+	{
+		return (float) $this->func('MIN', [$column]);
+	}
+	
+	/**
+	 * Call MAX($column)
+	 * @param string $column
+	 * @return float
+	 */
+	public function max(string $column): float
+	{
+		return (float) $this->func('MAX', [$column]);
+	}
+	
+	/**
+	 * Call sql function on args and return raw value
+	 * @param string $function
+	 * @param string[] $args
+	 * @return string
+	 */
+	public function func(string $function, array $args): string
+	{
+		$select = [$function . '(' . \implode(',', $args) . ')'];
+		$clone = clone $this;
+		
+		$clone->clear();
+		$clone->select($select);
+		
+		return (string) $clone->getPDOStatement()->fetchColumn();
+	}
+	
+	/**
+	 * Set WHERE condition and replace previous
+	 * @param string $expression
+	 * @param mixed[]|null|mixed $values
+	 * @return self
+	 */
+	public function where(?string $expression, $values = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		if ($expression === null) {
+			$this->modifiers[self::MODIFIER_WHERE] = [];
+		} else {
+			$this->processWhere($expression, $values, false, true);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Add WHERE condition with "AND" glue
+	 * @param string $expression
+	 * @param mixed[]|null|mixed $values
+	 * @return self
+	 */
+	public function addWhere(string $expression, $values = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->processWhere($expression, $values, false, false);
+		
+		return $this;
+	}
+	
+	/**
+	 * Set WHERE negated condition and replace previous
+	 * @param string $expression
+	 * @param mixed[]|null|mixed $values
+	 * @return self
+	 */
+	public function whereNot(string $expression, $values = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->processWhere($expression, $values, true, true);
+		
+		return $this;
+	}
+	
+	/**
+	 * Add WHERE negated condition with "AND" glue
+	 * @param string $expression
+	 * @param mixed[]|null|mixed $values
+	 * @return self
+	 */
+	public function addWhereNot(string $expression, $values = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->processWhere($expression, $values, false, false);
+		
+		return $this;
+	}
+	
+	/**
+	 * Add FROM clause and merge with previous
+	 * @param string[] $from
+	 * @param mixed[]|null $values
+	 * @return self
+	 */
+	public function addFrom(array $from, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->addAlias($from, self::MODIFIER_FROM);
+		
+		$this->modifiers[self::MODIFIER_FROM] = \array_merge($this->modifiers[self::MODIFIER_FROM], $from);
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_FROM_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Set FROM clause and remove previous
+	 * @param string[] $from
+	 * @param mixed[]|null $values
+	 * @return self
+	 */
+	public function from(array $from, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->removeVars(self::MODIFIER_FROM_FLAG);
+		
+		$this->removeAlias(self::MODIFIER_FROM);
+		$this->addAlias($from, self::MODIFIER_FROM);
+		
+		$this->modifiers[self::MODIFIER_FROM] = $from;
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_FROM_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Set SELECT clause and replace previous
+	 * @param string[] $select
+	 * @param mixed[]|null $values
+	 * @param bool $keepIndex
+	 * @return self
+	 */
+	public function select(array $select, array $values = [], bool $keepIndex = false): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->removeVars(self::MODIFIER_SELECT_FLAG);
+		
+		$this->modifiers[self::MODIFIER_SELECT] = $select;
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_SELECT_FLAG);
+		}
+		
+		if (!$keepIndex) {
+			$this->index = null;
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Add SELECT clause and merge with previous
+	 * @param string[] $select
+	 * @param mixed[] $values
+	 * @return $this
+	 */
+	public function addSelect(array $select, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_SELECT] = \array_merge($this->modifiers[self::MODIFIER_SELECT], $select);
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_SELECT_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	
+	/**
+	 * Add LIMIT clause
+	 * @param int|null $number
+	 * @return self
+	 */
+	public function take(?int $number): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_LIMIT] = $number;
+		
+		return $this;
+	}
+	
+	/**
+	 * Add OFFSET clause
+	 * @param int|null $number
+	 * @return self
+	 */
+	public function skip(?int $number): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_OFFSET] = $number;
+		
+		return $this;
+	}
+	
+	/**
+	 * Combine skip() and take() to slice page you want
+	 * @param int $page
+	 * @param int $onPage
+	 * @return self
+	 */
+	public function page(int $page, int $onPage): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->skip(($page - 1) * $onPage);
+		$this->take($onPage);
+		
+		return $this;
+	}
+	
+	/**
+	 * Set ORDER clause and replace previous
+	 * @param string[] $order
+	 * @param mixed[] $values
+	 * @return self
+	 */
+	public function orderBy(array $order, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_ORDER_BY] = $order;
+		$this->removeVars(self::MODIFIER_ORDER_BY_FLAG);
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_ORDER_BY_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Add ORDER clause and merge with previous
+	 * @param string[] $order
+	 * @param mixed[] $values
+	 * @return self
+	 */
+	public function addOrderBy(array $order, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_ORDER_BY] = \array_merge($this->modifiers[self::MODIFIER_ORDER_BY], $order);
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_ORDER_BY_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Set GROUP BY and HAVING clause and replace previous
+	 * @param string[] $groups
+	 * @param null|string $having
+	 * @param mixed[] $values
+	 * @return self
+	 */
+	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_GROUP_BY] = $groups;
+		$this->modifiers[self::MODIFIER_HAVING] = $having;
+		$this->removeVars(self::MODIFIER_GROUP_BY_FLAG);
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_GROUP_BY_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Add GROUP BY and HAVING clause and merge with previous
+	 * @param string[] $groups
+	 * @param null|string $having
+	 * @param mixed[] $values
+	 * @return self
+	 */
+	public function addGroupBy(array $groups, ?string $having = null, array $values = []): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->modifiers[self::MODIFIER_GROUP_BY] = \array_merge($this->modifiers[self::MODIFIER_GROUP_BY], $groups);
+		$this->modifiers[self::MODIFIER_HAVING] = $having;
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_GROUP_BY_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Set GROUP BY for all columns excepts columns in parameter $exceptColumns and HAVING clause and replace previous
+	 * @param string[] $exceptColumns
+	 * @param null|string $having
+	 * @return self
+	 */
+	public function fullGroupBy(array $exceptColumns, ?string $having = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$groups = $this->modifiers[self::MODIFIER_SELECT];
+		
+		foreach ($exceptColumns as $column) {
+			unset($groups[$column]);
+		}
+		
+		$this->modifiers[self::MODIFIER_GROUP_BY] = $groups;
+		$this->modifiers[self::MODIFIER_HAVING] = $having;
+		
+		return $this;
+	}
+	
+	/**
+	 * Set JOIN clause and replace previous
+	 * @param string[] $from
+	 * @param string $condition
+	 * @param mixed[] $values
+	 * @param string|null $type
+	 * @return self
+	 */
+	public function join(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		if (!$type) {
+			$type = self::DEFAULT_JOIN;
+		}
+		
+		$this->removeAlias(self::MODIFIER_JOIN);
+		$this->removeVars(self::MODIFIER_JOIN_FLAG);
+		$this->addAlias($from, self::MODIFIER_JOIN);
+		
+		if ($from) {
+			$this->modifiers[self::MODIFIER_JOIN] = [[$type, $from, $condition]];
+		}
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_JOIN_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Add JOIN clause and merge with previous
+	 * @param string[] $from
+	 * @param string $condition
+	 * @param mixed[] $values
+	 * @param string|null $type
+	 * @return self
+	 */
+	public function addJoin(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN): ICollection
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		if (!$type) {
+			$type = self::DEFAULT_JOIN;
+		}
+		
+		$this->addAlias($from, self::MODIFIER_JOIN);
+		
+		$this->modifiers[self::MODIFIER_JOIN][] = [$type, $from, $condition];
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_JOIN_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	
+	/**
+	 * Specify data which should be serialized to JSON
+	 * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
+	 * @return mixed data which can be serialized by <b>json_encode</b>,
+	 * which is a value of any type other than a resource.
+	 * @since 5.4.0
+	 */
+	public function jsonSerialize()
+	{
+		$array = $this->toArray();
+		
+		foreach ($array as $key => $value) {
+			$array[$key] = $value instanceof \JsonSerializable ? $value->jsonSerialize() : (array) $value;
+		}
+		
+		return $array;
+	}
+	
+	/**
+	 * Get real SQL string
+	 * @return string
+	 */
+	public function __toString(): string
+	{
+		return '(' . $this->getSql() . ')';
+	}
+	
+	/**
+	 * Dump modifiers, sql, binders and state of collection
+	 */
+	public function dump(): void
+	{
+		echo 'MODIFIERS:<br>';
+		\dump($this->modifiers);
+		echo 'SQL:<br>';
+		\dump($this->getSql());
+		echo 'BINDERS:<br>';
+		\dump($this->getVars());
+		echo 'STATE:<br>';
+		\dump('Get class: ' . $this->class);
+		\dump('Is loaded: ' . ($this->isLoaded() ? 'yes' : 'no'));
+		\dump('Internal index:' . ($this->index ?? 'none'));
+		\dump('Internal array count:' . ($this->items !== null ? \count($this->items) : 0));
+	}
+	
+	private function getPrefix(bool $dot = true): ?string
+	{
+		if (!$this->modifiers[self::MODIFIER_FROM]) {
+			return null;
+		}
+		
+		$tableName = \reset($this->modifiers[self::MODIFIER_FROM]);
+		$alias = \key($this->modifiers[self::MODIFIER_FROM]);
+		$dot = $dot ? '.' : '';
+		
+		if ($alias === 0) {
+			return "$tableName$dot";
+		}
+		
+		return $alias ? "$alias$dot" : '';
+	}
+	
+	protected function init(): void
+	{
+		$this->select($this->baseSelect, [], true);
+		
+		$this->modifiers[self::MODIFIER_FROM] = [];
+		
+		if ($this->baseFrom !== null) {
+			$this->from($this->baseFrom);
+		}
+		
+		$this->modifiers[self::MODIFIER_JOIN] = [];
+		$this->modifiers[self::MODIFIER_WHERE] = [];
+		$this->modifiers[self::MODIFIER_GROUP_BY] = [];
+		$this->modifiers[self::MODIFIER_HAVING] = null;
+		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
+		$this->modifiers[self::MODIFIER_LIMIT] = null;
+		$this->modifiers[self::MODIFIER_OFFSET] = null;
+	}
+	
+	/**
+	 * Return array of parsed vars, means converted from Entity to primary key, from literal to SQL string
+	 * @param int|null $flags
+	 * @return mixed[]
+	 */
+	public function getVars(?int $flags = null): array
+	{
+		$return = [];
+		
+		foreach ($this->vars as $name => $value) {
+			if ($flags === null || $this->varsFlags[$name] & $flags) {
+				$return[$name] = $value;
+			}
+		}
+		
+		return $this->parseVars($return);
+	}
+	
+	/**
+	 * @param mixed[] $vars
+	 * @return mixed[]
+	 */
+	protected function parseVars(array $vars): array
+	{
+		foreach ($vars as $name => $value) {
+			if (\is_scalar($value)) {
+				$vars[$name] = \is_bool($value) ? (int) $value : $value;
+				
+				continue;
+			}
+			
+			if ($value instanceof Entity) {
+				$vars[$name] = (string)$value;
+				
+				continue;
+			}
+			
+			$type = \is_object($value) ? \get_class($value) : \gettype($value);
+			
+			throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$name of $type");
+		}
+		
+		return $vars;
+	}
+	
+	/**
+	 * @param string $sql
+	 * @param mixed[] $vars
+	 * @return string
+	 */
+	protected function replaceLiterals(string $sql, array $vars): string
+	{
+		foreach ($vars as $name => $value) {
+			if ($value instanceof Literal) {
+				$sql = \str_replace(":$name", (string) $value, $sql);
+			}
+		}
+		
+		return $sql;
+	}
+	
+	/**
+	 * Get PDO statement handle. Ff its not created, it will be
+	 * @return \PDOStatement
+	 */
+	public function getPDOStatement(): \PDOStatement
+	{
+		if (!$this->sth) {
+			$this->sth = $this->connection->query($this->getSql(), $this->getVars());
+		}
+		
+		return $this->sth;
+	}
+	
+	/**
+	 * @return mixed[]
+	 */
+	protected function getFetchParameters(): array
+	{
+		$mode = \PDO::FETCH_CLASS;
+		
+		if ($this->index !== null) {
+			$mode |= \PDO::FETCH_UNIQUE;
+		}
+		
+		return [$mode, $this->class, $this->classParameters];
+	}
+	
+	/**
+	 * Return the current element
+	 * @return \StORM\Entity|null
+	 */
+	public function current(): ?object
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		return $this->items[\current($this->keys)];
+	}
+	
+	/**
+	 * Move forward to next element
+	 * @return void
+	 */
+	public function next(): void
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		\next($this->keys);
+	}
+	
+	/**
+	 * Return the key of the current element
+	 * @return string|null
+	 */
+	public function key(): ?string
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		return \current($this->keys);
+	}
+	
+	/**
+	 * Checks if current position is valid
+	 * @return bool
+	 */
+	public function valid(): bool
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		return \current($this->keys) !== false;
+	}
+	
+	/**
+	 * Rewind the Iterator to the first element
+	 * @return void
+	 */
+	public function rewind(): void
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		$this->keys = \array_keys($this->items);
+		\reset($this->keys);
+	}
+	
+	/**
+	 * Whether a offset exists
+	 * @param mixed $offset
+	 * @return bool
+	 */
+	public function offsetExists($offset): bool
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		return isset($this->items[$offset]);
+	}
+	
+	/**
+	 * Offset to retrieve
+	 * @param mixed $offset
+	 * @return \StORM\Entity
+	 */
+	public function offsetGet($offset): object
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		if (!isset($this->items[$offset])) {
+			throw new NotFoundException("Object with key $offset not found");
+		}
+		
+		return $this->items[$offset];
+	}
+	
+	/**
+	 * Offset to set
+	 * @param mixed $offset
+	 * @param mixed $value
+	 * @return void
+	 */
+	public function offsetSet($offset, $value): void
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		$this->keys[] = $offset;
+		$this->items[$offset] = $value;
+	}
+	
+	/**
+	 * Offset to unset
+	 * @param mixed $offset
+	 * @return void
+	 */
+	public function offsetUnset($offset): void
+	{
+		if (!$this->isLoaded()) {
+			$this->load();
+		}
+		
+		unset($this->keys[\array_search($offset, $this->keys)]);
+		unset($this->items[$offset]);
+	}
+	
+	private function generateBinder(): string
+	{
+		$binder = self::BINDER_NAME . (string) $this->binderCounter;
+		$this->binderCounter++;
+		
+		return $binder;
+	}
+	
+	/**
+	 * @param string $expression
+	 * @param mixed[]|null|mixed $values
+	 * @param bool $not
+	 * @param bool $replace
+	 * @return void
+	 */
+	private function processWhere(string $expression, $values, bool $not, bool $replace): void
+	{
+		$this->possibleValues = [];
+		
+		if ($replace) {
+			$this->removeVars(self::MODIFIER_WHERE_FLAG);
+			$this->modifiers[self::MODIFIER_WHERE] = [];
+		}
+		
+		if ($values === null) {
+			$this->modifiers[self::MODIFIER_WHERE][] = $not ? "!($expression)" : "($expression)";
+			
+			return;
+		}
+		
+		if (!\is_array($values)) {
+			$values = [$values];
+		}
+		
+		$isAssociative = Helpers::isAssociative($values);
+		$count = \count($values);
+		$firstBindOffset = \strpos($expression, ':');
+		
+		if (!$isAssociative && $firstBindOffset !== false) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_INVALID_CONDITION, "Expression $expression includes binded variable at " . \substr($expression, $firstBindOffset));
+		}
+		
+		if ($isAssociative && $count) {
+			$this->modifiers[self::MODIFIER_WHERE][] = $not ? "!($expression)" : "($expression)";
+			
+			foreach ($values as $k => $v) {
+				$this->bindVar($k, $v, self::MODIFIER_WHERE_FLAG);
+			}
+		} else {
+			if ($count === 1 && \array_key_exists(0, $values)) {
+				$binder = $this->generateBinder();
+				
+				if ($values[0] === null) {
+					$this->modifiers[self::MODIFIER_WHERE][] = $not ? "($expression IS NOT NULL)" : "($expression IS NULL)";
+				} else {
+					$this->modifiers[self::MODIFIER_WHERE][] = $not ? "($expression != :$binder)" : "($expression = :$binder)";
+					$this->bindVar($binder, $values[0], self::MODIFIER_WHERE_FLAG);
+					
+					if (!$not) {
+						$this->possibleValues[$expression] = $values;
+					}
+				}
+			} elseif ($count !== 0) {
+				$nullValue = false;
+				$i = 0;
+				$inFragment = '';
+				
+				foreach ($values as $v) {
+					if ($v === null) {
+						$nullValue = true;
+						
+						continue;
+					}
+					
+					$binder = $this->generateBinder();
+					
+					if ($i !== 0) {
+						$inFragment .= ',';
+					}
+					
+					$aux = ":$binder";
+					$this->bindVar($binder, $v, self::MODIFIER_WHERE_FLAG);
+					
+					$inFragment .= $aux;
+					$i++;
+				}
+				
+				$where = $not ? "$expression NOT IN ($inFragment)" : "$expression IN ($inFragment)";
+				
+				if ($nullValue) {
+					$where .= $not ? " AND $expression IS NOT NULL" : " OR $expression IS NULL";
+				}
+				
+				if (!$not) {
+					$this->possibleValues[$expression] = $values;
+				}
+				
+				$this->modifiers[self::MODIFIER_WHERE][] = "($where)";
+			} else {
+				if (!$not) {
+					$this->modifiers[self::MODIFIER_WHERE][] = '(1 = 0)';
+				}
+			}
+		}
+		
+		return;
+	}
+	
+	/**
+	 * @param string $name
+	 * @param mixed $value
+	 * @param int $modifierFlag
+	 */
+	protected function bindVar(string $name, $value, int $modifierFlag): void
+	{
+		if (isset($this->vars[$name])) {
+			throw new AlreadyExistsException(AlreadyExistsException::BIND_VAR, $name);
+		}
+		
+		if (\is_int($name)) {
+			throw new InvalidStateException(InvalidStateException::INTEGER_BINDER);
+		}
+		
+		$this->vars[$name] = $value;
+		
+		if (isset($this->varsFlags[$name])) {
+			$this->varsFlags[$name] |= $modifierFlag;
+		} else {
+			$this->varsFlags[$name] = $modifierFlag;
+		}
+		
+		return;
+	}
+	
+	protected function removeVars(int $flagToRemove): void
+	{
+		foreach ($this->varsFlags as $var => $flag) {
+			$this->varsFlags[$var] = $flag & ~$flagToRemove;
+			
+			if ($this->varsFlags[$var] !== 0) {
+				continue;
+			}
+			
+			unset($this->varsFlags[$var]);
+			unset($this->vars[$var]);
+		}
+	}
+	
+	/**
+	 * @param string[] $aliases
+	 * @param string $modifier
+	 */
+	private function addAlias(array $aliases, string $modifier): void
+	{
+		foreach ($aliases as $alias => $table) {
+			if (\is_int($alias)) {
+				$alias = (string) $table;
+			}
+			
+			if (\substr($alias, 0, 1) === $this->connection->getQuoteIdentifierChar()) {
+				$alias = \substr($alias, 1, -1);
+			}
+			
+			if (!Helpers::isValidIdentifier($alias)) {
+				throw new InvalidStateException(InvalidStateException::INVALID_IDENTIFIER, $alias);
+			}
+			
+			if (isset($this->aliases[$alias])) {
+				throw new AlreadyExistsException(AlreadyExistsException::ALIAS, $alias);
+			}
+			
+			$this->aliases[$alias] = $modifier;
+			$this->tableAliases[$table] = $alias;
+		}
+	}
+	
+	private function removeAlias(string $remove): void
+	{
+		foreach ($this->aliases as $alias => $modifier) {
+			if ($modifier === $remove) {
+				unset($this->aliases[$alias]);
+			}
+		}
+	}
+}

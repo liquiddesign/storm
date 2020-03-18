@@ -1,0 +1,22 @@
+services:
+	- Nette\Caching\Storages\DevNullStorage
+	db.stocks: \DB\StockRepository
+	- Tracy\Debugger::getBar
+
+storm:
+	default:
+		host: localhost
+		dbname: _test_storm
+		user: root
+		password: ""
+		debug: true
+		charset: utf8
+		collate: utf8_czech_ci
+	test:
+		host: localhost
+		dbname: _test_storm2
+		user: root
+		password: ""
+		debug: true
+		charset: utf8
+		collate: utf8_czech_ci
