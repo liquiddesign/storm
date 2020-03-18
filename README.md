@@ -12,6 +12,9 @@ StORM is lightweight PHP ORM library based on PDO
 ## INSTALLATION
 > composer require liquiddesign/storm
 
+## DOCUMENTATION
+https://paper.dropbox.com/doc/StORM--Awb3TaGQMzsId3ZrkFM0gAWZAg-hVi2MGVyIC8j1bN66dUKY
+
 ## USAGE
 ### WITH NETTE FRAMEWORK
 1. Add extension and configuration to neon config
@@ -19,7 +22,7 @@ StORM is lightweight PHP ORM library based on PDO
 // file: config.neon
 
 extensions:
-   storm: \StORM\Bridges\Nette
+   storm: \StORM\Bridges\StormDI
 
 storm:
    default:
@@ -62,10 +65,6 @@ $class = $loader->load(static function (\Nette\DI\Compiler $compiler) use ($conf
 $container = new $class();
 $storm = $container->getByType(Connection::class);
 ```
-
-## FOR DEVELOPERS
-vendor\bin\tester tests\*.phpt  -c tests/php.ini
-tester tests\*.phpt  -c tests/php.ini --coverage coverage.html --coverage-src src/
 
 ## TODO
 - performance test
