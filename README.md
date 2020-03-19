@@ -33,7 +33,16 @@ storm:
       debug: true
 ```
 2. Let's go
-You will find autowired service by class \StORM\Connection or by name "storm.default".
+You will find autowired service by class \StORM\Connection or by name "storm.default".  
+Follow DI rules in Nette: https://doc.nette.org/cs/3.0/di-usage
+
+```php
+// get 10 rows on page 2 from table "users" where "age" >= 18
+$users = $storm->rows(['users'])->where('age >= :age', ['age' => 18])->page(2, 10);
+foreach ($users as $user) {
+  echo $user->age;
+}
+```
 
 ### STANDALONE USAGE
 1. Create config file
@@ -64,6 +73,14 @@ $class = $loader->load(static function (\Nette\DI\Compiler $compiler) use ($conf
 /** @var \Nette\DI\Container $container */
 $container = new $class();
 $storm = $container->getByType(Connection::class);
+```
+
+```php
+// get 10 rows on page 2 from table "users" where "age" >= 18
+$users = $storm->rows(['users'])->where('age >= :age', ['age' => 18])->page(2, 10);
+foreach ($users as $user) {
+  echo $user->age;
+}
 ```
 
 ## TODO
