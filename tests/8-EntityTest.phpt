@@ -227,7 +227,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm->setMutation('cz');
 		$energy = $sectors->one('materials');
 		$energy->name = 'Materialy';
-		Assert::same('Materialy', $energy->name);
+			Assert::same('Materialy', $energy->name);
 		Assert::same('Materialy', $energy->getValue('name', 'cz'));
 		//Assert::same('Materialy', $energy->toArray([], false)['name']);
 		Assert::same('Materialy', $energy->toArray([], false)["name$separator" . 'cz']);
@@ -243,13 +243,13 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$energy = $sectors->one('materials');
 		$energy->setValue('name', 'Materials2', 'en');
-		Assert::same('Materials', $energy->name);
-		Assert::same('Materials', $energy->getValue('name', 'cz'));
+		Assert::same('Materialy', $energy->name);
+		Assert::same('Materialy', $energy->getValue('name', 'cz'));
 		Assert::same('Materials2', $energy->getValue('name', 'en'));
 		//Assert::same('Materials', $energy->toArray([], false)['name']);
-		Assert::same('Materials', $energy->toArray([], false)["name$separator" . 'cz']);
+		Assert::same('Materialy', $energy->toArray([], false)["name$separator" . 'cz']);
 		Assert::same('Materials2', $energy->toArray([], false)["name$separator" . 'en']);
-		Assert::same('Materials', $energy->toArray([], true)['name']['cz']);
+		Assert::same('Materialy', $energy->toArray([], true)['name']['cz']);
 		Assert::same('Materials2', $energy->toArray([], true)['name']['en']);
 	
 		// 6. update with locales

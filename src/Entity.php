@@ -45,20 +45,26 @@ abstract class Entity implements \JsonSerializable
 	protected $mutations;
 	
 	/**
+	 * @var int|null
+	 */
+	protected $affectedNumber;
+	
+	/**
 	 * Entity constructor.
 	 * @param mixed[]|null $vars
 	 * @param \StORM\Repository $repository
 	 * @param string|null $mutation
 	 * @param string[] $mutations
 	 * @param \StORM\CollectionEntity $parent
+	 * @param int|null $affectedNumber
 	 */
-	public function __construct(array $vars, Repository $repository, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null)
+	public function __construct(array $vars, Repository $repository, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null, ?int $affectedNumber = null)
 	{
 		foreach ($vars as $name => $value) {
 			$this->$name = $value;
 		}
 	
-		foreach ($repository->getSqlStructure()->getRelations() as $name => $relation) {
+		foreach ($repository->getStructure()->getRelations() as $name => $relation) {
 			if ($relation->isKeyHolder()) {
 				$this->foreignKeys[$name] = $this->$name ?? null;
 			}
@@ -70,16 +76,22 @@ abstract class Entity implements \JsonSerializable
 		$this->mutations = $mutations;
 		$this->parent = $parent;
 		$this->repository = $repository;
+		$this->affectedNumber = $affectedNumber;
+	}
+	
+	public function getAffectedNumber(): ?int
+	{
+		return $this->affectedNumber;
 	}
 	
 	/**
-	 * Sets parent of object
-	 * @param \StORM\CollectionEntity|null $parent
+	 * Sets parents and affected number to null
 	 * @internal
 	 */
-	public function setParent(?CollectionEntity $parent): void
+	public function removeParent(): void
 	{
-		$this->parent = $parent;
+		$this->parent = null;
+		$this->affectedNumber = null;
 		
 		return;
 	}
@@ -120,7 +132,7 @@ abstract class Entity implements \JsonSerializable
 	
 	private function getPKName(): string
 	{
-		return $this->repository->getSqlStructure()->getPK()->getName();
+		return $this->repository->getStructure()->getPK()->getName();
 	}
 	
 	/**
@@ -309,7 +321,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		// init relation
-		$relation = $this->repository->getSqlStructure()->getRelation($name);
+		$relation = $this->repository->getStructure()->getRelation($name);
 		
 		if ($relation) {
 			if ($relation->isKeyHolder() && isset($this->properties[$name . Repository::RELATION_SEPARATOR . $relation->getTargetKey()])) {
@@ -357,7 +369,7 @@ abstract class Entity implements \JsonSerializable
 	 */
 	private function getVars(bool $includeNonColumns = false): array
 	{
-		$columns = $this->repository->getSqlStructure()->getColumns(true, false);
+		$columns = $this->repository->getStructure()->getColumns(true, false);
 		$columnNames = \array_keys($columns);
 		$vars = Helpers::getModelVars($this);
 		
@@ -413,7 +425,7 @@ abstract class Entity implements \JsonSerializable
 		$array = [$this->getPKName() => $this->getPK()] + $this->getVars($includeNonColumns);
 		
 		if ($this->mutation && $groupLocales) {
-			foreach ($this->repository->getSqlStructure()->getColumns() as $name => $column) {
+			foreach ($this->repository->getStructure()->getColumns() as $name => $column) {
 				if ($column->hasMutations()) {
 					$array[$name] = [];
 					
@@ -426,7 +438,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		foreach ($relations as $relationName) {
-			$value = $this->getRelation($this->repository->getSqlStructure()->getRelation($relationName));
+			$value = $this->getRelation($this->repository->getStructure()->getRelation($relationName));
 			$array[$relationName] = $value instanceof CollectionRelation ? \array_keys($value->toArray()) : (string)$value;
 		}
 		
@@ -439,6 +451,6 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function jsonSerialize(): array
 	{
-		return $this->toArray(\array_keys($this->repository->getSqlStructure()->getRelations()), true, true);
+		return $this->toArray(\array_keys($this->repository->getStructure()->getRelations()), true, true);
 	}
 }

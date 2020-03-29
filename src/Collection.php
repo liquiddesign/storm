@@ -418,45 +418,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$varPrefix = self::UNIQUE_BINDER_PREFIX;
 		
 		foreach ($updates as $property => $rawValue) {
-			$column = \str_replace('.', '_', $property); // cannot bind "."
-			
-			if (\is_array($rawValue)) {
-				foreach ($rawValue as $language => $value) {
-					if (!\in_array($language, $this->connection->getAvailableMutations())) {
-						throw new \InvalidArgumentException("Language $language is not in available languages");
-					}
-					
-					$realProperty = $property . Connection::MUTATION_SEPARATOR . $language;
-					$values["$varPrefix$realProperty"] = (string) $value;
-					$binds[":$varPrefix$realProperty"] = $realProperty;
-				}
-				
-				continue;
-			}
-			
-			if (\is_scalar($rawValue) || $rawValue === null) {
-				$values["$varPrefix$column"] = \is_bool($rawValue) ? (int) $rawValue : $rawValue;
-				$binds[":$varPrefix$column"] = "$property";
-				
-				continue;
-			}
-			
-			if ($rawValue instanceof Literal) {
-				$binds[(string) $rawValue] = $property;
-				
-				continue;
-			}
-			
-			if ($rawValue instanceof ICollection) {
-				$binds[(string)$rawValue] = $property;
-				$values += $rawValue->getVars();
-				
-				continue;
-			}
-			
-			$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
-			
-			throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
+			Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, '', $this->connection->getAvailableMutations());
 		}
 		
 		$updates = $values;
@@ -1165,7 +1127,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected function parseVars(array $vars): array
 	{
 		foreach ($vars as $name => $value) {
-			if (\is_scalar($value)) {
+			if (\is_scalar($value) || \is_null($value)) {
 				$vars[$name] = \is_bool($value) ? (int) $value : $value;
 				
 				continue;

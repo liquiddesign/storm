@@ -23,7 +23,7 @@ class NotExistsException extends \RuntimeException
 			$message = "Property or relation $value not found";
 		} elseif ($propertyCode === self::PROPERTIES) {
 			$message = "Property/ies $value not found";
-		}  elseif ($propertyCode === self::FILTER) {
+		} elseif ($propertyCode === self::FILTER) {
 			$message = "Filter $value not found";
 		} else {
 			$message = "$propertyCode of $value is not set";

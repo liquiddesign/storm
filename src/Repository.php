@@ -5,7 +5,7 @@ namespace StORM;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
-use StORM\Meta\SqlStructure;
+use StORM\Meta\Structure;
 
 abstract class Repository
 {
@@ -20,7 +20,7 @@ abstract class Repository
 	public const RELATION_SEPARATOR = '_';
 	
 	/**
-	 * @var \StORM\Meta\SqlStructure
+	 * @var \StORM\Meta\Structure
 	 */
 	protected $sqlStructure;
 	
@@ -51,7 +51,7 @@ abstract class Repository
 	 */
 	final public function getEntityClass(): string
 	{
-		return $this->getSqlStructure()->getEntityClass();
+		return $this->getStructure()->getEntityClass();
 	}
 	
 	/**
@@ -90,7 +90,7 @@ abstract class Repository
 	 */
 	public function filterByColumns(array &$values, bool $includePK = true, ?bool $mode = null): array
 	{
-		$columns = $this->getSqlStructure()->getColumns($includePK);
+		$columns = $this->getStructure()->getColumns($includePK);
 		
 		return $this->filterValues($columns, $values, $mode);
 	}
@@ -131,13 +131,13 @@ abstract class Repository
 	
 	/**
 	 * Get SQL structure object
-	 * @return \StORM\Meta\SqlStructure
+	 * @return \StORM\Meta\Structure
 	 */
-	final public function getSqlStructure(): SqlStructure
+	final public function getStructure(): Structure
 	{
 		if (!$this->sqlStructure) {
-			$class = SqlStructure::getEntityClassFromRepositoryClass(static::class);
-			$this->sqlStructure = $this->schemaManager->getSqlStructure($class);
+			$class = Structure::getEntityClassFromRepositoryClass(static::class);
+			$this->sqlStructure = $this->schemaManager->getStructure($class);
 		}
 		
 		return $this->sqlStructure;
@@ -173,7 +173,7 @@ abstract class Repository
 				$collection->addWhere(self::DEFAULT_ALIAS . '.' . $property, $value);
 			}
 		} else {
-			$collection->where(self::DEFAULT_ALIAS . '.' . $this->getSqlStructure()->getPK()->getName(), $condition);
+			$collection->where(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
 		}
 		
 		/**
@@ -189,11 +189,10 @@ abstract class Repository
 			return null;
 		}
 		
-		$object->setParent(null);
+		$object->removeParent();
 		
 		return $object;
 	}
-	
 	
 	/**
 	 * Create entity row = insert row into table
@@ -215,7 +214,7 @@ abstract class Repository
 	 */
 	final public function syncOne(array $values, ?array $updateProps = null, ?bool $filterByColumns = null): Entity
 	{
-		$columns = $this->getSqlStructure()->getColumns();
+		$columns = $this->getStructure()->getColumns();
 		
 		$insert = $this->filterValues($columns, $values, $filterByColumns);
 		
@@ -229,9 +228,9 @@ abstract class Repository
 			}
 		}
 		
-		$pk = $this->getSqlStructure()->getPK();
+		$pk = $this->getStructure()->getPK();
 		
-		$class = $this->getSqlStructure()->getEntityClass();
+		$class = $this->getStructure()->getEntityClass();
 		$vars = [];
 		
 		if (!isset($insert[$pk->getName()]) && !$pk->isAutoincrement()) {
@@ -245,15 +244,15 @@ abstract class Repository
 		
 		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, false);
 		
-		$this->connection->query($sql, $vars);
+		$rowCount = $this->connection->query($sql, $vars)->rowCount();
 		
 		if ($pk->isAutoincrement()) {
 			$values[$pk->getName()] = $this->getPrimaryKeyNextValue();
 		}
 		
-		$hasMutations = $this->getSqlStructure()->hasMutations();
+		$hasMutations = $this->getStructure()->hasMutations();
 		
-		return new $class($values, $this, $hasMutations ? $this->connection->getMutation() : null, $hasMutations ? $this->connection->getAvailableMutations() : []);
+		return new $class($values, $this, $hasMutations ? $this->connection->getMutation() : null, $hasMutations ? $this->connection->getAvailableMutations() : [], null, $rowCount);
 	}
 	
 	/**
@@ -282,8 +281,8 @@ abstract class Repository
 	{
 		$affected = 0;
 		
-		$columns = $this->getSqlStructure()->getColumns();
-		$pk = $this->getSqlStructure()->getPK();
+		$columns = $this->getStructure()->getColumns();
+		$pk = $this->getStructure()->getPK();
 		$primaryKeys = [];
 		
 		if ($updateProps) {
@@ -353,7 +352,7 @@ abstract class Repository
 	 */
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
 	{
-		return $this->connection->getSqlInsert($this->getSqlStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore);
+		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore);
 	}
 	
 	private function getPrimaryKeyNextValue(): int
@@ -371,7 +370,7 @@ abstract class Repository
 	 */
 	public function getDefaultSelect(): array
 	{
-		return $this->getSqlStructure()->getColumnsSelect(self::DEFAULT_ALIAS . '.');
+		return $this->getStructure()->getColumnsSelect(self::DEFAULT_ALIAS . '.');
 	}
 	
 	/**
@@ -381,15 +380,15 @@ abstract class Repository
 	 */
 	public function getRelationSelect(string $relation): array
 	{
-		if (!$this->getSqlStructure()->hasRelation($relation)) {
+		if (!$this->getStructure()->hasRelation($relation)) {
 			throw new NotExistsException(NotExistsException::RELATION, $relation);
 		}
 		
-		$relation = $this->getSqlStructure()->getRelation($relation);
+		$relation = $this->getStructure()->getRelation($relation);
 		$name = $relation->getName();
 		$class = $relation->getTarget();
 		
-		return $this->getSchemaManager()->getSqlStructure($class)->getColumnsSelect("$name.", $name. self::RELATION_SEPARATOR);
+		return $this->getSchemaManager()->getStructure($class)->getColumnsSelect("$name.", $name. self::RELATION_SEPARATOR);
 	}
 	
 	/**
@@ -398,6 +397,6 @@ abstract class Repository
 	 */
 	public function getDefaultFrom(): array
 	{
-		return [self::DEFAULT_ALIAS => $this->getSqlStructure()->getTable()->getName()];
+		return [self::DEFAULT_ALIAS => $this->getStructure()->getTable()->getName()];
 	}
 }

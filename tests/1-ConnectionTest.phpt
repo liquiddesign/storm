@@ -100,7 +100,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$connection->connect($name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
 		
 		$schemaManager = new SchemaManager($connection, $cacheStorage);
-		$schemaManager->getSqlStructure(Stock::class);
+		$schemaManager->getStructure(Stock::class);
 	}
 	
 	/**

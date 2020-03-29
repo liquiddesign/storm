@@ -13,7 +13,7 @@ use StORM\CollectionEntity;
 use StORM\Connection;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
-use StORM\Meta\SqlStructure;
+use StORM\Meta\Structure;
 use StORM\SchemaManager;
 use Tester\Assert;
 
@@ -54,7 +54,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$types = $storm->getRepository(TypeRepository::class);
 		$alias = TypeRepository::DEFAULT_ALIAS;
 		
-		Assert::type(SqlStructure::class, $types->getSqlStructure());
+		Assert::type(Structure::class, $types->getStructure());
 		Assert::type(SchemaManager::class, $types->getSchemaManager());
 		Assert::same(Type::class, $types->getEntityClass());
 		Assert::same($storm, $types->getConnection());
@@ -126,6 +126,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		Assert::type(Type::class, $object1);
 		$object2 = $types->one($id);
+		$object1->removeParent();
 		Assert::equal($object1, $object2);
 		
 		// 2. using generated pk
@@ -133,6 +134,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$object1 = $types->createOne(['myName' => 'test', 'sector' => 'energy']);
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
+		$object1->removeParent();
 		Assert::equal($object1, $object2);
 		
 		// 3. invalid property name
@@ -146,6 +148,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$object1 = $types->createOne(['myName' => 'test', 'sector' => 'energy', 'foo' => 'x'], true);
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
+		$object1->removeParent();
 		Assert::equal($object1, $object2);
 		
 		
@@ -154,6 +157,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$object1 = $types->createOne(['myName' => 'test', 'sector' => 'energy'], false);
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
+		$object1->removeParent();
 		Assert::equal($object1, $object2);
 	}
 	
@@ -266,6 +270,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		Assert::type(Type::class, $object1);
 		$object2 = $types->one($id);
+		$object1->removeParent();
 		Assert::equal($object1, $object2);
 		Assert::same('test2', $object2->myName);
 		Assert::same('finance', $object2->sector->uuid);

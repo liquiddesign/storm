@@ -6,7 +6,7 @@ use Nette\Caching\Cache;
 use Nette\Caching\IStorage;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
-use StORM\Meta\SqlStructure;
+use StORM\Meta\Structure;
 
 class SchemaManager implements \JsonSerializable
 {
@@ -21,7 +21,7 @@ class SchemaManager implements \JsonSerializable
 	private $connection;
 	
 	/**
-	 * @var \StORM\Meta\SqlStructure[]
+	 * @var \StORM\Meta\Structure[]
 	 */
 	private $dataModels = [];
 	
@@ -40,20 +40,20 @@ class SchemaManager implements \JsonSerializable
 	/**
 	 * Get description of Entity in structure structure called DataModel containing properties ect.
 	 * @param string $class
-	 * @return \StORM\Meta\SqlStructure
+	 * @return \StORM\Meta\Structure
 	 */
-	public function getSqlStructure(string $class): SqlStructure
+	public function getStructure(string $class): Structure
 	{
 		if (!isset($this->dataModels[$class])) {
 			if (!\class_exists($class)) {
 				throw new NotExistsException(NotExistsException::CLASS_NAME, $class);
 			}
 			
-			if (!\StORM\Meta\SqlStructure::isEntityClass($class)) {
+			if (!\StORM\Meta\Structure::isEntityClass($class)) {
 				throw new \InvalidArgumentException("$class should be child of Entity class");
 			}
 			
-			$this->dataModels[$class] = new \StORM\Meta\SqlStructure($class, $this, $this->cache);
+			$this->dataModels[$class] = new \StORM\Meta\Structure($class, $this, $this->cache);
 		}
 		
 		return $this->dataModels[$class];
@@ -114,7 +114,7 @@ class SchemaManager implements \JsonSerializable
 		$json = [];
 		
 		foreach ($this->connection->getAllRepositories() as $repository) {
-			$json[$repository->getEntityClass()] = $repository->getSqlStructure()->jsonSerialize();
+			$json[$repository->getEntityClass()] = $repository->getStructure()->jsonSerialize();
 		}
 		
 		return $json;

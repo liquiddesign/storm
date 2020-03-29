@@ -96,7 +96,7 @@ class Relation extends PropertyAnnotation
 			$offset = \strpos($type, '[]');
 			$target = $offset === false ? $type : \substr($type, 0, $offset);
 			
-			if (SqlStructure::isEntityClass($target)) {
+			if (Structure::isEntityClass($target)) {
 				$this->target = \substr($target, 0, 1) === "\\" ? \substr($target, 1) : $target;
 				$this->source = $this->getEntityClass();
 				$this->isKeyHolder = $offset === false;

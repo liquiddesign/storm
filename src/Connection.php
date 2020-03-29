@@ -4,9 +4,8 @@ namespace StORM;
 
 use Nette\DI\Container;
 use StORM\Exception\GeneralException;
-use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
-use StORM\Meta\SqlStructure;
+use StORM\Meta\Structure;
 
 class Connection
 {
@@ -80,6 +79,11 @@ class Connection
 	 * @var callable
 	 */
 	private $primaryKeyGenerator;
+	
+	/**
+	 * @var string[]
+	 */
+	private $customAnnotations = [];
 	
 	/**
 	 * @var \StORM\LogItem[]
@@ -357,6 +361,22 @@ class Connection
 	}
 	
 	/**
+	 * @param string[] $customAnnotations
+	 */
+	public function setCustomAnnotations(array $customAnnotations): void
+	{
+		$this->customAnnotations = $customAnnotations;
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function getCustomAnnotations(): array
+	{
+		return $this->customAnnotations;
+	}
+	
+	/**
 	 * Get collection of rows
 	 * @param string[]|null $from
 	 * @param string[] $select
@@ -375,14 +395,32 @@ class Connection
 	 * @param string $table
 	 * @param mixed[] $values
 	 * @param bool $ignore
-	 * @return int
+	 * @param string|null $nonAutoincrementPK
+	 * @return \StORM\InsertResult
 	 */
-	public function createRow(string $table, array $values, bool $ignore = false): int
+	public function createRow(string $table, array $values, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
 		$vars = [];
+		$primaryKeys = [];
+		
+		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
+			$generatedPrimaryKey = $this->generatePrimaryKey();
+			
+			if ($generatedPrimaryKey) {
+				$values[$nonAutoincrementPK] = $generatedPrimaryKey;
+			}
+		}
+		
+		if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
+			$primaryKeys[] = $values[$nonAutoincrementPK];
+		}
+		
 		$sql = $this->getSqlInsert($table, [$values], $vars, [], $ignore);
 		
-		return $this->query($sql, $vars)->rowCount();
+		$beforeId = $this->getLink()->lastInsertId();
+		$rowCount = $this->query($sql, $vars)->rowCount();
+		
+		return new InsertResult($this, $table, false, $ignore, $rowCount, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
@@ -390,21 +428,37 @@ class Connection
 	 * @param string $table
 	 * @param mixed[][] $manyValues
 	 * @param bool $ignore
+	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
-	 * @return int
+	 * @return \StORM\InsertResult
 	 */
-	public function createRows(string $table, array $manyValues, bool $ignore = false, int $chunkSize = 100): int
+	public function createRows(string $table, array $manyValues, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
 	{
 		$affected = 0;
+		$primaryKeys = [];
+		$beforeId = $this->getLink()->lastInsertId();
 		
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$vars = [];
+			
+			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
+				$generatedPrimaryKey = $this->generatePrimaryKey();
+				
+				if ($generatedPrimaryKey) {
+					$values[$nonAutoincrementPK] = $generatedPrimaryKey;
+				}
+			}
+			
+			if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
+				$primaryKeys[] = $values[$nonAutoincrementPK];
+			}
+			
 			$sql = $this->getSqlInsert($table, $values, $vars, [], $ignore);
 			
 			$affected += $this->query($sql, $vars)->rowCount();
 		}
 		
-		return $affected;
+		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
@@ -413,14 +467,32 @@ class Connection
 	 * @param mixed[] $values
 	 * @param string[]|null $columnsToUpdate
 	 * @param bool $ignore
-	 * @return int
+	 * @param string|null $nonAutoincrementPK
+	 * @return \StORM\InsertResult
 	 */
-	public function syncRow(string $table, array $values, ?array $columnsToUpdate = null, bool $ignore = false): int
+	public function syncRow(string $table, array $values, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
 		$vars = [];
+		$primaryKeys = [];
+		$beforeId = $this->getLink()->lastInsertId();
+		
+		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
+			$generatedPrimaryKey = $this->generatePrimaryKey();
+			
+			if ($generatedPrimaryKey) {
+				$values[$nonAutoincrementPK] = $generatedPrimaryKey;
+			}
+		}
+		
+		if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
+			$primaryKeys[] = $values[$nonAutoincrementPK];
+		}
+		
 		$sql = $this->getSqlInsert($table, [$values], $vars, $columnsToUpdate, $ignore);
 		
-		return $this->query($sql, $vars)->rowCount();
+		$affected = $this->query($sql, $vars)->rowCount();
+		
+		return new InsertResult($this, $table, false, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
@@ -429,20 +501,36 @@ class Connection
 	 * @param mixed[][] $manyValues
 	 * @param string[]|null $columnsToUpdate
 	 * @param bool $ignore
+	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
-	 * @return int
+	 * @return \StORM\InsertResult
 	 */
-	public function syncRows(string $table, array $manyValues, ?array $columnsToUpdate = null, bool $ignore = false, int $chunkSize = 100): int
+	public function syncRows(string $table, array $manyValues, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
 	{
 		$affected = 0;
+		$primaryKeys = [];
+		$beforeId = $this->getLink()->lastInsertId();
 		
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$vars = [];
+			
+			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
+				$generatedPrimaryKey = $this->generatePrimaryKey();
+				
+				if ($generatedPrimaryKey) {
+					$values[$nonAutoincrementPK] = $generatedPrimaryKey;
+				}
+			}
+			
+			if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
+				$primaryKeys[] = $values[$nonAutoincrementPK];
+			}
+			
 			$sql = $this->getSqlInsert($table, $values, $vars, $columnsToUpdate, $ignore);
 			$affected += $this->query($sql, $vars)->rowCount();
 		}
 		
-		return $affected;
+		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
@@ -477,36 +565,7 @@ class Connection
 			$binds = [];
 			
 			foreach ($inserts as $property => $rawValue) {
-				if (\is_array($rawValue)) {
-					foreach ($rawValue as $language => $value) {
-						if (!\in_array($language, $this->getAvailableMutations())) {
-							throw new NotExistsException(NotExistsException::MUTATION, $language);
-						}
-						
-						$realProperty = $property . self::MUTATION_SEPARATOR . $language;
-						$values["$realProperty$i"] = (string)$value;
-						$binds[":$realProperty$i"] = $this->quoteIdentifier($realProperty);
-					}
-					
-					continue;
-				}
-				
-				if (\is_scalar($rawValue)) {
-					$values["$property$i"] = $rawValue;
-					$binds[":$property$i"] = $this->quoteIdentifier($property);
-					
-					continue;
-				}
-				
-				if ($rawValue instanceof Literal) {
-					$binds[(string)$rawValue] = $this->quoteIdentifier($property);
-					
-					continue;
-				}
-				
-				$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
-				
-				throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
+				Helpers::bindVariables($property, $rawValue, $values, $binds, '', $i, $this->getAvailableMutations());
 			}
 			
 			if ($i === 0) {
@@ -712,8 +771,11 @@ class Connection
 			throw new \InvalidArgumentException("$entityClass is not child of \StORM\Entity");
 		}
 		
+		$repositoryClass = Structure::getRepositoryClassFromEntityClass($entityClass);
+		$interface = Structure::getInterfaceFromRepositoryClass($repositoryClass);
+		
 		/** @var \StORM\Repository $repository */
-		$repository = $this->container->getByType(SqlStructure::getRepositoryClassFromEntityClass($entityClass));
+		$repository = $this->container->getByType(\interface_exists($interface) ? $interface : $repositoryClass);
 		
 		return $repository;
 	}

@@ -11,6 +11,7 @@ storm:
 		password: ""
 		debug: true
 		charset: utf8
+		driver: mysql
 		collate: utf8_czech_ci
 	test:
 		host: localhost
@@ -19,4 +20,5 @@ storm:
 		password: ""
 		debug: true
 		charset: utf8
+		driver: mysql
 		collate: utf8_czech_ci

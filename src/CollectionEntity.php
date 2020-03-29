@@ -32,14 +32,14 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	{
 		$this->repository = $repository;
 		$connection = $repository->getConnection();
-		$hasMutations = $repository->getSqlStructure()->hasMutations();
+		$hasMutations = $repository->getStructure()->hasMutations();
 		$classParameters = [[], $repository, $hasMutations ? $connection->getMutation() : null, $hasMutations ? $connection->getAvailableMutations() : []];
 		
 		if ($passParentToEntities) {
 			$classParameters[] = $this;
 		}
 		
-		$index = $repository->getSqlStructure()->getPK()->getName();
+		$index = $repository->getStructure()->getPK()->getName();
 		$defaultSelect = $repository->getDefaultSelect();
 		$this->skipSelectLength = \count($defaultSelect);
 		
@@ -99,7 +99,7 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
 			$targetRepository = $this->getConnection()->getRepositoryByEntityClass($relation->getTarget());
-			$pkName = $targetRepository->getSqlStructure()->getPK()->getName();
+			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
 			
 			foreach ($this->items as $item) {
@@ -144,7 +144,7 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 			
 			foreach ($aliasesList as $alias) {
 				if (!isset($this->clauseFrom[$alias]) && !isset($this->clauseJoin[$alias])) {
-					$relation = $this->repository->getSchemaManager()->getSqlStructure($relationClass)->getRelation($alias);
+					$relation = $this->repository->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
 					
 					if (!$relation) {
 						throw new NotExistsException(NotExistsException::RELATION, $alias, $relationClass);
@@ -163,11 +163,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 					 */
 					$source = $relation->getSource();
 					
-					$sourceTable = $this->repository->getSchemaManager()->getSqlStructure($source)->getTable()->getName();
+					$sourceTable = $this->repository->getSchemaManager()->getStructure($source)->getTable()->getName();
 					$sourceAlias = $this->tableAliases[$sourceTable] ?? $sourceTable;
 					$sourceAliasQuoted = $this->connection->quoteIdentifier($sourceAlias);
 					
-					$targetTable = $this->repository->getSchemaManager()->getSqlStructure($target)->getTable()->getName();
+					$targetTable = $this->repository->getSchemaManager()->getStructure($target)->getTable()->getName();
 					$sourceKey = $relation->getSourceKey();
 					$targetKey = $relation->getTargetKey();
 					

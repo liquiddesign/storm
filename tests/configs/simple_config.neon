@@ -1,5 +1,6 @@
 services:
 	- Nette\Caching\Storages\DevNullStorage
+	db.alerts: \DB\AlertRepository
 storm:
 	default:
 		host: localhost
@@ -7,3 +8,6 @@ storm:
 		user: root
 		password: ""
 		driver: mysql
+		customAnnotations:
+			testClass: class
+			testProperty: property

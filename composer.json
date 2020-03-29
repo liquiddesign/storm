@@ -17,6 +17,8 @@
 	},
 	"require-dev": 
 	{
-		"nette/tester":"*"
+		"nette/tester":"*",
+		"squizlabs/php_codesniffer": "3.*",
+		"slevomat/coding-standard": "~4.0"
 	}
 }

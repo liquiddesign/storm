@@ -1,5 +1,15 @@
 # StORM
-StORM is lightweight PHP ORM library based on PDO
+StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
+
+## FEATURES
+- works great with Nette and others framework, even standalone
+-clean, smarter code, that is more understandable and extendable
+- keep your database model organized and easy to extend and reusable
+- ORM optimizations, DI pattern, and "autojoin" feature
+- prepare for localized web applications
+- extension for API (for you REACT, apps) (UNDER CONSTRUCTION)
+- extension from database schema synchronization (UNDER CONSTRUCTION)
+- well tested, documented
 
 ## REQUIREMENTS
 - PHP >=7.3.0  
@@ -14,6 +24,12 @@ StORM is lightweight PHP ORM library based on PDO
 
 ## DOCUMENTATION
 https://paper.dropbox.com/doc/StORM--Awb3TaGQMzsId3ZrkFM0gAWZAg-hVi2MGVyIC8j1bN66dUKY
+
+## API
+http://www.phpstorm.net/api
+
+## WEB
+http://www.phpstorm.net
 
 ## USAGE
 ### WITH NETTE FRAMEWORK
@@ -82,12 +98,3 @@ foreach ($users as $user) {
   echo $user->age;
 }
 ```
-
-## TODO
-- performance test
-- finish documentation
-- generate sami api doc
-- source for test as SQL
-- travis - sql automatization codestyle, tests, coverage info
-- autoincrement test
-- postgres test

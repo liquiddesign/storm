@@ -2,6 +2,8 @@
 
 namespace StORM;
 
+use StORM\Exception\InvalidStateException;
+
 /**
  * Helpers class
  */
@@ -111,5 +113,57 @@ class Helpers
 		}
 		
 		return $brackets ? "$prefix ($string)" : "$prefix $string";
+	}
+	
+	/**
+	 * @param string $property
+	 * @param mixed $rawValue
+	 * @param mixed[] $values
+	 * @param mixed[] $binds
+	 * @param string $varPrefix
+	 * @param string $varPostfix
+	 * @param string[] $mutations
+	 */
+	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations): void
+	{
+		$column = \str_replace('.', '_', $property); // cannot bind "."
+		
+		if (\is_array($rawValue)) {
+			foreach ($rawValue as $language => $value) {
+				if (!\in_array($language, $mutations)) {
+					throw new \InvalidArgumentException("Language $language is not in available languages");
+				}
+				
+				$realProperty = $column . Connection::MUTATION_SEPARATOR . $language;
+				$values["$varPrefix$realProperty$varPostfix"] = (string) $value;
+				$binds[":$varPrefix$realProperty$varPostfix"] = $realProperty;
+			}
+			
+			return;
+		}
+		
+		if (\is_scalar($rawValue) || $rawValue === null) {
+			$values["$varPrefix$column$varPostfix"] = \is_bool($rawValue) ? (int) $rawValue : $rawValue;
+			$binds[":$varPrefix$column$varPostfix"] = "$property";
+			
+			return;
+		}
+		
+		if ($rawValue instanceof Literal) {
+			$binds[(string) $rawValue] = $property;
+			
+			return;
+		}
+		
+		if ($rawValue instanceof ICollection) {
+			$binds[(string)$rawValue] = $property;
+			$values += $rawValue->getVars();
+			
+			return;
+		}
+		
+		$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
+		
+		throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
 	}
 }

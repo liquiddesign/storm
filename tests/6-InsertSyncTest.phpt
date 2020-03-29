@@ -64,8 +64,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm->rows([$table])->where('flag', $flag)->delete();
 		
 		// 1. insert
-		$affected = $storm->createRow($table, $data[0]);
-		Assert::same(1, $affected);
+		$affected = $storm->createRow($table, $data[0], false, 'uuid');
+		Assert::same(1, $affected->getRowCount());
+		Assert::same(1, $affected->getRows('uuid')->enum());
 		Assert::same(1, $storm->rows([$table])->where('flag', $flag)->count());
 		
 		Assert::exception(static function () use ($storm, $table, $data): void {
@@ -74,9 +75,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2. insert and ingnore
 		$affected = $storm->createRow($table, $data[0], true);
-		Assert::same(0, $affected);
+		Assert::same(0, $affected->getRowCount());
 		$affected = $storm->createRow($table, $data[1], true);
-		Assert::same(1, $affected);
+		Assert::same(1, $affected->getRowCount());
 		
 		Assert::same(2, $storm->rows([$table])->where('flag', $flag)->count());
 		
@@ -84,7 +85,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm->rows([$table])->where('flag', $flag)->delete();
 		$affected = $storm->createRow($table, \array_merge($data[0], ['test' => new Literal("UPPER(uuid)")]));
 		
-		Assert::same(1, $affected);
+		Assert::same(1, $affected->getRowCount());
 		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])[0];
 		Assert::same(\strtoupper($row->uuid), $row->test);
 	}
@@ -106,7 +107,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 1. insert
 		$affected = $storm->createRows($table, $data);
-		Assert::same(3, $affected);
+		Assert::same(3, $affected->getRowCount());
 		Assert::same(3, $storm->rows([$table])->where('flag', $flag)->count());
 		
 		// 2. insert ignore
@@ -116,7 +117,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		}, \PDOException::class);
 		
 		$affected = $storm->createRows($table, $data, true);
-		Assert::same(1, $affected);
+		Assert::same(1, $affected->getRowCount());
 		Assert::same(4, $storm->rows([$table])->where('flag', $flag)->count());
 		
 		
@@ -124,9 +125,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm->rows([$table])->where('flag', $flag)->delete();
 		$data = $this->generateMockData(9, $flag);
 		$total = $this->getTotalQueries($storm->getLog());
-		$affected = $storm->createRows($table, $data, false, 2);
+		$affected = $storm->createRows($table, $data, false, null, 2);
 		
-		Assert::same(9, $affected);
+		Assert::same(9, $affected->getRowCount());
 		Assert::same(5, $this->getTotalQueries($storm->getLog()) - $total);
 	}
 	
@@ -208,7 +209,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data[1]['test'] = 'altered4';
 		
 		$affected = $storm->syncRows($table, \array_merge($data, [$aux[3]]));
-		Assert::same(5, $affected);
+		Assert::same(5, $affected->getRowCount());
 		$row0 = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		$row1 = $storm->rows([$table])->where('uuid', $data[1]['uuid'])->jsonSerialize()[0];
 		$row2 = $storm->rows([$table])->where('uuid', $data[2]['uuid'])->jsonSerialize()[0];
@@ -234,7 +235,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data[1]['name'] = 'altered3';
 		$data[1]['test'] = 'altered4';
 		$affected = $storm->syncRows($table, $data, ['name']);
-		Assert::same(4, $affected);
+		Assert::same(4, $affected->getRowCount());
 		$row0 = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		$row1 = $storm->rows([$table])->where('uuid', $data[1]['uuid'])->jsonSerialize()[0];
 		$row2 = $storm->rows([$table])->where('uuid', $data[2]['uuid'])->jsonSerialize()[0];

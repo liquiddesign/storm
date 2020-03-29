@@ -25,6 +25,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 		'collate' => 'utf8_general_ci',
 		'mutations' => [self::DEFAULT_MUTATION],
 		'primaryKeyGenerator' => null,
+		'customAnnotations' => [],
 	];
 	
 	public function loadConfiguration(): void
@@ -90,6 +91,10 @@ class StormDI extends \Nette\DI\CompilerExtension
 		
 		if ($config['mutations']) {
 			$connection->addSetup('setAvailableMutations', [$config['mutations']]);
+		}
+		
+		if ($config['customAnnotations']) {
+			$connection->addSetup('setCustomAnnotations', [$config['customAnnotations']]);
 		}
 		
 		return;

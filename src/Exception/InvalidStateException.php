@@ -14,6 +14,8 @@ class InvalidStateException extends \RuntimeException
 	public const GROUP_BY_NOT_ALLOWED = 8;
 	public const INDEX_AND_STAR_WITHOUT_PREFIX = 9;
 	public const ORDER_BY_NOT_ALLOWED = 10;
+	public const IGNORE = 11;
+	public const SYNCED = 12;
 	
 	public function __construct(int $propertyCode, ?string $extraMessage = null)
 	{
@@ -39,6 +41,10 @@ class InvalidStateException extends \RuntimeException
 			$message = 'ORDER BY clause is not allowed in delete, remove by ->orderBy([])';
 		} elseif ($propertyCode === self::INDEX_AND_STAR_WITHOUT_PREFIX) {
 			$message = "Cannot use index '$extraMessage' with '*' without prefix'";
+		} elseif ($propertyCode === self::IGNORE) {
+			$message = "Cannot get autoincrement primary keys with IGNORE = true and multiple inserts";
+		} elseif ($propertyCode === self::SYNCED) {
+			$message = "Cannot get is synced with multiple inserts";
 		}
 		
 		$message = $message ?: $extraMessage;

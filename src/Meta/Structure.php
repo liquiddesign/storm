@@ -10,9 +10,15 @@ use StORM\Helpers;
 use StORM\Repository;
 use StORM\SchemaManager;
 
-class SqlStructure
+class Structure
 {
 	private const ANNOTATION_VAR = 'var';
+	
+	private const INTERFACE_PREFIX = 'I';
+	
+	private const ANNOTATION_TYPE_CLASS = 'class';
+	
+	private const ANNOTATION_TYPE_PROPERTY = 'property';
 	
 	/**
 	 * @var string
@@ -40,6 +46,16 @@ class SqlStructure
 	private $relations = [];
 	
 	/**
+	 * @var mixed[][]
+	 */
+	private $customClassAnnotations = [];
+	
+	/**
+	 * @var mixed[][][]
+	 */
+	private $customPropertyAnnotations = [];
+	
+	/**
 	 * @var \StORM\SchemaManager
 	 */
 	private $schemaManager;
@@ -63,11 +79,13 @@ class SqlStructure
 		$this->schemaManager = $schemaManager;
 		
 		try {
+			$customAnnotations = $schemaManager->getConnection()->getCustomAnnotations();
+			
 			$fileName = (new \ReflectionClass($class))->getFileName();
 			
 			$dataModel = $this;
 			
-			[$this->table, $this->columns, $this->pk, $this->relations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel) {
+			[$this->table, $this->columns, $this->pk, $this->relations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $customAnnotations) {
 				$dependencies = [
 					Cache::FILES => $fileName,
 				];
@@ -97,10 +115,73 @@ class SqlStructure
 					}
 				}
 				
+				$dataModel->loadCustomAnnotations($customAnnotations, $classDocComment, $propertiesDocComments);
+				
 				return [$table, $columns, $pk, $relations];
 			});
 		} catch (\ReflectionException $x) {
 			throw new GeneralException("Cannot get $class reflection");
+		}
+	}
+	
+	/**
+	 * Get custom class annotation
+	 * @param string $annotationName
+	 * @return mixed[]|null
+	 */
+	public function getClassAnnotation(string $annotationName): ?array
+	{
+		return $this->customClassAnnotations[\strtolower($annotationName)] ?? null;
+	}
+	
+	/**
+	 * Get custom annotations for all properties
+	 * @param string $annotationName
+	 * @return mixed[][]|null
+	 */
+	public function getPropertiesAnnotation(string $annotationName): ?array
+	{
+		return $this->customPropertyAnnotations[\strtolower($annotationName)] ?? null;
+	}
+	
+	/**
+	 * Get custom annotations for property
+	 * @param string $property
+	 * @param string $annotationName
+	 * @return mixed[]|null
+	 */
+	public function getPropertyAnnotations(string $property, string $annotationName): ?array
+	{
+		return $this->customPropertyAnnotations[\strtolower($annotationName)][$property] ?? null;
+	}
+	
+	/**
+	 * @param string[] $customAnnotations
+	 * @param string[]  $classDocComment
+	 * @param string[][]  $propertiesDocComments
+	 */
+	protected function loadCustomAnnotations(array $customAnnotations, array $classDocComment, array $propertiesDocComments): void
+	{
+		foreach ($customAnnotations as $annotationName => $annotationType) {
+			$annotationName = \strtolower($annotationName);
+			
+			if ($annotationType === self::ANNOTATION_TYPE_CLASS && isset($classDocComment[$annotationName])) {
+				$this->customClassAnnotations[$annotationName] = $this->parseJson($classDocComment[$annotationName]);
+			}
+			
+			if ($annotationType === self::ANNOTATION_TYPE_PROPERTY) {
+				foreach ($propertiesDocComments as $property => $propertyDocComment) {
+					if (isset($propertyDocComment[$annotationName])) {
+						if (!isset($this->customPropertyAnnotations[$annotationName])) {
+							$this->customPropertyAnnotations[$annotationName] = [];
+						}
+						
+						$this->customPropertyAnnotations[$annotationName][$property] = $this->parseJson($propertyDocComment[$annotationName]);
+					}
+				}
+			}
+			
+			continue;
 		}
 	}
 	
@@ -136,6 +217,11 @@ class SqlStructure
 	public static function getRepositoryClassFromEntityClass(string $entityClass): string
 	{
 		return $entityClass . \basename(Repository::class);
+	}
+	
+	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
+	{
+		return self::INTERFACE_PREFIX . $repositoryClass;
 	}
 	
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
@@ -386,13 +472,13 @@ class SqlStructure
 			if ($loaded) {
 				if ($relation instanceof RelationNxN) {
 					$relation->setSourceKey($sourcePk);
-					$relation->setTargetKey($this->schemaManager->getSqlStructure($target)->getPK()->getName());
-					$relation->setVia($sourceTable . '_nxn_' . $this->schemaManager->getSqlStructure($target)->getTable()->getName());
+					$relation->setTargetKey($this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setVia($sourceTable . '_nxn_' . $this->schemaManager->getStructure($target)->getTable()->getName());
 					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));
 					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($target)));
 				} elseif ($relation->isKeyHolder()) {
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
-					$relation->setTargetKey($this->schemaManager->getSqlStructure($target)->getPK()->getName());
+					$relation->setTargetKey($this->schemaManager->getStructure($target)->getPK()->getName());
 				} else {
 					$relation->setSourceKey($sourcePk);
 					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));

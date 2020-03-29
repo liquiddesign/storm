@@ -31,11 +31,11 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$test = $connection->getRepository(TestRepository::class);
 		$test2 = $connection->getRepository(Test2Repository::class);
 		
-		$meta = $test->getSqlStructure();
-		$meta2 = $test2->getSqlStructure();
+		$meta = $test->getStructure();
+		$meta2 = $test2->getStructure();
 		
-		Assert::type(\StORM\Meta\SqlStructure::class, $meta);
-		Assert::type(\StORM\Meta\SqlStructure::class, $meta2);
+		Assert::type(\StORM\Meta\Structure::class, $meta);
+		Assert::type(\StORM\Meta\Structure::class, $meta2);
 		
 		Assert::equal('test', $meta->getTable()->getName());
 		Assert::equal('tests', $meta2->	getTable()->getName());
