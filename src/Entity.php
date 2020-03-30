@@ -132,7 +132,7 @@ abstract class Entity implements \JsonSerializable
 	
 	private function getPKName(): string
 	{
-		return $this->repository->getStructure()->getPK()->getName();
+		return $this->repository->getStructure()->getPK()->getPropertyName();
 	}
 	
 	/**

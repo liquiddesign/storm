@@ -690,7 +690,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$this->processWhere($expression, $values, false, false);
+		$this->processWhere($expression, $values, true, false);
 		
 		return $this;
 	}
