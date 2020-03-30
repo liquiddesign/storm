@@ -130,9 +130,9 @@ abstract class Entity implements \JsonSerializable
 		return;
 	}
 	
-	private function getPKName(): string
+	private function getPKName(bool $realColumn = false): string
 	{
-		return $this->repository->getStructure()->getPK()->getPropertyName();
+		return $realColumn ? $this->repository->getStructure()->getPK()->getName() : $this->repository->getStructure()->getPK()->getPropertyName();
 	}
 	
 	/**
@@ -358,7 +358,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\ICollectionEntity $collection */
-		$collection = $this->repository->many()->where($this->getPKName(), [$this->getPK()]);
+		$collection = $this->repository->many()->where($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($properties, false, $filterByColumns);
 	}
@@ -399,7 +399,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->repository->many()->where($this->getPKName(), [$this->getPK()]);
+		$collection = $this->repository->many()->where($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($vars, false, false);
 	}
@@ -410,7 +410,7 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function delete(): int
 	{
-		return $this->repository->many()->where($this->getPKName(), [$this->getPK()])->delete();
+		return $this->repository->many()->where($this->getPKName(true), [$this->getPK()])->delete();
 	}
 	
 	/**
