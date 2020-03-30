@@ -238,7 +238,7 @@ abstract class Repository
 			
 			if ($primaryKey) {
 				$insert[$pk->getName()] = $primaryKey;
-				$values[$pk->getName()] = $primaryKey;
+				$values[$pk->getPropertyName()] = $primaryKey;
 			}
 		}
 		
@@ -247,7 +247,7 @@ abstract class Repository
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
 		
 		if ($pk->isAutoincrement()) {
-			$values[$pk->getName()] = $this->getPrimaryKeyNextValue();
+			$values[$pk->getPropertyName()] = $this->getPrimaryKeyNextValue();
 		}
 		
 		$hasMutations = $this->getStructure()->hasMutations();
