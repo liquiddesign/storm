@@ -1,0 +1,40 @@
+# see http://about.travis-ci.org/docs/user/languages/php/ for more hints
+language: php
+
+# list any PHP version you want to test against
+php:
+  # using major version aliases
+  # aliased to a recent 7.x version
+  - 7.3
+
+services:
+  - mysql
+
+# optionally specify a list of environments, for example to test different RDBMS
+env:
+  - DB=mysql
+
+# optionally set up exclusions and allowed failures in the matrix
+matrix:
+
+# execute any number of scripts before the test run, custom env's are available as variables
+before_install:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+
+install:
+  - travis_retry composer install --no-progress --prefer-dist
+
+script:
+  - vendor/bin/tester tests/*.phpt -s
+
+after_failure:
+  # Print *.actual content
+  - for i in $(find tests -name \*.actual); do echo "--- $i"; cat $i; echo; echo; done
+
+# configure notifications (email, IRC, campfire etc)
+notifications:
+  email:
+    recipients:
+      - oldrich@lqd.cz
+    on_success: never # default: change
+    on_failure: always # default: always

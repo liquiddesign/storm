@@ -98,3 +98,8 @@ foreach ($users as $user) {
   echo $user->age;
 }
 ```
+
+- autoicrement detect
+- Relation or alias "shop_item" is not defined in App\Eshop\DB\Product. Define @relation, fix typo or add Join with alias "shop_item". Available aliases: "this"
+- alias hint nette suggest
+- documentation error refering language

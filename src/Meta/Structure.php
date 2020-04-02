@@ -472,13 +472,13 @@ class Structure
 			if ($loaded) {
 				if ($relation instanceof RelationNxN) {
 					$relation->setSourceKey($sourcePk);
-					$relation->setTargetKey($this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
 					$relation->setVia($sourceTable . '_nxn_' . $this->schemaManager->getStructure($target)->getTable()->getName());
 					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));
 					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($target)));
 				} elseif ($relation->isKeyHolder()) {
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
-					$relation->setTargetKey($this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
 				} else {
 					$relation->setSourceKey($sourcePk);
 					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));
