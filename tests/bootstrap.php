@@ -9,6 +9,10 @@ use Tracy\Debugger;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+if (!is_dir(\TEMP_DIR)) {
+	mkdir(\TEMP_DIR);
+}
+
 // create databases
 $configFile = __DIR__ . '/configs/multiple_connections.neon';
 $sourceFile = __DIR__ . '/_sql/_test_storm.sql';
@@ -33,5 +37,4 @@ foreach (\glob(\ENTITIES_DIR . '/*.php') as $file) {
 
 Debugger::enable();
 Tester\Environment::setup();
-
-Tester\Helpers::purge(\TEMP_DIR);
+Tester\Helpers::purge(\TEMP_DIR . '/test');
