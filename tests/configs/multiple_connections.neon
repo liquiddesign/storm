@@ -5,7 +5,7 @@ services:
 
 storm:
 	default:
-		host: localhost
+		host: 127.0.0.1
 		dbname: _test_storm
 		user: root
 		password: ""
@@ -14,7 +14,7 @@ storm:
 		driver: mysql
 		collate: utf8_czech_ci
 	test:
-		host: localhost
+		host: 127.0.0.1
 		dbname: _test_storm2
 		user: root
 		password: ""

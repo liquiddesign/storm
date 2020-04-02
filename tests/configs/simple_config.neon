@@ -3,7 +3,7 @@ services:
 	db.alerts: \DB\AlertRepository
 storm:
 	default:
-		host: localhost
+		host: 127.0.0.1
 		dbname: _test_storm
 		user: root
 		password: ""
