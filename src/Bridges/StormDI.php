@@ -17,7 +17,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 		'debug' => false,
 		'autowired' => null,
 		'driver' => 'mysql',
-		'host' => 'localhost',
+		'host' => '127.0.0.1',
 		'dbname' => null,
 		'user' => 'root',
 		'password' => '',
