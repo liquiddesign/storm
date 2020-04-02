@@ -3,7 +3,7 @@ StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
 
 ## FEATURES
 - works great with Nette and others framework, even standalone
--clean, smarter code, that is more understandable and extendable
+- clean, smarter code, that is more understandable and extendable
 - keep your database model organized and easy to extend and reusable
 - ORM optimizations, DI pattern, and "autojoin" feature
 - prepare for localized web applications
@@ -98,6 +98,25 @@ foreach ($users as $user) {
   echo $user->age;
 }
 ```
+
+5. UPDATE stocks_stock AAPL
+6. DELETE stocks_tag
+7. INSERT stocks_test
+
+
+// 0. utoincrement detect
+// 1. zlepseni chyb a alias hint nette suggest
+// 2. tmp creating better. fix typos in web odkaz na github
+// 1. runner setup -> nacteni databaze
+// 2. nekolidovani navzajem... 
+// 3. pridani badgu, version, travis
+// 4. 1.0.0 deploy
+
+vendor\bin\tester tests\*.phpt  -c tests/php.ini -j 12 --setup tests/runner-setup.php
+
+
+
+
 
 - autoicrement detect
 - Relation or alias "shop_item" is not defined in App\Eshop\DB\Product. Define @relation, fix typo or add Join with alias "shop_item". Available aliases: "this"
