@@ -6,6 +6,7 @@ php:
   # using major version aliases
   # aliased to a recent 7.x version
   - 7.3
+  - 7.4
 
 services:
   - mysql
