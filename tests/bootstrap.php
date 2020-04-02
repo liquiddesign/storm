@@ -3,7 +3,7 @@
 
 use Tracy\Debugger;
 
-\define('TEMP_DIR', __DIR__ . '/temp/' . \getmypid());
+\define('TEMP_DIR', __DIR__ . '/temp/' . \basename($_SERVER["SCRIPT_FILENAME"], '.phpt'));
 \define('CONFIGS_DIR', __DIR__ . '/configs');
 \define('ENTITIES_DIR', __DIR__ . '/DB');
 
@@ -34,4 +34,4 @@ foreach (\glob(\ENTITIES_DIR . '/*.php') as $file) {
 Debugger::enable();
 Tester\Environment::setup();
 
-Tester\Helpers::purge(__DIR__ . '/temp');
+Tester\Helpers::purge(\TEMP_DIR);
