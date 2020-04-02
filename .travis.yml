@@ -27,6 +27,7 @@ install:
 
 script:
   - vendor/bin/tester tests/*.phpt -s -j 1
+  - vendor\bin\phpcs --standard=ruleset.xml src
 
 after_failure:
   # Print *.actual content
