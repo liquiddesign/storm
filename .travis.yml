@@ -25,7 +25,7 @@ install:
   - travis_retry composer install --no-progress --prefer-dist
 
 script:
-  - vendor/bin/tester tests/3-FetchingTest.phpt -s
+  - vendor/bin/tester tests/*.phpt -s -j 1
 
 after_failure:
   # Print *.actual content
