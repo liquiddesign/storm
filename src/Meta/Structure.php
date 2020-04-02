@@ -216,7 +216,7 @@ class Structure
 	
 	public static function getRepositoryClassFromEntityClass(string $entityClass): string
 	{
-		return $entityClass . \basename(Repository::class);
+		return $entityClass . (new \ReflectionClass(Repository::class))->getShortName();
 	}
 	
 	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
@@ -226,7 +226,7 @@ class Structure
 	
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
 	{
-		return \substr($repositoryClass, 0, (\strrpos($repositoryClass, \basename(Repository::class))));
+		return \substr($repositoryClass, 0, (\strrpos($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName())));
 	}
 	
 	public function getEntityClass(): ?string
@@ -474,14 +474,14 @@ class Structure
 					$relation->setSourceKey($sourcePk);
 					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
 					$relation->setVia($sourceTable . '_nxn_' . $this->schemaManager->getStructure($target)->getTable()->getName());
-					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));
-					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($target)));
+					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
+					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($target))->getShortName()));
 				} elseif ($relation->isKeyHolder()) {
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
 					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
 				} else {
 					$relation->setSourceKey($sourcePk);
-					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower(\basename($class)));
+					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
 				}
 			}
 		}
