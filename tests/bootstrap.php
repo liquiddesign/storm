@@ -34,4 +34,4 @@ foreach (\glob(\ENTITIES_DIR . '/*.php') as $file) {
 Debugger::enable();
 Tester\Environment::setup();
 
-Tester\Helpers::purge(\TEMP_DIR);
+Tester\Helpers::purge(__DIR__ . '/temp');
