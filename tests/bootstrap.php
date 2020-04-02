@@ -37,4 +37,4 @@ foreach (\glob(\ENTITIES_DIR . '/*.php') as $file) {
 
 Debugger::enable();
 Tester\Environment::setup();
-Tester\Helpers::purge(\TEMP_DIR . '/test');
+Tester\Helpers::purge(\TEMP_DIR . '/' . \getmypid());
