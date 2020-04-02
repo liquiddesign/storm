@@ -99,20 +99,14 @@ foreach ($users as $user) {
 }
 ```
 
-5. UPDATE stocks_stock AAPL
-6. DELETE stocks_tag
-7. INSERT stocks_test
-
 
 // 0. utoincrement detect
 // 1. zlepseni chyb a alias hint nette suggest
 // 2. tmp creating better. fix typos in web odkaz na github
-// 1. runner setup -> nacteni databaze
-// 2. nekolidovani navzajem... 
 // 3. pridani badgu, version, travis
 // 4. 1.0.0 deploy
 
-vendor\bin\tester tests\*.phpt  -c tests/php.ini -j 12 --setup tests/runner-setup.php
+vendor\bin\tester tests\*.phpt  -c tests/php.ini --setup tests/runner-setup.php
 
 
 
@@ -123,6 +117,4 @@ vendor\bin\tester tests\*.phpt  -c tests/php.ini -j 12 --setup tests/runner-setu
 - alias hint nette suggest
 - documentation error refering language
 
-define('TEMP_DIR', __DIR__ . '/tmp');
-@mkdir(dirname(TEMP_DIR));
-@mkdir(TEMP_DIR);
+
