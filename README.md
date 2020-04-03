@@ -2,7 +2,7 @@
 StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
 
 ![Travis](https://travis-ci.org/liquiddesign/storm.svg?branch=master)
-![Release](https://img.shields.io/github/v/release/liquiddesign/storm.svg)
+![Release](https://img.shields.io/github/v/release/liquiddesign/storm.svg?1)
 
 ## FEATURES
 - works great with Nette and others framework, even standalone
