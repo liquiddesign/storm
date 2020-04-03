@@ -34,6 +34,7 @@
         <exclude name="SlevomatCodingStandard.ControlStructures.NewWithoutParentheses" />
         <exclude name="SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator" />
         <exclude name="SlevomatCodingStandard.ControlStructures.DisallowShortTernaryOperator" />
+        <exclude name="SlevomatCodingStandard.ControlStructures.AssignmentInCondition" />
         <exclude name="SlevomatCodingStandard.TypeHints.NullTypeHintOnLastPosition" />
         <exclude name="SlevomatCodingStandard.Operators.DisallowIncrementAndDecrementOperators" />
         <exclude name="SlevomatCodingStandard.Operators.RequireOnlyStandaloneIncrementAndDecrementOperators" />

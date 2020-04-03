@@ -119,7 +119,9 @@ abstract class Repository
 		}
 		
 		if ($filterByColumns === null && $mess) {
-			throw new NotExistsException(NotExistsException::PROPERTIES, \implode(',', \array_keys($mess)));
+			foreach (\array_keys($mess) as $property) {
+				throw new NotExistsException(NotExistsException::PROPERTY, $property, $this->getEntityClass(), \array_keys($columns));
+			}
 		}
 		
 		if ($filterByColumns === false && $mess) {
@@ -221,7 +223,7 @@ abstract class Repository
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
 				if (!isset($columns[$name])) {
-					throw new NotExistsException(NotExistsException::PROPERTY, $name);
+					throw new NotExistsException(NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
 				
 				$updateProps[$key] = $columns[$name]->getName();
@@ -243,10 +245,11 @@ abstract class Repository
 		}
 		
 		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, false);
+		$beforeId = $this->getPrimaryKeyNextValue(false);
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
 		
-		if ($pk->isAutoincrement()) {
+		if ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false))) {
 			$values[$pk->getPropertyName()] = $this->getPrimaryKeyNextValue();
 		}
 		
@@ -288,7 +291,7 @@ abstract class Repository
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
 				if (!isset($columns[$name])) {
-					throw new NotExistsException(NotExistsException::PROPERTY, $name);
+					throw new NotExistsException(NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
 				
 				$updateProps[$key] = $columns[$name]->getName();
@@ -318,19 +321,15 @@ abstract class Repository
 			
 			$vars = [];
 			
-			$nextValue = 0;
 			
-			if ($pk->isAutoincrement()) {
-				$this->connection->getLink()->beginTransaction();
-				$nextValue = $this->getPrimaryKeyNextValue();
-			}
+			$beforeId = $this->getPrimaryKeyNextValue(false);
+			
 			
 			$sql = $this->getSqlInsert($insert, $vars, $updateProps, $ignore);
 			$affected += $this->connection->query($sql, $vars)->rowCount();
 			
-			if ($pk->isAutoincrement()) {
-				$primaryKeys = \range($nextValue, $this->getPrimaryKeyNextValue() - 1);
-				$this->connection->getLink()->commit();
+			if (!$ignore && $updateProps === array() && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false)))) {
+				$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
 			}
 			
 			continue;
@@ -355,9 +354,9 @@ abstract class Repository
 		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore);
 	}
 	
-	private function getPrimaryKeyNextValue(): int
+	private function getPrimaryKeyNextValue(bool $check = true): int
 	{
-		if ((int) $this->connection->getLink()->lastInsertId() === 0) {
+		if ($check && (int) $this->connection->getLink()->lastInsertId() === 0) {
 			throw new GeneralException('Cannot get last inserted ID in autoincrement PK');
 		}
 		
@@ -381,7 +380,7 @@ abstract class Repository
 	public function getRelationSelect(string $relation): array
 	{
 		if (!$this->getStructure()->hasRelation($relation)) {
-			throw new NotExistsException(NotExistsException::RELATION, $relation);
+			throw new NotExistsException(NotExistsException::RELATION, $relation, $this->getEntityClass(), \array_keys($this->getStructure()->getRelations()));
 		}
 		
 		$relation = $this->getStructure()->getRelation($relation);

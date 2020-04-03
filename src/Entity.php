@@ -261,7 +261,7 @@ abstract class Entity implements \JsonSerializable
 		
 		if ($mutation && $this->mutation) {
 			if (!\in_array($mutation, $this->mutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation);
+				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->mutations);
 			}
 			
 			$property .= Connection::MUTATION_SEPARATOR . $mutation;
@@ -292,14 +292,16 @@ abstract class Entity implements \JsonSerializable
 		
 		if ($mutation && $this->mutation) {
 			if (!\in_array($mutation, $this->mutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation);
+				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->mutations);
 			}
 			
 			$property .= Connection::MUTATION_SEPARATOR . $mutation;
 		}
 		
 		if (!\array_key_exists($property, $this->properties)) {
-			throw new NotExistsException(NotExistsException::PROPERTY, $property);
+			$keys = \array_keys($this->foreignKeys) + \array_keys($vars) + \array_keys($vars) + \array_keys($this->properties);
+			
+			throw new NotExistsException(NotExistsException::VALUE, $property, static::class, $keys);
 		}
 		
 		return $this->properties[$property];
@@ -331,7 +333,7 @@ abstract class Entity implements \JsonSerializable
 			return $this->relations[$name] = $this->getRelation($relation);
 		}
 		
-		throw new NotExistsException(NotExistsException::PROPERTY, $name);
+		throw new NotExistsException(NotExistsException::VALUE, $name, static::class, \array_keys($this->properties) + \array_keys($this->relations));
 	}
 	
 	/**

@@ -63,6 +63,28 @@ class Helpers
 	}
 	
 	/**
+	 * @param string $value
+	 * @param string[] $possibilities
+	 * @return string|null
+	 */
+	public static function getBestSimilarString(string $value, array $possibilities): ?string
+	{
+		$best = null;
+		$min = (\strlen($value) / 4 + 1) * 10 + .1;
+		
+		foreach (\array_unique($possibilities, \SORT_REGULAR) as $item) {
+			if ($item !== $value && (
+					$len = \levenshtein($item, $value, 10, 11, 10)) < $min
+				) {
+				$min = $len;
+				$best = $item;
+			}
+		}
+		
+		return $best;
+	}
+	
+	/**
 	 * Converts to web safe characters [a-z0-9] and trim @ and ' '
 	 * @param string $s
 	 * @param bool $lower

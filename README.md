@@ -1,6 +1,9 @@
 # StORM
 StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
 
+![Travis](https://travis-ci.org/liquiddesign/storm.svg?branch=master)
+![Release](https://img.shields.io/github/v/release/liquiddesign/storm.svg)
+
 ## FEATURES
 - works great with Nette and others framework, even standalone
 - clean, smarter code, that is more understandable and extendable
@@ -100,21 +103,7 @@ foreach ($users as $user) {
 ```
 
 
-// 0. utoincrement detect
-// 1. zlepseni chyb a alias hint nette suggest
-// 2. tmp creating better. fix typos in web odkaz na github
-// 3. pridani badgu, version, travis
-// 4. 1.0.0 deploy
-
-vendor\bin\tester tests\*.phpt  -c tests/php.ini --setup tests/runner-setup.php
 
 
-
-
-
-- autoicrement detect
-- Relation or alias "shop_item" is not defined in App\Eshop\DB\Product. Define @relation, fix typo or add Join with alias "shop_item". Available aliases: "this"
-- alias hint nette suggest
-- documentation error refering language
 
 

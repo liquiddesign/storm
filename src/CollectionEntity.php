@@ -57,14 +57,16 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		$collection = $this;
 		
 		foreach ($filters as $name => $value) {
-			if (\method_exists($this->repository, Repository::FILTER_PREFIX . \ucfirst($name))) {
-				\call_user_func_array([$this->repository, Repository::FILTER_PREFIX . \ucfirst($name)], [$value, $collection]);
+			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
+			
+			if (\method_exists($this->repository, $realName)) {
+				\call_user_func_array([$this->repository, $realName], [$value, $collection]);
 				
 				continue;
 			}
 			
 			if (!$silent) {
-				throw new NotExistsException(NotExistsException::FILTER, $name);
+				throw new NotExistsException(NotExistsException::FILTER, $realName, $this->class, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->repository)));
 			}
 		}
 		
@@ -143,11 +145,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 			$aliasPrefix = '';
 			
 			foreach ($aliasesList as $alias) {
-				if (!isset($this->clauseFrom[$alias]) && !isset($this->clauseJoin[$alias])) {
+				if (!isset($this->aliases[$alias])) {
 					$relation = $this->repository->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
 					
 					if (!$relation) {
-						throw new NotExistsException(NotExistsException::RELATION, $alias, $relationClass);
+						throw new NotExistsException(NotExistsException::RELATION, $alias, $relationClass, \array_keys($this->aliases));
 					}
 					
 					$realAlias = $aliasPrefix . $alias;

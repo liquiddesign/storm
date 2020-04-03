@@ -806,11 +806,12 @@ class Connection
 	
 	/**
 	 * Get current language suffix
+	 * @param bool $prefixed
 	 * @return string;
 	 */
-	public function getMutation(): string
+	public function getMutation(bool $prefixed = false): string
 	{
-		return $this->mutation;
+		return $prefixed ? self::MUTATION_SEPARATOR . $this->mutation : $this->mutation;
 	}
 	
 	/**

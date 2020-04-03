@@ -99,7 +99,7 @@ class InsertResult
 			}
 			
 			if ($this->idBefore !== $this->idAfter) {
-				return \range($this->idAfter - $this->rowCount + 1, $this->idAfter);
+				return \range($this->idAfter - $this->rowCount, $this->idAfter - 1);
 			}
 		}
 		

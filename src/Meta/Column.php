@@ -72,9 +72,9 @@ class Column extends PropertyAnnotation
 	protected $comment;
 	
 	/**
-	 * @var bool
+	 * @var null|bool
 	 */
-	protected $autoincrement = false;
+	protected $autoincrement;
 	
 	/**
 	 * @var bool
@@ -107,7 +107,7 @@ class Column extends PropertyAnnotation
 		$this->foreignKey = $isForeignKey;
 	}
 	
-	public function isAutoincrement(): bool
+	public function isAutoincrement(): ?bool
 	{
 		return $this->autoincrement;
 	}

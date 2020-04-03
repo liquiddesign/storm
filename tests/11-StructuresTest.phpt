@@ -159,7 +159,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(null, $column->getExtra());
 		Assert::equal(false, $column->isUnique());
 		Assert::equal(false, $column->isNullable());
-		Assert::equal(false, $column->isAutoincrement());
+		Assert::equal(null, $column->isAutoincrement());
 		Assert::equal(false, $column->hasMutations());
 		
 		
