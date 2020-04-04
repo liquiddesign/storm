@@ -96,7 +96,7 @@ $storm = $container->getByType(Connection::class);
 
 ```php
 // get 10 rows on page 2 from table "users" where "age" >= 18
-$users = $storm->rows(['users'])->where('age >= :age', ['age' => 18])->orderBy(['age'])->page(2, 10);
+$users = $storm->rows(['users'])->where('age >= :age', ['age' => 18])->orderBy(['age' => 'DESC'])->page(2, 10);
 foreach ($users as $user) {
   echo $user->age;
 }
