@@ -1,4 +1,4 @@
-# StORM
+# ϟ StORM
 StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
 
 ![Travis](https://travis-ci.org/liquiddesign/storm.svg?branch=master)
@@ -101,9 +101,3 @@ foreach ($users as $user) {
   echo $user->age;
 }
 ```
-
-
-
-
-
-

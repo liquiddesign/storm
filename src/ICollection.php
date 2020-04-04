@@ -35,11 +35,19 @@ interface ICollection
 	public function isLoaded(): bool;
 	
 	/**
+	 * Take 1, fetch fetch the column and close cursor
+	 * @param string $property
+	 * @param bool $needed
+	 * @return null|string|bool
+	 */
+	public function firstValue(string $property, bool $needed = false);
+	
+	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
-	 * @param string|null $property
+	 * @param bool $needed
 	 * @return object|null|string|bool
 	 */
-	public function first(?string $property = null);
+	public function first(bool $needed = false);
 	
 	/**
 	 * Fetch object and move cursor
@@ -105,9 +113,10 @@ interface ICollection
 	/**
 	 * Convert collection to array of object or strings
 	 * @param string|null $column
+	 * @param bool $toArrayValues
 	 * @return string[]|object[]
 	 */
-	public function toArray(?string $column = null): array;
+	public function toArray(?string $column = null, bool $toArrayValues = false): array;
 	
 	/**
 	 * Convert collection to array of sprintf formated strings
@@ -123,7 +132,7 @@ interface ICollection
 	 * @param string|null $index
 	 * @return \StORM\ICollection
 	 */
-	public function useIndex(?string $index): ICollection;
+	public function setIndex(?string $index): ICollection;
 	
 	/**
 	 * Count internal array if loaded, otherwise call enum()
@@ -181,7 +190,7 @@ interface ICollection
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function where(?string $expression, $values = null): self;
+	public function setWhere(?string $expression, $values = null): self;
 	
 	/**
 	 * Add WHERE condition with "AND" glue
@@ -189,7 +198,7 @@ interface ICollection
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function addWhere(string $expression, $values = null): ICollection;
+	public function where(string $expression, $values = null): ICollection;
 	
 	/**
 	 * Set WHERE negated condition and replace previous
@@ -197,7 +206,7 @@ interface ICollection
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function whereNot(string $expression, $values = null): ICollection;
+	public function setWhereNot(string $expression, $values = null): ICollection;
 	
 	/**
 	 * Add WHERE negated condition with "AND" glue
@@ -205,7 +214,7 @@ interface ICollection
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function addWhereNot(string $expression, $values = null): ICollection;
+	public function whereNot(string $expression, $values = null): ICollection;
 	
 	/**
 	 * Set FROM clause and remove previous
@@ -213,7 +222,7 @@ interface ICollection
 	 * @param mixed[]|null $values
 	 * @return self
 	 */
-	public function from(array $from, array $values = []): ICollection;
+	public function setFrom(array $from, array $values = []): ICollection;
 	
 	/**
 	 * Add FROM clause and merge with previous
@@ -221,7 +230,7 @@ interface ICollection
 	 * @param mixed[]|null $values
 	 * @return self
 	 */
-	public function addFrom(array $from, array $values = []): ICollection;
+	public function from(array $from, array $values = []): ICollection;
 	
 	/**
 	 * Set SELECT clause and replace previous
@@ -230,7 +239,7 @@ interface ICollection
 	 * @param bool $keepIndex
 	 * @return self
 	 */
-	public function select(array $select, array $values = [], bool $keepIndex = false): ICollection;
+	public function setSelect(array $select, array $values = [], bool $keepIndex = false): ICollection;
 	
 	/**
 	 * Add SELECT clause and merge with previous
@@ -238,7 +247,7 @@ interface ICollection
 	 * @param mixed[] $values
 	 * @return $this
 	 */
-	public function addSelect(array $select, array $values = []): ICollection;
+	public function select(array $select, array $values = []): ICollection;
 	
 	/**
 	 * Add LIMIT clause
@@ -268,7 +277,7 @@ interface ICollection
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function orderBy(array $order, array $values = []): ICollection;
+	public function setOrderBy(array $order, array $values = []): ICollection;
 	
 	/**
 	 * Add ORDER clause and merge with previous
@@ -276,7 +285,7 @@ interface ICollection
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function addOrderBy(array $order, array $values = []): ICollection;
+	public function orderBy(array $order, array $values = []): ICollection;
 	
 	/**
 	 * Set GROUP BY and HAVING clause and replace previous
@@ -285,7 +294,7 @@ interface ICollection
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection;
+	public function setGroupBy(array $groups, ?string $having = null, array $values = []): ICollection;
 	
 	/**
 	 * Add GROUP BY and HAVING clause and merge with previous
@@ -294,7 +303,7 @@ interface ICollection
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function addGroupBy(array $groups, ?string $having = null, array $values = []): ICollection;
+	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection;
 	
 	/**
 	 * Set GROUP BY for all columns excepts columns in parameter $exceptColumns and HAVING clause and replace previous
@@ -302,7 +311,7 @@ interface ICollection
 	 * @param null|string $having
 	 * @return self
 	 */
-	public function fullGroupBy(array $exceptColumns, ?string $having = null): ICollection;
+	public function setFullGroupBy(array $exceptColumns, ?string $having = null): ICollection;
 	
 	/**
 	 * Set JOIN clause and replace previous
@@ -312,7 +321,7 @@ interface ICollection
 	 * @param string|null $type
 	 * @return self
 	 */
-	public function join(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection;
+	public function setJoin(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection;
 	
 	/**
 	 * Add JOIN clause and merge with previous
@@ -322,7 +331,7 @@ interface ICollection
 	 * @param string|null $type
 	 * @return self
 	 */
-	public function addJoin(array $from, string $condition, array $values = [], ?string $type = null): ICollection;
+	public function join(array $from, string $condition, array $values = [], ?string $type = null): ICollection;
 	
 	/**
 	 * Get last affected number

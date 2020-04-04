@@ -61,13 +61,13 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data = $this->generateMockData(2, $flag);
 		
 		// wipe
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		
 		// 1. insert
 		$affected = $storm->createRow($table, $data[0], false, 'uuid');
 		Assert::same(1, $affected->getRowCount());
 		Assert::same(1, $affected->getRows('uuid')->enum());
-		Assert::same(1, $storm->rows([$table])->where('flag', $flag)->count());
+		Assert::same(1, $storm->rows([$table])->setWhere('flag', $flag)->count());
 		
 		Assert::exception(static function () use ($storm, $table, $data): void {
 			$storm->createRow($table, $data[0]);
@@ -79,14 +79,14 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$affected = $storm->createRow($table, $data[1], true);
 		Assert::same(1, $affected->getRowCount());
 		
-		Assert::same(2, $storm->rows([$table])->where('flag', $flag)->count());
+		Assert::same(2, $storm->rows([$table])->setWhere('flag', $flag)->count());
 		
 		// 3. insert literal
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		$affected = $storm->createRow($table, \array_merge($data[0], ['test' => new Literal("UPPER(uuid)")]));
 		
 		Assert::same(1, $affected->getRowCount());
-		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])[0];
+		$row = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])[0];
 		Assert::same(\strtoupper($row->uuid), $row->test);
 	}
 	
@@ -103,12 +103,12 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data = $this->generateMockData(3, $flag);
 		
 		// wipe
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		
 		// 1. insert
 		$affected = $storm->createRows($table, $data);
 		Assert::same(3, $affected->getRowCount());
-		Assert::same(3, $storm->rows([$table])->where('flag', $flag)->count());
+		Assert::same(3, $storm->rows([$table])->setWhere('flag', $flag)->count());
 		
 		// 2. insert ignore
 		$data = $this->generateMockData(4, $flag);
@@ -118,11 +118,11 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$affected = $storm->createRows($table, $data, true);
 		Assert::same(1, $affected->getRowCount());
-		Assert::same(4, $storm->rows([$table])->where('flag', $flag)->count());
+		Assert::same(4, $storm->rows([$table])->setWhere('flag', $flag)->count());
 		
 		
 		// 3. using chunk
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		$data = $this->generateMockData(9, $flag);
 		$total = $this->getTotalQueries($storm->getLog());
 		$affected = $storm->createRows($table, $data, false, null, 2);
@@ -146,9 +146,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 1. sync all
 		// prepare row
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		$storm->createRow($table, $data[0]);
-		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		Assert::same($data[0], $row);
 		
 		// update if exists
@@ -156,7 +156,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$modifiedData['name'] = 'altered1';
 		$modifiedData['test'] = 'altered2';
 		$storm->syncRow($table, $modifiedData);
-		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		Assert::notSame($data[0], $row);
 		Assert::same('altered1', $row['name']);
 		Assert::same('altered2', $row['test']);
@@ -169,16 +169,16 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2, sync selected
 		// prepare row
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		$storm->createRow($table, $data[0]);
-		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		Assert::same($data[0], $row);
 		// update if exists
 		$modifiedData = $data[0];
 		$modifiedData['name'] = 'altered1';
 		$modifiedData['test'] = 'altered2';
 		$storm->syncRow($table, $modifiedData, ['test']);
-		$row = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
 		Assert::notSame($data[0], $row);
 		Assert::same('name0', $row['name']);
 		Assert::same('altered2', $row['test']);
@@ -196,7 +196,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$flag = \basename(__FUNCTION__);
 		
 		// wipe
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		
 		// 1. sync all
 		$data = $this->generateMockData(3, $flag);
@@ -210,9 +210,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$affected = $storm->syncRows($table, \array_merge($data, [$aux[3]]));
 		Assert::same(5, $affected->getRowCount());
-		$row0 = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
-		$row1 = $storm->rows([$table])->where('uuid', $data[1]['uuid'])->jsonSerialize()[0];
-		$row2 = $storm->rows([$table])->where('uuid', $data[2]['uuid'])->jsonSerialize()[0];
+		$row0 = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row1 = $storm->rows([$table])->setWhere('uuid', $data[1]['uuid'])->jsonSerialize()[0];
+		$row2 = $storm->rows([$table])->setWhere('uuid', $data[2]['uuid'])->jsonSerialize()[0];
 		Assert::notSame($dataBefore[0], $row0);
 		Assert::notSame($dataBefore[1], $row1);
 		Assert::same($dataBefore[2], $row2);
@@ -224,7 +224,7 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('test2', $row2['test']);
 		
 		// wipe
-		$storm->rows([$table])->where('flag', $flag)->delete();
+		$storm->rows([$table])->setWhere('flag', $flag)->delete();
 		
 		// 2, sync selected
 		$data = $this->generateMockData(3, $flag);
@@ -236,9 +236,9 @@ class InsertSyncTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data[1]['test'] = 'altered4';
 		$affected = $storm->syncRows($table, $data, ['name']);
 		Assert::same(4, $affected->getRowCount());
-		$row0 = $storm->rows([$table])->where('uuid', $data[0]['uuid'])->jsonSerialize()[0];
-		$row1 = $storm->rows([$table])->where('uuid', $data[1]['uuid'])->jsonSerialize()[0];
-		$row2 = $storm->rows([$table])->where('uuid', $data[2]['uuid'])->jsonSerialize()[0];
+		$row0 = $storm->rows([$table])->setWhere('uuid', $data[0]['uuid'])->jsonSerialize()[0];
+		$row1 = $storm->rows([$table])->setWhere('uuid', $data[1]['uuid'])->jsonSerialize()[0];
+		$row2 = $storm->rows([$table])->setWhere('uuid', $data[2]['uuid'])->jsonSerialize()[0];
 		Assert::notSame($dataBefore[0], $row0);
 		Assert::notSame($dataBefore[1], $row1);
 		Assert::same($dataBefore[2], $row2);

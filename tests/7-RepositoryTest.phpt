@@ -227,7 +227,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data = [['myName' => 'test', 'sector' => 'energy', 'foo' => 'x']];
 		$collection = $types->createMany($data, true);
 		Assert::equal(1, $types->many()->count());
-		Assert::same($data[0]['myName'], $collection->first('myName'));
+		Assert::same($data[0]['myName'], $collection->firstValue('myName'));
 		
 		
 		// 5. do not filter property name
@@ -235,7 +235,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$data = [['myName' => 'test', 'fk_sector' => 'energy']];
 		$collection = $types->createMany($data, false);
 		Assert::equal(1, $types->many()->count());
-		Assert::same($data[0]['myName'], $collection->first('myName'));
+		Assert::same($data[0]['myName'], $collection->firstValue('myName'));
 		
 		// 6. ignore
 		$types->many()->delete();

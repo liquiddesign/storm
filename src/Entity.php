@@ -360,7 +360,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\ICollectionEntity $collection */
-		$collection = $this->repository->many()->where($this->getPKName(true), [$this->getPK()]);
+		$collection = $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($properties, false, $filterByColumns);
 	}
@@ -401,7 +401,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->repository->many()->where($this->getPKName(true), [$this->getPK()]);
+		$collection = $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($vars, false, false);
 	}
@@ -412,7 +412,7 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function delete(): int
 	{
-		return $this->repository->many()->where($this->getPKName(true), [$this->getPK()])->delete();
+		return $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()])->delete();
 	}
 	
 	/**

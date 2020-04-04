@@ -108,6 +108,6 @@ class InsertResult
 	
 	public function getRows(string $primaryKeyName): ICollection
 	{
-		return $this->connection->rows([$this->tableName])->where($primaryKeyName, $this->getPrimaryKeys());
+		return $this->connection->rows([$this->tableName])->setWhere($primaryKeyName, $this->getPrimaryKeys());
 	}
 }

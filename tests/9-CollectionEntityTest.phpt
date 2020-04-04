@@ -29,7 +29,7 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 		$storm = $container->getByType(Connection::class);
 		$types = $storm->getRepository(TypeRepository::class);
 		
-		$type = $types->many()->addSelect($types->getRelationSelect('sector'))->where('this.id', 'id-0')->first();
+		$type = $types->many()->select($types->getRelationSelect('sector'))->setWhere('this.id', 'id-0')->first();
 		$count = \count($storm->getLog());
 		Assert::type(Sector::class, $type->sector);
 		Assert::same('energy', $type->sector->uuid);
@@ -46,11 +46,11 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 	{
 		$storm = $container->getByType(Connection::class);
 		$stocks = $storm->getRepository(StockRepository::class);
-		$collection = $stocks->many()->where('uuid', ['AAPL', 'IBM']);
+		$collection = $stocks->many()->setWhere('uuid', ['AAPL', 'IBM']);
 		Assert::same(['AAPL', 'IBM'], $collection->getPossibleValues('uuid'));
-		$collection = $stocks->many()->where('uuid', 'AAPL');
+		$collection = $stocks->many()->setWhere('uuid', 'AAPL');
 		Assert::same(['AAPL'], $collection->getPossibleValues('uuid'));
-		$collection = $stocks->many()->where('uuid', 'AAPL')->addWhere('name', 'test');
+		$collection = $stocks->many()->setWhere('uuid', 'AAPL')->where('name', 'test');
 		Assert::same([], $collection->getPossibleValues('uuid'));
 	}
 	
@@ -64,15 +64,15 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 	{
 		$storm = $container->getByType(Connection::class);
 		$stocks = $storm->getRepository(StockRepository::class);
-		$uuid = $stocks->many()->filter(['id' => 'AAPL'])->first('uuid');
+		$uuid = $stocks->many()->filter(['id' => 'AAPL'])->firstValue('uuid');
 		Assert::same('AAPL', $uuid);
 		
 		Assert::exception(static function () use ($stocks): void {
-			$stocks->many()->filter(['not-exists' => 'AAPL'])->first('uuid');
+			$stocks->many()->filter(['not-exists' => 'AAPL'])->firstValue('uuid');
 		}, NotExistsException::class);
 			
 		
-		$uuid = $stocks->many()->filter(['id' => 'AAPL', 'not-exists' => 'AAPL'], true)->first('uuid');
+		$uuid = $stocks->many()->filter(['id' => 'AAPL', 'not-exists' => 'AAPL'], true)->firstValue('uuid');
 		Assert::same('AAPL', $uuid);
 	}
 	
@@ -88,7 +88,7 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 		$types = $storm->getRepository(TypeRepository::class);
 		
 		// turn on loops optimalization
-		foreach ($types->many()->from(['this' => 'stocks_type2']) as $type) {
+		foreach ($types->many()->setFrom(['this' => 'stocks_type2']) as $type) {
 			Assert::type(Sector::class, $type->sector);
 			Assert::same('energy', $type->sector->uuid);
 		}
@@ -96,7 +96,7 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 		Assert::same(1, $storm->getLastLogItem()->getAmount());
 		
 		// turn off loops optimalization
-		foreach ($types->many(false)->from(['this' => 'stocks_type2']) as $type) {
+		foreach ($types->many(false)->setFrom(['this' => 'stocks_type2']) as $type) {
 			Assert::type(Sector::class, $type->sector);
 			Assert::same('energy', $type->sector->uuid);
 		}

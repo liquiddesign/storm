@@ -28,25 +28,25 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$table = self::STOCK_TABLE;
 		$from = [$table];
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->toArray();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArray();
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));
 		Assert::type(\stdClass::class, \end($objects));
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->useIndex('uuid')->toArray();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->toArray();
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));
 		Assert::type(\stdClass::class, \end($objects));
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->toArray('uuid');
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArray('uuid');
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_values($objects));
 		Assert::same('AAPL', \reset($objects));
 		Assert::same('IBM', \end($objects));
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->jsonSerialize();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->jsonSerialize();
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::type('array', \reset($objects));
@@ -63,12 +63,12 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$table = self::STOCK_TABLE;
 		$from = [$table];
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->format('__%s__%s', ['uuid', 'name']);
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->format('__%s__%s', ['uuid', 'name']);
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::same('__AAPL__Apple Inc.', \reset($objects));
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->useIndex('uuid')->format('__%s__', [ static function ($row) {
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->format('__%s__', [ static function ($row) {
 			return \strtolower($row->uuid);
 		}]);
 		Assert::count(2, $objects);
@@ -76,7 +76,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('__aapl__', \reset($objects));
 		Assert::same('__ibm__', \end($objects));
 		
-		$objects = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->useIndex('uuid')->format('__%s.%s__', ['__iterator', 'uuid']);
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->format('__%s.%s__', ['__iterator', 'uuid']);
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_keys($objects));
 		Assert::same('__1.AAPL__', \reset($objects));
@@ -105,54 +105,54 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2. adding
 		$table2 = 'stocks_type';
-		$collection->addFrom([$table2]);
+		$collection->from([$table2]);
 		Assert::same([$table, $table2], $collection->getModifiers()['FROM']);
 		Assert::contains(" FROM $table,$table2", $collection->getSql());
 		Assert::contains("UPDATE $table,$table2", $collection->getSqlUpdate($toUpdate));
 		Assert::contains("DELETE $table", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3. adding with alias
 		$collection = $storm->rows($from);
 		$table2 = 'stocks_type';
 		$alias = 'test';
-		$collection->addFrom([$alias => $table2]);
+		$collection->from([$alias => $table2]);
 		Assert::same([$table, $alias => $table2], $collection->getModifiers()['FROM']);
 		Assert::contains(" FROM $table,$table2 AS $alias", $collection->getSql());
 		Assert::contains("UPDATE $table,$table2 AS $alias", $collection->getSqlUpdate($toUpdate));
 		Assert::contains("DELETE $table", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4. binding
 		$collection = $storm->rows($from);
 		$table2 = '(SELECT * FROM stocks_type WHERE 1=:var)';
 		$alias = 'test';
 		$vars = ['var' => 1];
-		$collection->addFrom([$alias => $table2], $vars);
+		$collection->from([$alias => $table2], $vars);
 		Assert::same([$table, $alias => $table2], $collection->getModifiers()['FROM']);
 		Assert::contains(" FROM $table,$table2 AS $alias", $collection->getSql());
 		Assert::contains("UPDATE $table,$table2 AS $alias", $collection->getSqlUpdate($toUpdate));
 		Assert::contains("DELETE $table", $collection->getSqlDelete());
 		Assert::same($vars, $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 5. replacing
 		$table2 = 'stocks_type';
-		$collection->from([$table2]);
+		$collection->setFrom([$table2]);
 		$toUpdateReal = ["$table2.name" => 'foo'];
 		Assert::same([$table2], $collection->getModifiers()['FROM']);
 		Assert::contains(" FROM $table2", $collection->getSql());
 		Assert::contains("UPDATE $table2", $collection->getSqlUpdate($toUpdate));
 		Assert::contains("DELETE $table2", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 6. replacing with bidning
 		$collection = $storm->rows($from);
@@ -162,16 +162,16 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$toUpdateReal = ["$table3.name" => 'foo'];
 		$vars = ['var' => 1];
 		$vars2 = ['var2' => 2];
-		$collection->select(['fooAlias' => ':var2'], $vars2)->addFrom([$alias => $table2], $vars);
-		$collection->from([$table3]);
+		$collection->setSelect(['fooAlias' => ':var2'], $vars2)->from([$alias => $table2], $vars);
+		$collection->setFrom([$table3]);
 		Assert::same([$table3], $collection->getModifiers()['FROM']);
 		Assert::contains(" FROM $table3", $collection->getSql());
 		Assert::contains("UPDATE $table3", $collection->getSqlUpdate($toUpdate));
 		Assert::contains("DELETE $table3", $collection->getSqlDelete());
 		Assert::same($vars2, $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 	}
 	
 	/**
@@ -191,49 +191,49 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$collection = $storm->rows($from);
 		Assert::same([$defaultSelect], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $defaultSelect", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2. adding
 		$column = 'name';
-		$collection = $storm->rows($from)->addSelect([$column]);
+		$collection = $storm->rows($from)->select([$column]);
 		Assert::same([$defaultSelect, $column], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $defaultSelect,$column", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3. adding with alias
 		$column = 'name';
 		$alias = 'test';
-		$collection = $storm->rows($from)->addSelect([$alias => $column]);
+		$collection = $storm->rows($from)->select([$alias => $column]);
 		Assert::same([$defaultSelect, $alias => $column], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $defaultSelect,$column AS $alias", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4. binding
 		$column = 'name=:var';
 		$alias = 'test';
 		$vars = ['var' => 1];
-		$collection = $storm->rows($from)->addSelect([$alias => $column], $vars);
+		$collection = $storm->rows($from)->select([$alias => $column], $vars);
 		Assert::same([$defaultSelect, $alias => $column], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $defaultSelect,$column AS $alias", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		Assert::same($vars, $collection->getVars());
 		
 		// 5. replacing
 		$column = 'name';
-		$collection = $storm->rows($from)->select([$column]);
+		$collection = $storm->rows($from)->setSelect([$column]);
 		Assert::same([$column], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $column", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 6. replacing with bidning
 		$from = '(SELECT * FROM stocks_type WHERE 1=:var)';
@@ -242,11 +242,11 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$vars = ['var' => 1];
 		$vars1 = ['var1' => 0];
 		$vars2 = ['var2' => 2];
-		$collection = $storm->rows()->from(['test' => $from], $vars)->addSelect([$column1], $vars1)->select([$column2], $vars2);
+		$collection = $storm->rows()->setFrom(['test' => $from], $vars)->select([$column1], $vars1)->setSelect([$column2], $vars2);
 		Assert::same([$column2], $collection->getModifiers()['SELECT']);
 		Assert::contains("SELECT $column2", $collection->getSql());
 		Assert::same($vars + $vars2, $collection->getVars());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 	}
 	
 	/**
@@ -268,27 +268,27 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::notContains("JOIN", $collection->getSql());
 		Assert::notContains("JOIN", $collection->getSqlUpdate($toUpdate));
 		Assert::notContains("JOIN", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2. adding
 		$table2 = 'stocks_type';
 		$condition = '1=1';
-		$baseCollection = $storm->rows($from)->addJoin([$table2], $condition);
+		$baseCollection = $storm->rows($from)->join([$table2], $condition);
 		Assert::same([['LEFT', [$table2], $condition]], $baseCollection->getModifiers()['JOIN']);
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3. adding with alias
 		$table3 = 'stocks_type';
 		$alias3 = 'test';
 		$condition = '1=1';
-		$baseCollection = $baseCollection->addJoin([$alias3 => $table3], $condition);
+		$baseCollection = $baseCollection->join([$alias3 => $table3], $condition);
 		Assert::same([['LEFT', [$table2], $condition], ['LEFT', [$alias3 => $table3], $condition]], $baseCollection->getModifiers()['JOIN']);
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
 		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSql());
@@ -296,9 +296,9 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
 		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSqlDelete());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4. binding
 		$subselect = '(SELECT * FROM stocks_type WHERE 1=:var1)';
@@ -306,40 +306,40 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$vars1 = ['var1' => 1];
 		$vars2 = ['var2' => 2];
 		$condition = 'aux.name=:var2';
-		$baseCollection = $storm->rows()->from(['aux' => $subselect], $vars1)->addJoin([$table2], $condition, $vars2);
+		$baseCollection = $storm->rows()->setFrom(['aux' => $subselect], $vars1)->join([$table2], $condition, $vars2);
 		Assert::same([['LEFT', [$table2], $condition]], $baseCollection->getModifiers()['JOIN']);
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
 		Assert::same($vars1 + $vars2, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->load();
 		
 		// 5. replacing with bidning
 		$table = 'stocks_type';
 		$condition = '1=1';
-		$baseCollection = $storm->rows($from)->addJoin([$table2], $condition);
-		$baseCollection->join([$table], $condition);
+		$baseCollection = $storm->rows($from)->join([$table2], $condition);
+		$baseCollection->setJoin([$table], $condition);
 		Assert::same([['LEFT', [$table], $condition]], $baseCollection->getModifiers()['JOIN']);
 		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSql());
 		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSqlDelete());
 		Assert::same([], $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 6. remove all
 		$baseCollection->clear();
-		$baseCollection->join([]);
+		$baseCollection->setJoin([]);
 		Assert::same([], $collection->getModifiers()['JOIN']);
 		Assert::notContains("JOIN", $collection->getSql());
 		Assert::notContains("JOIN", $collection->getSqlUpdate($toUpdate));
 		Assert::notContains("JOIN", $collection->getSqlDelete());
 		Assert::same([], $baseCollection->getVars());
 		
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 	}
 	
 	/**
@@ -361,171 +361,171 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::notContains("WHERE", $collection->getSql());
 		Assert::notContains("WHERE", $collection->getSqlUpdate($toUpdate));
 		Assert::notContains("WHERE", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2.a equals
 		$collection = $storm->rows($from);
-		$collection->where('uuid', 'AAPL');
+		$collection->setWhere('uuid', 'AAPL');
 		Assert::same(['(uuid = :__var0)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSql());
 		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2.b not equals
 		$collection = $storm->rows($from);
-		$collection->whereNot('uuid', 'AAPL');
+		$collection->setWhereNot('uuid', 'AAPL');
 		Assert::same(['(uuid != :__var0)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSql());
 		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3.a is null
 		$collection = $storm->rows($from);
-		$collection->where('uuid', [null]);
+		$collection->setWhere('uuid', [null]);
 		Assert::same(['(uuid IS NULL)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid IS NULL)", $collection->getSql());
 		Assert::contains(" WHERE (uuid IS NULL)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid IS NULL)", $collection->getSqlDelete());
 		Assert::same([], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3.b is not null
 		$collection = $storm->rows($from);
-		$collection->whereNot('uuid', [null]);
+		$collection->setWhereNot('uuid', [null]);
 		Assert::same(['(uuid IS NOT NULL)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid IS NOT NULL)", $collection->getSql());
 		Assert::contains(" WHERE (uuid IS NOT NULL)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid IS NOT NULL)", $collection->getSqlDelete());
 		Assert::same([], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.a in
 		$collection = $storm->rows($from);
-		$collection->where('uuid', ['AAPL','IBM']);
+		$collection->setWhere('uuid', ['AAPL','IBM']);
 		Assert::same(['(uuid IN (:__var0,:__var1))'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSql());
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.b in include NULL
 		$collection = $storm->rows($from);
-		$collection->where('uuid', ['AAPL','IBM', null]);
+		$collection->setWhere('uuid', ['AAPL','IBM', null]);
 		Assert::same(['(uuid IN (:__var0,:__var1) OR uuid IS NULL)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSql());
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.c not in
 		$collection = $storm->rows($from);
-		$collection->whereNot('uuid', ['AAPL','IBM']);
+		$collection->setWhereNot('uuid', ['AAPL','IBM']);
 		Assert::same(['(uuid NOT IN (:__var0,:__var1))'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSql());
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.d not in include null
 		$collection = $storm->rows($from);
-		$collection->whereNot('uuid', ['AAPL','IBM', null]);
+		$collection->setWhereNot('uuid', ['AAPL','IBM', null]);
 		Assert::same(['(uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)'], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSql());
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.a expression
 		$collection = $storm->rows($from);
 		$expression = "name != UPPER(name) AND name != ''";
-		$collection->where($expression);
+		$collection->setWhere($expression);
 		Assert::same(["($expression)"], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE ($expression)", $collection->getSql());
 		Assert::contains(" WHERE ($expression)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE ($expression)", $collection->getSqlDelete());
 		Assert::same([], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.b not expression
 		$collection = $storm->rows($from);
 		$expression = "name != UPPER(name) AND name != ''";
-		$collection->whereNot($expression);
+		$collection->setWhereNot($expression);
 		Assert::same(["!($expression)"], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE !($expression)", $collection->getSql());
 		Assert::contains(" WHERE !($expression)", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE !($expression)", $collection->getSqlDelete());
 		Assert::same([], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 5. expression with binding
 		$baseCollection = $storm->rows($from);
 		$vars2 = ['var2' => 'AAPL'];
 		$vars1 = ['var1' => 'X'];
 		$expression = "name != UPPER(name) OR name = :var2";
-		$baseCollection->select(['test' => ':var1'], $vars1)->where($expression, $vars2);
+		$baseCollection->setSelect(['test' => ':var1'], $vars1)->setWhere($expression, $vars2);
 		Assert::same(["($expression)"], $baseCollection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE ($expression)", $baseCollection->getSql());
 		Assert::contains(" WHERE ($expression)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE ($expression)", $baseCollection->getSqlDelete());
 		Assert::same($vars1 + $vars2, $baseCollection->getVars());
 		$testCollection = clone $baseCollection;
-		$testCollection->clear()->where('1=0')->load();
-		$testCollection->clear()->where('1=0')->delete();
-		$testCollection->clear()->where('1=0')->update($toUpdateReal);
+		$testCollection->clear()->setWhere('1=0')->load();
+		$testCollection->clear()->setWhere('1=0')->delete();
+		$testCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 6. adding
 		$vars3 = ['var3' => 'IBM'];
 		$expression2 = 'name = :var3';
-		$baseCollection->addWhere($expression2, $vars3);
+		$baseCollection->where($expression2, $vars3);
 		Assert::same(["($expression)","($expression2)"], $baseCollection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE ($expression) AND ($expression2)", $baseCollection->getSql());
 		Assert::contains(" WHERE ($expression) AND ($expression2)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE ($expression) AND ($expression2)", $baseCollection->getSqlDelete());
 		Assert::same($vars1 + $vars2 + $vars3, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 7. replacing
-		$baseCollection->where($expression2, $vars3);
+		$baseCollection->setWhere($expression2, $vars3);
 		Assert::same(["($expression2)"], $baseCollection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE ($expression2)", $baseCollection->getSql());
 		Assert::contains(" WHERE ($expression2)", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::contains(" WHERE ($expression2)", $baseCollection->getSqlDelete());
 		Assert::same($vars1 + $vars3, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->delete();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->delete();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 	}
 	
 	/**
@@ -546,61 +546,61 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same([], $collection->getModifiers()['ORDER BY']);
 		Assert::notContains("ORDER BY", $collection->getSql());
 		Assert::notContains("ORDER BY", $collection->getSqlUpdate($toUpdate));
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		
 		// 2. adding
 		$orderBy = 'name';
-		$collection = $storm->rows($from)->addOrderBy([$orderBy]);
+		$collection = $storm->rows($from)->orderBy([$orderBy]);
 		Assert::same([$orderBy], $collection->getModifiers()['ORDER BY']);
 		Assert::contains(" ORDER BY $orderBy", $collection->getSql());
 		Assert::contains(" ORDER BY $orderBy", $collection->getSqlUpdate($toUpdate));
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		
 		// 2. adding with dir
 		$orderBy = 'name';
 		$dir = 'DESC';
-		$collection = $storm->rows($from)->addOrderBy([$orderBy => $dir]);
+		$collection = $storm->rows($from)->orderBy([$orderBy => $dir]);
 		Assert::same([$orderBy => $dir], $collection->getModifiers()['ORDER BY']);
 		Assert::contains(" ORDER BY $orderBy $dir", $collection->getSql());
 		Assert::contains(" ORDER BY $orderBy $dir", $collection->getSqlUpdate($toUpdate));
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4. binding
 		$orderBy = 'IF(name = :var,1,0)';
 		$vars = ['var' => 'AAPL'];
-		$baseCollection = $storm->rows($from)->addOrderBy([$orderBy => $dir], $vars);
+		$baseCollection = $storm->rows($from)->orderBy([$orderBy => $dir], $vars);
 		Assert::same([$orderBy => $dir], $baseCollection->getModifiers()['ORDER BY']);
 		Assert::contains(" ORDER BY $orderBy $dir", $baseCollection->getSql());
 		Assert::contains(" ORDER BY $orderBy $dir", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::same($vars, $baseCollection->getVars());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 5. replacing
 		$orderBy2 = 'IF(uuid = :var2,1,0)';
 		$vars2 = ['var2' => 'AAPL'];
-		$baseCollection->orderBy([$orderBy2], $vars2);
+		$baseCollection->setOrderBy([$orderBy2], $vars2);
 		Assert::same([$orderBy2], $baseCollection->getModifiers()['ORDER BY']);
 		Assert::contains(" ORDER BY $orderBy2", $baseCollection->getSql());
 		Assert::contains(" ORDER BY $orderBy2", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::same($vars2, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 6. replacing with bidning
 		$vars1 = ['var1' => 'X'];
-		$baseCollection->select(['test' => ':var1'], $vars1)->orderBy([$orderBy], $vars);
+		$baseCollection->setSelect(['test' => ':var1'], $vars1)->setOrderBy([$orderBy], $vars);
 		Assert::same([$orderBy], $baseCollection->getModifiers()['ORDER BY']);
 		Assert::contains(" ORDER BY $orderBy", $baseCollection->getSql());
 		Assert::contains(" ORDER BY $orderBy", $baseCollection->getSqlUpdate($toUpdate));
 		Assert::same($vars1 + $vars, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
-		$baseCollection->clear()->where('1=0')->update($toUpdateReal);
+		$baseCollection->clear()->setWhere('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
 	}
 	
 	/**
@@ -625,10 +625,10 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::notContains("GROUP BY", $collection->getSql());
 		Assert::notContains("GROUP BY", $collection->getSqlUpdate($toUpdate));
 		Assert::notContains("GROUP BY", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 		
 		// 2. adding
-		$collection = $storm->rows($from)->addGroupBy([$group]);
+		$collection = $storm->rows($from)->groupBy([$group]);
 		Assert::same([$group], $collection->getModifiers()['GROUP BY']);
 		Assert::contains(" GROUP BY $group", $collection->getSql());
 		Assert::exception(static function () use ($collection, $toUpdate): void {
@@ -637,40 +637,40 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::exception(static function () use ($collection): void {
 			$collection->getSqlDelete();
 		}, \StORM\Exception\InvalidStateException::class);
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 		
 		// 2. adding with having
-		$collection = $storm->rows($from)->addGroupBy([$group], $having);
+		$collection = $storm->rows($from)->groupBy([$group], $having);
 		Assert::same([$group], $collection->getModifiers()['GROUP BY']);
 		Assert::same($having, $collection->getModifiers()['HAVING']);
 		Assert::contains(" GROUP BY $group HAVING $having", $collection->getSql());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 		
 		// 2. adding with binding
-		$baseCollection = $storm->rows($from)->addGroupBy([$group], $having2, $vars2);
+		$baseCollection = $storm->rows($from)->groupBy([$group], $having2, $vars2);
 		Assert::same([$group], $baseCollection->getModifiers()['GROUP BY']);
 		Assert::same($having2, $baseCollection->getModifiers()['HAVING']);
 		Assert::contains(" GROUP BY $group HAVING $having2", $baseCollection->getSql());
 		Assert::same($vars2, $baseCollection->getVars());
 		$testCollection = clone $collection;
-		$testCollection->clear()->where('1=0')->load();
+		$testCollection->clear()->setWhere('1=0')->load();
 		
 		// 5. replacing
 		$select3 = 'IF(uuid = :var2,1,0)';
 		$vars3 = ['var2' => 'AAPL'];
-		$baseCollection->select(['test' => $select3], $vars3)->groupBy([$group], $having);
+		$baseCollection->setSelect(['test' => $select3], $vars3)->setGroupBy([$group], $having);
 		Assert::same([$group], $baseCollection->getModifiers()['GROUP BY']);
 		Assert::contains(" GROUP BY $group HAVING $having", $baseCollection->getSql());
 		Assert::same($vars3, $baseCollection->getVars());
-		$baseCollection->clear()->where('1=0')->load();
+		$baseCollection->clear()->setWhere('1=0')->load();
 		
 		// 5. fullgroup by
 		$allColumns = ['uuid', 'name', 'ceo'];
-		$collection = $storm->rows($from)->select($allColumns + ['sum_enabled' => 'SUM(is_enabled)'])->fullGroupBy(['sum_enabled']);
+		$collection = $storm->rows($from)->setSelect($allColumns + ['sum_enabled' => 'SUM(is_enabled)'])->setFullGroupBy(['sum_enabled']);
 		Assert::same($allColumns, $collection->getModifiers()['GROUP BY']);
 		Assert::contains(" GROUP BY uuid,name,ceo", $collection->getSql());
 		Assert::same([], $collection->getVars());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 	}
 	
 	/**
@@ -699,9 +699,9 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::notContains("OFFSET", $collection->getSql());
 		Assert::notContains("OFFSET", $collection->getSqlUpdate($toUpdate));
 		Assert::notContains("OFFSET", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->delete();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->delete();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2. LIMIT
 		$collection = $storm->rows($from)->take($limit);
@@ -709,8 +709,8 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains(" LIMIT $limit", $collection->getSql());
 		Assert::contains(" LIMIT $limit", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" LIMIT $limit", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
-		$collection->clear()->where('1=0')->update($toUpdateReal);
+		$collection->clear()->setWhere('1=0')->load();
+		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3. OFFSET
 		$collection = $storm->rows($from)->skip($offset);
@@ -718,7 +718,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains(" LIMIT $upperLimit OFFSET $offset", $collection->getSql());
 		Assert::contains(" LIMIT $upperLimit OFFSET $offset", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" LIMIT $upperLimit OFFSET $offset", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 		
 		// 4. LIMIT AND OFFSET
 		$collection = $storm->rows($from)->take($limit)->skip($offset);
@@ -727,7 +727,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains(" LIMIT $limit OFFSET $offset", $collection->getSql());
 		Assert::contains(" LIMIT $limit OFFSET $offset", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" LIMIT $limit OFFSET $offset", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 		
 		// 5. PAGE
 		$collection = $storm->rows($from)->take($limit)->page(2, 10);
@@ -736,7 +736,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains(" LIMIT $limit OFFSET $limit", $collection->getSql());
 		Assert::contains(" LIMIT $limit OFFSET $limit", $collection->getSqlUpdate($toUpdate));
 		Assert::contains(" LIMIT $limit OFFSET $limit", $collection->getSqlDelete());
-		$collection->clear()->where('1=0')->load();
+		$collection->clear()->setWhere('1=0')->load();
 	}
 	
 	/**

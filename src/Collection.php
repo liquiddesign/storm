@@ -237,11 +237,12 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	}
 	
 	/**
-	 * Take 1, fetch and close cursor, if property is not null fetch the property
-	 * @param string|null $property
-	 * @return object|null|string|bool
+	 * Take 1, fetch fetch the column and close cursor
+	 * @param string $property
+	 * @param bool $needed
+	 * @return null|string|bool
 	 */
-	public function first(?string $property = null)
+	public function firstValue(string $property, bool $needed = false)
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -249,17 +250,39 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		$this->take(1);
 		
-		if ($property !== null) {
-			isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->select([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->select([$property]);
-			$sth = $this->getPDOStatement();
-			$result = $sth->fetchColumn(0);
-		} else {
-			$sth = $this->getPDOStatement();
-			$sth->setFetchMode(...$this->getFetchParameters());
-			$result = $sth->fetch();
+		isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->setSelect([$property]);
+		$sth = $this->getPDOStatement();
+		$result = $sth->fetchColumn(0);
+		$sth->closeCursor();
+		
+		if ($result === false && $needed) {
+			throw new NotFoundException();
 		}
 		
+		return $result;
+	}
+	
+	/**
+	 * Take 1, fetch and close cursor, if property is not null fetch the property
+	 * @param bool $needed
+	 * @return object|null|string|bool
+	 */
+	public function first(bool $needed = false)
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		$this->take(1);
+		
+		$sth = $this->getPDOStatement();
+		$sth->setFetchMode(...$this->getFetchParameters());
+		$result = $sth->fetch();
 		$sth->closeCursor();
+		
+		if ($result === false && $needed) {
+			throw new NotFoundException();
+		}
 		
 		return $result;
 	}
@@ -471,9 +494,10 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Convert collection to array of object or strings
 	 * @param string|null $column
+	 * @param bool $toArrayValues
 	 * @return string[]|object[]
 	 */
-	public function toArray(?string $column = null): array
+	public function toArray(?string $column = null, bool $toArrayValues = false): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
@@ -489,7 +513,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 			$return[$index] = $column === null ? $value : $value->$column;
 		}
 		
-		return $return;
+		return $toArrayValues ? \array_values($return) : $return;
 	}
 	
 	/**
@@ -533,7 +557,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param string|null $index
 	 * @return \StORM\ICollection
 	 */
-	public function useIndex(?string $index): ICollection
+	public function setIndex(?string $index): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -618,7 +642,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$clone = clone $this;
 		
 		$clone->clear();
-		$clone->select($select);
+		$clone->setSelect($select);
 		
 		return (string) $clone->getPDOStatement()->fetchColumn();
 	}
@@ -629,7 +653,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function where(?string $expression, $values = null): ICollection
+	public function setWhere(?string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -650,7 +674,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function addWhere(string $expression, $values = null): ICollection
+	public function where(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -667,7 +691,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function whereNot(string $expression, $values = null): ICollection
+	public function setWhereNot(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -684,7 +708,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null|mixed $values
 	 * @return self
 	 */
-	public function addWhereNot(string $expression, $values = null): ICollection
+	public function whereNot(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -701,7 +725,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null $values
 	 * @return self
 	 */
-	public function addFrom(array $from, array $values = []): ICollection
+	public function from(array $from, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -724,7 +748,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[]|null $values
 	 * @return self
 	 */
-	public function from(array $from, array $values = []): ICollection
+	public function setFrom(array $from, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -751,7 +775,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param bool $keepIndex
 	 * @return self
 	 */
-	public function select(array $select, array $values = [], bool $keepIndex = false): ICollection
+	public function setSelect(array $select, array $values = [], bool $keepIndex = false): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -778,7 +802,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[] $values
 	 * @return $this
 	 */
-	public function addSelect(array $select, array $values = []): ICollection
+	public function select(array $select, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -850,7 +874,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function orderBy(array $order, array $values = []): ICollection
+	public function setOrderBy(array $order, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -872,7 +896,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function addOrderBy(array $order, array $values = []): ICollection
+	public function orderBy(array $order, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -894,7 +918,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection
+	public function setGroupBy(array $groups, ?string $having = null, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -918,7 +942,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param mixed[] $values
 	 * @return self
 	 */
-	public function addGroupBy(array $groups, ?string $having = null, array $values = []): ICollection
+	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -940,7 +964,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param null|string $having
 	 * @return self
 	 */
-	public function fullGroupBy(array $exceptColumns, ?string $having = null): ICollection
+	public function setFullGroupBy(array $exceptColumns, ?string $having = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -966,7 +990,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param string|null $type
 	 * @return self
 	 */
-	public function join(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection
+	public function setJoin(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -999,7 +1023,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * @param string|null $type
 	 * @return self
 	 */
-	public function addJoin(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN): ICollection
+	public function join(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -1085,12 +1109,12 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	
 	protected function init(): void
 	{
-		$this->select($this->baseSelect, [], true);
+		$this->setSelect($this->baseSelect, [], true);
 		
 		$this->modifiers[self::MODIFIER_FROM] = [];
 		
 		if ($this->baseFrom !== null) {
-			$this->from($this->baseFrom);
+			$this->setFrom($this->baseFrom);
 		}
 		
 		$this->modifiers[self::MODIFIER_JOIN] = [];
@@ -1355,13 +1379,12 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		$isAssociative = Helpers::isAssociative($values);
 		$count = \count($values);
-		$firstBindOffset = \strpos($expression, ':');
-		
-		if (!$isAssociative && $firstBindOffset !== false) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_INVALID_CONDITION, "Expression $expression includes binded variable at " . \substr($expression, $firstBindOffset));
-		}
 		
 		if ($isAssociative && $count) {
+			if (\strpos($expression, ':') === false) {
+				throw new \InvalidArgumentException("Passed associative array and there is no bind variable with ':'. Call \array_values() or toArray(..., true).");
+			}
+			
 			$this->modifiers[self::MODIFIER_WHERE][] = $not ? "!($expression)" : "($expression)";
 			
 			foreach ($values as $k => $v) {

@@ -58,7 +58,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains('telecommunications-equipment', $stock->tags->toArray('uuid'));
 		
 		$stock->tags->clear();
-		$stock->tags->where('this.uuid', 'electronic-technology');
+		$stock->tags->setWhere('this.uuid', 'electronic-technology');
 		Assert::contains('electronic-technology', $stock->tags->toArray('uuid'));
 		Assert::notContains('telecommunications-equipment', $stock->tags->toArray('uuid'));
 		
@@ -69,7 +69,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::contains('test2', $stock->alerts->toArray('uuid'));
 		
 		$stock->alerts->clear();
-		$stock->alerts->where('this.uuid', 'test')->toArray('uuid');
+		$stock->alerts->setWhere('this.uuid', 'test')->toArray('uuid');
 		Assert::contains('test', $stock->alerts->toArray('uuid'));
 		Assert::notContains('test2', $stock->alerts->toArray('uuid'));
 	}
@@ -99,7 +99,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$stock = $stocks->one('MS');
 		$stock->tags->relate(['electronic-technology' => ['uuid' => 'test-nxn','value' => 'x']]);
-		Assert::same('x', $stock->tags->addSelect(['value' => 'via.value'])['electronic-technology']->value);
+		Assert::same('x', $stock->tags->select(['value' => 'via.value'])['electronic-technology']->value);
 		
 		// unrelate all tests
 		$stock->tags->unrelateAll();
@@ -145,7 +145,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$connection = $container->getByType(Connection::class);
 		$stocks = $connection->getRepository(StockRepository::class);
-		$collection = $stocks->many()->where("industry.type.sector.uuid = :uuid", ['uuid' => 'energy']);
+		$collection = $stocks->many()->setWhere("industry.type.sector.uuid = :uuid", ['uuid' => 'energy']);
 		$collection->load();
 		Assert::count(3, $collection->getModifiers()['JOIN']);
 	}

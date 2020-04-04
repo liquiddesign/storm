@@ -45,10 +45,10 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 			$viaTargetKey = $this->relation->getTargetViaKey();
 			$viaSourceKey = $this->relation->getSourceViaKey();
 			$targetKey = $this->relation->getTargetKey();
-			$this->join(['via' => $via], "via.$viaTargetKey=this.$targetKey");
-			$this->where("via.$viaSourceKey", $this->keyValue);
+			$this->setJoin(['via' => $via], "via.$viaTargetKey=this.$targetKey");
+			$this->setWhere("via.$viaSourceKey", $this->keyValue);
 		} else {
-			$this->where($this->relation->getTargetKey(), [$this->keyValue]);
+			$this->setWhere($this->relation->getTargetKey(), [$this->keyValue]);
 		}
 		
 		return;
@@ -99,7 +99,7 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		/** @var \StORM\CollectionEntity $collection */
 		$collection = $this->getConnection()->getRepositoryByEntityClass($class)->many();
 
-		return $collection->where('this.uuid', \array_values($primaryKeys))->update([$targetKey => $this->keyValue], !$checkKeys, false);
+		return $collection->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => $this->keyValue], !$checkKeys, false);
 	}
 	
 	/**
@@ -119,14 +119,14 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 			$viaTargetKey = $this->relation->getTargetViaKey();
 			$viaSourceKey = $this->relation->getSourceViaKey();
 			
-			return $this->getConnection()->rows()->from(['this' => $via])->where("this.$viaSourceKey", $this->keyValue)->where("this.$viaTargetKey", \array_values($primaryKeys))->delete();
+			return $this->getConnection()->rows()->setFrom(['this' => $via])->setWhere("this.$viaSourceKey", $this->keyValue)->setWhere("this.$viaTargetKey", \array_values($primaryKeys))->delete();
 		}
 		
 		// RelationNx1
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->where('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
+		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
 	}
 	
 	/**
@@ -144,7 +144,7 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 			$via = $this->relation->getVia();
 			$viaSourceKey = $this->relation->getSourceViaKey();
 			
-			return $this->getConnection()->rows()->from(['this' => $via])->where("this.$viaSourceKey", $this->keyValue)->delete();
+			return $this->getConnection()->rows()->setFrom(['this' => $via])->setWhere("this.$viaSourceKey", $this->keyValue)->delete();
 		}
 		
 		// RelationNx1
@@ -152,6 +152,6 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$sourceKey = $this->relation->getSourceKey();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->where("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
 	}
 }

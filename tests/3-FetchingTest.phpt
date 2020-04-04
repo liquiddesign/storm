@@ -29,7 +29,7 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$from = [self::STOCK_TABLE];
 		
 		// 1. foreach testings
-		$collection = $storm->rows($from)->where('uuid', 'AAPL');
+		$collection = $storm->rows($from)->setWhere('uuid', 'AAPL');
 		
 		for ($j = 0; $j !== 2; $j++) {
 			$i = 0;
@@ -68,7 +68,7 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm = $container->getByType(Connection::class);
 		$from = [self::STOCK_TABLE];
 		
-		$collection = $storm->rows($from)->where('uuid', ['AAPL', 'IBM'])->orderBy(['uuid']);
+		$collection = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setOrderBy(['uuid']);
 		
 		// 1. while fetching
 		$i = 0;
@@ -114,7 +114,7 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$from = [self::STOCK_TABLE];
 		
 		// 1. getting record by first method
-		$object = $storm->rows($from)->where('uuid', 'AAPL')->first();
+		$object = $storm->rows($from)->setWhere('uuid', 'AAPL')->first();
 		Assert::type(\stdClass::class, $object);
 		Assert::same('AAPL', $object->uuid);
 		
@@ -124,7 +124,7 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		}, NotFoundException::class);
 		
 		// 3. getting record by offset
-		$collection = $storm->rows($from)->useIndex('uuid');
+		$collection = $storm->rows($from)->setIndex('uuid');
 		Assert::equal(false, $collection->isLoaded());
 		$object = $collection['AAPL'];
 		Assert::type(\stdClass::class, $object);
@@ -132,7 +132,7 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(true, $collection->isLoaded());
 		
 		// 4. getting record by offset with condition
-		$object = $storm->rows($from)->where('uuid', 'AAPL')[0];
+		$object = $storm->rows($from)->setWhere('uuid', 'AAPL')[0];
 		Assert::type(\stdClass::class, $object);
 		Assert::same('AAPL', $object->uuid);
 	}
@@ -147,10 +147,10 @@ class FetchingTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm = $container->getByType(Connection::class);
 		$from = [self::STOCK_TABLE];
 		
-		Assert::equal('AAPL', $storm->rows($from)->where('uuid', 'AAPL')->first('uuid'));
-		Assert::equal('Apple Inc.', $storm->rows($from)->where('uuid', 'AAPL')->first('name'));
-		Assert::equal('AAPL', $storm->rows($from)->where('uuid', 'AAPL')->getPDOStatement()->fetchColumn(0));
-		Assert::equal('Apple Inc.', $storm->rows($from)->where('uuid', 'AAPL')->getPDOStatement()->fetchColumn(1));
+		Assert::equal('AAPL', $storm->rows($from)->setWhere('uuid', 'AAPL')->firstValue('uuid'));
+		Assert::equal('Apple Inc.', $storm->rows($from)->setWhere('uuid', 'AAPL')->firstValue('name'));
+		Assert::equal('AAPL', $storm->rows($from)->setWhere('uuid', 'AAPL')->getPDOStatement()->fetchColumn(0));
+		Assert::equal('Apple Inc.', $storm->rows($from)->setWhere('uuid', 'AAPL')->getPDOStatement()->fetchColumn(1));
 	}
 }
 

@@ -79,7 +79,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$storm = $container->getByType(Connection::class);
 		$stocks = $storm->getRepository(StockRepository::class);
-		$stocks->many()->where('uuid', 'TSLA_aux')->delete();
+		$stocks->many()->setWhere('uuid', 'TSLA_aux')->delete();
 		
 		// 1. update single property
 		$tesla = $stocks->one('TSLA');
@@ -128,7 +128,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		// 1. create empty from array
 		$storm = $container->getByType(Connection::class);
 		$stocks = $storm->getRepository(StockRepository::class);
-		$stocks->many()->where('uuid', 'TSLA_aux')->delete();
+		$stocks->many()->setWhere('uuid', 'TSLA_aux')->delete();
 		$tesla = $stocks->one('TSLA');
 		
 		$stock = new Stock($tesla->toArray(), $stocks);
@@ -158,7 +158,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$storm = $container->getByType(Connection::class);
 		$sectors = $storm->getRepository(SectorRepository::class);
-		$sectors->many()->where('uuid', 'utilities_aux')->delete();
+		$sectors->many()->setWhere('uuid', 'utilities_aux')->delete();
 		$storm->setAvailableMutations(['cz', 'en']);
 		$separator = Connection::MUTATION_SEPARATOR;
 		

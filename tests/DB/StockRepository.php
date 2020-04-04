@@ -8,6 +8,6 @@ class StockRepository extends \StORM\Repository implements IStockRepository // @
 {
 	public function filterId(string $value, ICollection $collection): void
 	{
-		$collection->where('this.uuid', $value);
+		$collection->setWhere('this.uuid', $value);
 	}
 }

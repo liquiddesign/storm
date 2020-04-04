@@ -29,16 +29,16 @@ class UpdateDeleteCollectionTest extends \Tester\TestCase // @codingStandardsIgn
 		$from = [$table];
 		
 		// 1. update value
-		$storm->rows($from)->where('uuid', 'AAPL')->update(['beta' => 2.5]);
-		$stock = $storm->rows($from)->where('uuid', 'AAPL')->first();
+		$storm->rows($from)->setWhere('uuid', 'AAPL')->update(['beta' => 2.5]);
+		$stock = $storm->rows($from)->setWhere('uuid', 'AAPL')->first();
 		Assert::same(2.5, (float) $stock->beta);
-		$storm->rows($from)->where('uuid', 'AAPL')->update(['beta' => 3.0]);
-		$stock = $storm->rows($from)->where('uuid', 'AAPL')->first();
+		$storm->rows($from)->setWhere('uuid', 'AAPL')->update(['beta' => 3.0]);
+		$stock = $storm->rows($from)->setWhere('uuid', 'AAPL')->first();
 		Assert::same(3.0, (float) $stock->beta);
 		
 		// 2. update literal
-		$storm->rows($from)->where('uuid', 'AAPL')->update(['beta' => new Literal('beta + 1.5')]);
-		$stock = $storm->rows($from)->where('uuid', 'AAPL')->first();
+		$storm->rows($from)->setWhere('uuid', 'AAPL')->update(['beta' => new Literal('beta + 1.5')]);
+		$stock = $storm->rows($from)->setWhere('uuid', 'AAPL')->first();
 		Assert::same(4.5, (float) $stock->beta);
 	}
 	
@@ -58,10 +58,10 @@ class UpdateDeleteCollectionTest extends \Tester\TestCase // @codingStandardsIgn
 		$storm->createRows($table, [['uuid' => 'delete1','name' => 'John Doe'], ['uuid' => 'delete2','name' => 'Jane Doe'], ['uuid' => 'delete3','name' => 'Jane Doe']]);
 		Assert::equal($prevCount + 3, $storm->rows($from)->count());
 		
-		$storm->rows($from)->where('uuid', ['delete3'])->delete();
+		$storm->rows($from)->setWhere('uuid', ['delete3'])->delete();
 		Assert::equal($prevCount + 2, $storm->rows($from)->count());
 		
-		$storm->rows($from)->where('uuid', ['delete1', 'delete2'])->delete();
+		$storm->rows($from)->setWhere('uuid', ['delete1', 'delete2'])->delete();
 		Assert::equal($prevCount, $storm->rows($from)->count());
 	}
 }

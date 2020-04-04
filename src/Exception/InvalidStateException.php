@@ -5,7 +5,6 @@ namespace StORM\Exception;
 class InvalidStateException extends \RuntimeException
 {
 	public const COLLECTION_ALREADY_LOADED = 0;
-	public const COLLECTION_INVALID_CONDITION = 1;
 	public const INVALID_IDENTIFIER = 2;
 	public const INTEGER_BINDER = 4;
 	public const INVALID_BINDER_VAR = 5;
@@ -23,8 +22,6 @@ class InvalidStateException extends \RuntimeException
 		
 		if ($propertyCode === self::COLLECTION_ALREADY_LOADED) {
 			$message = "Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops";
-		} elseif ($propertyCode === self::COLLECTION_INVALID_CONDITION) {
-			$message = "Invalid condition: $extraMessage";
 		} elseif ($propertyCode === self::INVALID_IDENTIFIER) {
 			$message = "Invalid identifier: $extraMessage";
 		} elseif ($propertyCode === self::INTEGER_BINDER) {

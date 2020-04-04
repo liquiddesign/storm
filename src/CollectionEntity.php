@@ -108,7 +108,7 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 				$keys[] = $item->getValue($relation->getName());
 			}
 			
-			$this->cache[$cacheId] = $targetRepository->many()->where("$prefix.$pkName", $keys);
+			$this->cache[$cacheId] = $targetRepository->many()->setWhere("$prefix.$pkName", $keys);
 		}
 		
 		return $this->cache[$cacheId][$pk] ?? null;
@@ -177,10 +177,10 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 						$via = $relation->getVia();
 						$viaTargetKey = $relation->getTargetViaKey();
 						$viaSourceKey = $relation->getSourceViaKey();
-						$this->addJoin([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey");
-						$this->addJoin([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey");
+						$this->join([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey");
+						$this->join([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey");
 					} else {
-						$this->addJoin([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey");
+						$this->join([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey");
 					}
 					
 					$relationClass = $target;
@@ -257,11 +257,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	 * @param bool $keepIndex
 	 * @return \StORM\ICollection
 	 */
-	public function select(array $select, array $values = [], bool $keepIndex = false): ICollection
+	public function setSelect(array $select, array $values = [], bool $keepIndex = false): ICollection
 	{
 		$this->skipSelectLength = 0;
 		
-		return parent::select($select, $values, $keepIndex);
+		return parent::setSelect($select, $values, $keepIndex);
 	}
 	
 	/**

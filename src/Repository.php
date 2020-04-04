@@ -167,15 +167,15 @@ abstract class Repository
 		$collection = $this->many(false);
 		
 		if ($select !== null) {
-			$collection->select($select, [], true);
+			$collection->setSelect($select, [], true);
 		}
 		
 		if (\is_array($condition)) {
 			foreach ($condition as $property => $value) {
-				$collection->addWhere(self::DEFAULT_ALIAS . '.' . $property, $value);
+				$collection->where(self::DEFAULT_ALIAS . '.' . $property, $value);
 			}
 		} else {
-			$collection->where(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
+			$collection->setWhere(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
 		}
 		
 		/**
@@ -336,7 +336,7 @@ abstract class Repository
 		}
 		
 		/** @var \StORM\CollectionEntity $collection */
-		$collection = $primaryKeys ? $this->many()->where(self::DEFAULT_ALIAS . '.' . $pk->getName(), $primaryKeys) : $this->many()->where('1=0');
+		$collection = $primaryKeys ? $this->many()->setWhere(self::DEFAULT_ALIAS . '.' . $pk->getName(), $primaryKeys) : $this->many()->setWhere('1=0');
 		$collection->setAffectedNumber($affected);
 		
 		return $collection;
