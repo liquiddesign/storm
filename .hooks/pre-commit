@@ -1,0 +1,18 @@
+#!/bin/sh
+SRC_PATTERN="src"
+APP_PATTERN="app"
+
+if [ ! -x $PHPCS_BIN ]; then
+    echo "PHP CodeSniffer bin not found or executable -> $PHPCS_BIN"
+    exit 1
+fi
+
+if git diff --cached --name-only | grep --quiet "$SRC_PATTERN"
+then
+  exit 1
+fi
+
+if git diff --cached --name-only | grep --quiet "$APP_PATTERN"
+then
+  exec vendor/bin/phpcs --standard=ruleset.xml --extensions=php -sp $APP_PATTERN
+fi
