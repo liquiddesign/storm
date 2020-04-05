@@ -1,5 +1,5 @@
 #!/bin/sh
-SRC_PATTERN="../src"
+SRC_PATTERN="src/"
 APP_PATTERN="app"
 
 if [ ! -x $PHPCS_BIN ]; then
