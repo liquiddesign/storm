@@ -6,7 +6,7 @@ StORM is lightweight PHP ORM library based on PDO, fast alternative to Doctrine
 
 ## FEATURES
 - works great with Nette and others framework, even standalone
-- clean, smarter code, that is more understandable and extendable
+- cleaner, smarter code, that is more understandable and extendable
 - keep your database model organized and easy to extend and reusable
 - ORM optimizations, DI pattern, and "autojoin" feature
 - prepare for localized web applications
