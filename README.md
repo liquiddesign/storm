@@ -105,3 +105,13 @@ foreach ($users as $user) {
 TODO:
 - handle error about not found class in relation
 - go to PHP 7.4 for full covariance https://www.php.net/manual/en/language.oop5.variance.php
+- some error in test:
+-- FAILED: Class CollectionEntityTest | 9-CollectionEntityTest.phpt
+   Exited with error code 255 (expected 0)
+   E_NOTICE: Trying to get property 'sector' of non-object
+   
+   in storm/tests/9-CollectionEntityTest.phpt(34) 
+   in storm/tests/9-CollectionEntityTest.phpt(34) Tester\TestCase->Tester\{closure}()
+   in src/Framework/TestCase.php(143) Tests\CollectionEntityTest->testPrefetchedRelation()
+   in src/Framework/TestCase.php(55) Tester\TestCase->runTest()
+   in storm/tests/9-CollectionEntityTest.phpt(108) Tester\TestCase->run()
