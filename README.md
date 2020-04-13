@@ -101,3 +101,7 @@ foreach ($users as $user) {
   echo $user->age;
 }
 ```
+
+TODO:
+- handle error about not found class in relation
+- go to PHP 7.4 for full covariance https://www.php.net/manual/en/language.oop5.variance.php

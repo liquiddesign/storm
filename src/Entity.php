@@ -160,7 +160,11 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function __toString(): string
 	{
-		return $this->getPK();
+		try {
+			return $this->getPK();
+		} catch (InvalidStateException $x) {
+			return '';
+		}
 	}
 	
 	/**
@@ -202,7 +206,7 @@ abstract class Entity implements \JsonSerializable
 				return null;
 			}
 			
-			if ($this->parent) {
+			if ($this->parent && $this->parent->isLoaded()) {
 				$object = $this->parent->getRelatedObject($relation, $this->foreignKeys[$name]);
 				
 				if ($object === null) {

@@ -92,10 +92,6 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	 */
 	public function getRelatedObject(Relation $relation, string $pk): ?Entity
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-		
 		$cacheId = $relation->getEntityClass() . $relation->getName();
 		
 		if (!isset($this->cache[$cacheId])) {
