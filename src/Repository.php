@@ -173,7 +173,7 @@ abstract class Repository
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
 	{
-		$conditionValidTypes = ['array', 'string', 'int'];
+		$conditionValidTypes = ['array', 'string', 'integer'];
 		
 		if (!\in_array(\gettype($condition), $conditionValidTypes)) {
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
