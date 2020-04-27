@@ -3,6 +3,7 @@
 namespace StORM;
 
 use StORM\Exception\AlreadyExistsException;
+use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotFoundException;
 
@@ -162,7 +163,16 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 */
 	public function getConnection(): Connection
 	{
+		if (!$this->connection) {
+			throw new GeneralException('Connection is not set. Call setConnection().');
+		}
+		
 		return $this->connection;
+	}
+
+	public function setConnection(Connection $connection): void
+	{
+		$this->connection = $connection;
 	}
 	
 	/**
@@ -172,6 +182,14 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function getModifiers(): array
 	{
 		return $this->modifiers;
+	}
+	
+	/**
+	 * @param mixed[] $classParameters
+	 */
+	public function setClassParameters(array $classParameters): void
+	{
+		$this->classParameters = $classParameters;
 	}
 	
 	/**
@@ -256,7 +274,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$sth->closeCursor();
 		
 		if ($result === false && $needed) {
-			throw new NotFoundException();
+			throw new NotFoundException($this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
 		return $result;
@@ -281,7 +299,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$sth->closeCursor();
 		
 		if ($result === false && $needed) {
-			throw new NotFoundException();
+			throw new NotFoundException($this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
 		return $result;
@@ -441,7 +459,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$varPrefix = self::UNIQUE_BINDER_PREFIX;
 		
 		foreach ($updates as $property => $rawValue) {
-			Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, '', $this->connection->getAvailableMutations());
+			Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, '', $this->getConnection()->getAvailableMutations());
 		}
 		
 		$updates = $values;
@@ -1124,6 +1142,12 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
 		$this->modifiers[self::MODIFIER_LIMIT] = null;
 		$this->modifiers[self::MODIFIER_OFFSET] = null;
+		
+		$this->binderCounter = 0;
+		$this->vars = [];
+		$this->varsFlags = [];
+		$this->affectedNumber = null;
+		$this->possibleValues  = [];
 	}
 	
 	/**
@@ -1194,7 +1218,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function getPDOStatement(): \PDOStatement
 	{
 		if (!$this->sth) {
-			$this->sth = $this->connection->query($this->getSql(), $this->getVars());
+			$this->sth = $this->getConnection()->query($this->getSql(), $this->getVars());
 		}
 		
 		return $this->sth;
@@ -1306,7 +1330,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		}
 		
 		if (!isset($this->items[$offset])) {
-			throw new NotFoundException("Object with key $offset not found");
+			throw new NotFoundException($this->index ? [$this->index] : [$this->index => $offset], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
 		return $this->items[$offset];
@@ -1501,7 +1525,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 				$alias = (string) $table;
 			}
 			
-			if (\substr($alias, 0, 1) === $this->connection->getQuoteIdentifierChar()) {
+			if (\substr($alias, 0, 1) === $this->getConnection()->getQuoteIdentifierChar()) {
 				$alias = \substr($alias, 1, -1);
 			}
 			
@@ -1525,5 +1549,18 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 				unset($this->aliases[$alias]);
 			}
 		}
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		$this->clear();
+		
+		$vars = \get_object_vars($this);
+		unset($vars['connection'], $vars['sth']);
+		
+		return \array_keys($vars);
 	}
 }

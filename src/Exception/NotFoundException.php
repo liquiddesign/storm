@@ -8,14 +8,17 @@ class NotFoundException extends \RuntimeException
 {
 	/**
 	 * NotFoundException constructor.
-	 * @param mixed $message
-	 * @param int $code
+	 * @param string[] $conditions
+	 * @param string|string[] $source
 	 * @param \Throwable|null $previous
 	 */
-	public function __construct($message = "", $code = 0, ?Throwable $previous = null)
+	public function __construct(array $conditions = [], $source = null, ?Throwable $previous = null)
 	{
-		$message = $message ? 'Object with condition: "' . \print_r($message, true) . '" not found' : 'Row or value not found';
+		$printedConditions = \print_r($conditions, true);
+		$printedSource = \is_array($source) ? \implode(', ', $source) : $source;
 		
-		parent::__construct($message, $code, $previous);
+		$message = 'Object/row of "'.$printedSource.'" with condition: "' . \print_r($printedConditions, true) . '" not found';
+		
+		parent::__construct($message, 0, $previous);
 	}
 }

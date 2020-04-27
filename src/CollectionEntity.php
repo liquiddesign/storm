@@ -2,6 +2,7 @@
 
 namespace StORM;
 
+use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Meta\Relation;
 use StORM\Meta\RelationNxN;
@@ -24,6 +25,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	private $skipSelectLength = 0;
 	
 	/**
+	 * @var bool
+	 */
+	private $passParentToEntities;
+	
+	/**
 	 * Collection constructor.
 	 * @param \StORM\Repository $repository
 	 * @param bool $passParentToEntities
@@ -31,19 +37,32 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	public function __construct(Repository $repository, bool $passParentToEntities = true)
 	{
 		$this->repository = $repository;
-		$connection = $repository->getConnection();
-		$hasMutations = $repository->getStructure()->hasMutations();
-		$classParameters = [[], $repository, $hasMutations ? $connection->getMutation() : null, $hasMutations ? $connection->getAvailableMutations() : []];
+		$this->passParentToEntities = $passParentToEntities;
 		
-		if ($passParentToEntities) {
-			$classParameters[] = $this;
-		}
-		
+		$classParameters = $this->createClassParameters();
 		$index = $repository->getStructure()->getPK()->getName();
+		
 		$defaultSelect = $repository->getDefaultSelect();
 		$this->skipSelectLength = \count($defaultSelect);
 		
-		parent::__construct($connection, $repository->getDefaultFrom(), $repository->getDefaultSelect(), $repository->getEntityClass(), $classParameters, $index);
+		parent::__construct($this->repository->getConnection(), $repository->getDefaultFrom(), $repository->getDefaultSelect(), $repository->getEntityClass(), $classParameters, $index);
+	}
+	
+	/**
+	 * @return mixed[]
+	 */
+	private function createClassParameters(): array
+	{
+		$repository = $this->repository;
+		$connection = $this->repository->getConnection();
+		$hasMutations = $repository->getStructure()->hasMutations();
+		$classParameters = [[], $this->getRepository(), $hasMutations ? $connection->getMutation() : null, $hasMutations ? $connection->getAvailableMutations() : []];
+		
+		if ($this->passParentToEntities) {
+			$classParameters[] = $this;
+		}
+		
+		return $classParameters;
 	}
 	
 	/**
@@ -59,14 +78,14 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		foreach ($filters as $name => $value) {
 			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
 			
-			if (\method_exists($this->repository, $realName)) {
-				\call_user_func_array([$this->repository, $realName], [$value, $collection]);
+			if (\method_exists($this->getRepository(), $realName)) {
+				\call_user_func_array([$this->getRepository(), $realName], [$value, $collection]);
 				
 				continue;
 			}
 			
 			if (!$silent) {
-				throw new NotExistsException(NotExistsException::FILTER, $realName, $this->class, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->repository)));
+				throw new NotExistsException(NotExistsException::FILTER, $realName, $this->class, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->getRepository())));
 			}
 		}
 		
@@ -78,9 +97,32 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	 * Get collection repository
 	 * @return \StORM\Repository
 	 */
-	final public function getRepository(): Repository
+	public function getRepository(): Repository
 	{
+		if (!$this->repository) {
+			throw new GeneralException('Repository is not set. Call setRepository().');
+		}
+		
 		return $this->repository;
+	}
+	
+	public function setRepository(Repository $repository): void
+	{
+		$this->repository = $repository;
+		$this->connection = $repository->getConnection();
+		$this->setClassParameters($this->createClassParameters());
+	}
+	
+	public function getConnection(): Connection
+	{
+		return $this->getRepository()->getConnection();
+	}
+	
+	public function setConnection(Connection $connection): void
+	{
+		unset($connection);
+		
+		throw new GeneralException('Cannot set connection to CollectionEntity, setRepository() instead.');
 	}
 	
 	/**
@@ -134,22 +176,22 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 			$aliasesList = \explode('.', $aliases);
 			
 			if (\count($aliasesList) > 1) {
-				$expression = \substr_replace($expression, $this->connection->getQuoteIdentifierChar(), $offset, 0);
-				$expression = \substr_replace($expression, $this->connection->getQuoteIdentifierChar(), $offset + \strlen($aliases) + 1, 0);
+				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset, 0);
+				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset + \strlen($aliases) + 1, 0);
 			}
 			
 			$aliasPrefix = '';
 			
 			foreach ($aliasesList as $alias) {
 				if (!isset($this->aliases[$alias])) {
-					$relation = $this->repository->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
+					$relation = $this->getRepository()->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
 					
 					if (!$relation) {
 						throw new NotExistsException(NotExistsException::RELATION, $alias, $relationClass, \array_keys($this->aliases));
 					}
 					
 					$realAlias = $aliasPrefix . $alias;
-					$realAliasQuoted = $this->connection->quoteIdentifier($realAlias);
+					$realAliasQuoted = $this->getConnection()->quoteIdentifier($realAlias);
 					
 					/**
 					 * @var \StORM\Entity $target
@@ -161,11 +203,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 					 */
 					$source = $relation->getSource();
 					
-					$sourceTable = $this->repository->getSchemaManager()->getStructure($source)->getTable()->getName();
+					$sourceTable = $this->getRepository()->getSchemaManager()->getStructure($source)->getTable()->getName();
 					$sourceAlias = $this->tableAliases[$sourceTable] ?? $sourceTable;
-					$sourceAliasQuoted = $this->connection->quoteIdentifier($sourceAlias);
+					$sourceAliasQuoted = $this->getConnection()->quoteIdentifier($sourceAlias);
 					
-					$targetTable = $this->repository->getSchemaManager()->getStructure($target)->getTable()->getName();
+					$targetTable = $this->getRepository()->getSchemaManager()->getStructure($target)->getTable()->getName();
 					$sourceKey = $relation->getSourceKey();
 					$targetKey = $relation->getTargetKey();
 					
@@ -281,8 +323,22 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	 */
 	public function update(array $values, bool $ignore = false, ?bool $filterByColumns = null): int
 	{
-		$columns = $this->repository->filterByColumns($values, true, $filterByColumns);
+		$columns = $this->getRepository()->filterByColumns($values, true, $filterByColumns);
 		
 		return parent::update($columns, $ignore);
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		$this->clear();
+		$this->setClassParameters([]);
+		
+		$vars = \get_object_vars($this);
+		unset($vars['connection'], $vars['sth'], $vars['repository']);
+		
+		return \array_keys($vars);
 	}
 }

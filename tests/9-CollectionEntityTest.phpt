@@ -29,7 +29,7 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 		$storm = $container->getByType(Connection::class);
 		$types = $storm->getRepository(TypeRepository::class);
 		
-		$type = $types->many()->select($types->getRelationSelect('sector'))->setWhere('this.id', 'id-0')->first();
+		$type = $types->many()->setFrom(['this' => 'stocks_type2'])->select($types->getRelationSelect('sector'))->setWhere('this.id', 'id-0')->first();
 		$count = \count($storm->getLog());
 		Assert::type(Sector::class, $type->sector);
 		Assert::same('energy', $type->sector->uuid);

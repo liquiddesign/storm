@@ -130,27 +130,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::type('array', $connection->getAttributes());
 		Assert::type(\PDO::class, $connection->getLink());
 	}
-	
-	/**
-	 * Connection serializations
-	 * @dataProvider _containers.php multiple_connections
-	 * @param \Nette\DI\Container $container
-	 * @expectedException \Exception
-	 */
-	public function testSerialization(Container $container): void
-	{
-		$connection1 = $container->getByType(Connection::class);
-		$connection2 = $container->getService('storm.test');
-		
-		$aux1 = \serialize($connection1);
-		$aux2 = \serialize($connection2);
-		$newConnection1 = \unserialize($aux1);
-		$newConnection2 = \unserialize($aux2);
-		Assert::equal($connection1, $newConnection1);
-		Assert::equal($connection2, $newConnection2);
-		Assert::same($connection1->getLink(), $newConnection1->getLink());
-		Assert::same($connection2->getLink(), $newConnection2->getLink());
-	}
+
 }
 
 (new ConnectionTest())->run();

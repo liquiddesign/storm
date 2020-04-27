@@ -91,11 +91,6 @@ class Connection
 	private $log = [];
 	
 	/**
-	 * @var \StORM\Connection[]
-	 */
-	private static $CONNECTIONS = [];
-	
-	/**
 	 * Mysql quote char
 	 */
 	private const QUOTE_CHAR_MYSQL = '`';
@@ -155,8 +150,6 @@ class Connection
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
 		$this->link = new \PDO($dsn, $this->user, $this->password, $this->attributes);
-		
-		self::$CONNECTIONS[$this->name] = $this;
 		
 		return;
 	}
@@ -655,24 +648,9 @@ class Connection
 	 */
 	public function __sleep(): array
 	{
-		return ['name', 'user', 'password', 'host', 'driver', 'dbname', 'log', 'debug', 'quoteChar', 'attributes', 'mutation', 'availableMutations', 'primaryKeyGenerator'];
+		throw new GeneralException('StORM connections are unserializable');
 	}
 	
-	/**
-	 * After unseriliaze execute this
-	 * @return void
-	 */
-	public function __wakeup(): void
-	{
-		$name = $this->name;
-		
-		if (!isset(self::$CONNECTIONS[$name])) {
-			throw new GeneralException("Unable to unserialize connection '$name'. Connection not found. Create one first, than unserialize.");
-		}
-		
-		$this->link = self::$CONNECTIONS[$name]->link;
-		$this->container = self::$CONNECTIONS[$name]->container;
-	}
 	
 	/**
 	 * @param string $sql

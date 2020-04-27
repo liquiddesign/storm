@@ -46,6 +46,15 @@ abstract class Repository
 	}
 	
 	/**
+	 * Sleep
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		throw new GeneralException('StORM connections are unserializable');
+	}
+	
+	/**
 	 * Get entity class
 	 * @return string
 	 */
@@ -164,6 +173,12 @@ abstract class Repository
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
 	{
+		$conditionValidTypes = ['array', 'string'];
+		
+		if (!\in_array(\gettype($condition), $conditionValidTypes)) {
+			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
+		}
+		
 		$collection = $this->many(false);
 		
 		if ($select !== null) {
@@ -184,7 +199,7 @@ abstract class Repository
 		$object = $collection->first();
 		
 		if (!$object && $needed) {
-			throw new NotFoundException($condition);
+			throw new NotFoundException(\is_string($condition) ? [$this->getStructure()->getPK()->getName() => $condition] : $condition, static::class);
 		}
 		
 		if (!$object) {

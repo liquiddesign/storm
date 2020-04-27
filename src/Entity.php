@@ -2,6 +2,7 @@
 
 namespace StORM;
 
+use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
@@ -27,7 +28,7 @@ abstract class Entity implements \JsonSerializable
 	/**
 	 * @var \StORM\CollectionEntity
 	 */
-	protected $parent;
+	protected $parentCollection;
 	
 	/**
 	 * @var \StORM\Repository
@@ -37,12 +38,12 @@ abstract class Entity implements \JsonSerializable
 	/**
 	 * @var string
 	 */
-	protected $mutation;
+	protected $activeMutation;
 	
 	/**
 	 * @var string[]
 	 */
-	protected $mutations;
+	protected $availableMutations;
 	
 	/**
 	 * @var int|null
@@ -52,13 +53,13 @@ abstract class Entity implements \JsonSerializable
 	/**
 	 * Entity constructor.
 	 * @param mixed[]|null $vars
-	 * @param \StORM\Repository $repository
+	 * @param \StORM\Repository|null $repository
 	 * @param string|null $mutation
 	 * @param string[] $mutations
 	 * @param \StORM\CollectionEntity $parent
 	 * @param int|null $affectedNumber
 	 */
-	public function __construct(array $vars, Repository $repository, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null, ?int $affectedNumber = null)
+	public function __construct(array $vars, ?Repository $repository = null, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null, ?int $affectedNumber = null)
 	{
 		foreach ($vars as $name => $value) {
 			$this->$name = $value;
@@ -72,16 +73,11 @@ abstract class Entity implements \JsonSerializable
 			unset($this->$name);
 		}
 		
-		$this->mutation = $mutation;
-		$this->mutations = $mutations;
-		$this->parent = $parent;
+		$this->activeMutation = $mutation;
+		$this->availableMutations = $mutations;
+		$this->parentCollection = $parent;
 		$this->repository = $repository;
 		$this->affectedNumber = $affectedNumber;
-	}
-	
-	public function getAffectedNumber(): ?int
-	{
-		return $this->affectedNumber;
 	}
 	
 	/**
@@ -90,10 +86,33 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function removeParent(): void
 	{
-		$this->parent = null;
+		$this->parentCollection = null;
 		$this->affectedNumber = null;
 		
 		return;
+	}
+	
+	public function getRepository(): Repository
+	{
+		if (!$this->repository) {
+			throw new GeneralException('Repository is not set. Call setRepository().');
+		}
+		
+		return $this->repository;
+	}
+	
+	public function setRepository(Repository $repository): void
+	{
+		$this->repository = $repository;
+		
+		foreach (\array_keys($repository->getStructure()->getRelations()) as $name) {
+			unset($this->$name);
+		}
+	}
+	
+	public function getAffectedNumber(): ?int
+	{
+		return $this->affectedNumber;
 	}
 	
 	/**
@@ -105,7 +124,7 @@ abstract class Entity implements \JsonSerializable
 	public function loadFromArray(array $vars, ?bool $filterByColumns = null, bool $includePrimaryKey = true): void
 	{
 		if ($filterByColumns) {
-			$vars = $this->repository->filterByColumns($vars, $includePrimaryKey, $filterByColumns);
+			$vars = $this->getRepository()->filterByColumns($vars, $includePrimaryKey, $filterByColumns);
 		}
 		
 		foreach ($vars as $name => $value) {
@@ -121,7 +140,7 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function loadFromObject(Entity $object): void
 	{
-		$vars = $this->repository->filterByColumns($object->toArray(), false);
+		$vars = $this->getRepository()->filterByColumns($object->toArray(), false);
 		
 		foreach ($vars as $name => $value) {
 			$this->$name = $value;
@@ -132,7 +151,7 @@ abstract class Entity implements \JsonSerializable
 	
 	private function getPKName(bool $realColumn = false): string
 	{
-		return $realColumn ? $this->repository->getStructure()->getPK()->getName() : $this->repository->getStructure()->getPK()->getPropertyName();
+		return $realColumn ? $this->getRepository()->getStructure()->getPK()->getName() : $this->getRepository()->getStructure()->getPK()->getPropertyName();
 	}
 	
 	/**
@@ -187,7 +206,7 @@ abstract class Entity implements \JsonSerializable
 			$data[\substr($property, $length)] = $value;
 		}
 		
-		$repository = $this->repository->getConnection()->getRepositoryByEntityClass($relatedClass);
+		$repository = $this->getRepository()->getConnection()->getRepositoryByEntityClass($relatedClass);
 		
 		return new $relatedClass($data, $repository);
 	}
@@ -206,20 +225,20 @@ abstract class Entity implements \JsonSerializable
 				return null;
 			}
 			
-			if ($this->parent && $this->parent->isLoaded()) {
-				$object = $this->parent->getRelatedObject($relation, $this->foreignKeys[$name]);
+			if ($this->parentCollection && $this->parentCollection->isLoaded()) {
+				$object = $this->parentCollection->getRelatedObject($relation, $this->foreignKeys[$name]);
 				
 				if ($object === null) {
-					throw new NotFoundException($this->foreignKeys[$name]);
+					throw new NotFoundException([$name => $this->foreignKeys[$name]], $relation->getTarget());
 				}
 				
 				return $object;
 			}
 			
-			return $this->repository->getConnection()->getRepositoryByEntityClass($relation->getTarget())->one($this->foreignKeys[$name], true);
+			return $this->getRepository()->getConnection()->getRepositoryByEntityClass($relation->getTarget())->one($this->foreignKeys[$name], true);
 		}
 		
-		return new CollectionRelation($this->repository, $relation, $this->getPK());
+		return new CollectionRelation($this->getRepository(), $relation, $this->getPK());
 	}
 	
 	/**
@@ -253,19 +272,19 @@ abstract class Entity implements \JsonSerializable
 		
 		$vars = Helpers::getModelVars($this);
 		
-		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->mutation)) {
+		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->activeMutation)) {
 			$this->$property = $value;
 			
-			if (\array_key_exists($property . Connection::MUTATION_SEPARATOR . $this->mutation, $this->properties)) {
-				$this->properties[$property . Connection::MUTATION_SEPARATOR . $this->mutation] = $value;
+			if (\array_key_exists($property . Connection::MUTATION_SEPARATOR . $this->activeMutation, $this->properties)) {
+				$this->properties[$property . Connection::MUTATION_SEPARATOR . $this->activeMutation] = $value;
 			}
 			
 			return;
 		}
 		
-		if ($mutation && $this->mutation) {
-			if (!\in_array($mutation, $this->mutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->mutations);
+		if ($mutation && $this->activeMutation) {
+			if (!\in_array($mutation, $this->availableMutations)) {
+				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
 			}
 			
 			$property .= Connection::MUTATION_SEPARATOR . $mutation;
@@ -290,13 +309,13 @@ abstract class Entity implements \JsonSerializable
 		
 		$vars = Helpers::getModelVars($this);
 		
-		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->mutation)) {
+		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->activeMutation)) {
 			return $vars[$property];
 		}
 		
-		if ($mutation && $this->mutation) {
-			if (!\in_array($mutation, $this->mutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->mutations);
+		if ($mutation && $this->activeMutation) {
+			if (!\in_array($mutation, $this->availableMutations)) {
+				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
 			}
 			
 			$property .= Connection::MUTATION_SEPARATOR . $mutation;
@@ -327,7 +346,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		// init relation
-		$relation = $this->repository->getStructure()->getRelation($name);
+		$relation = $this->getRepository()->getStructure()->getRelation($name);
 		
 		if ($relation) {
 			if ($relation->isKeyHolder() && isset($this->properties[$name . Repository::RELATION_SEPARATOR . $relation->getTargetKey()])) {
@@ -364,7 +383,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\ICollectionEntity $collection */
-		$collection = $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()]);
+		$collection = $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($properties, false, $filterByColumns);
 	}
@@ -375,14 +394,14 @@ abstract class Entity implements \JsonSerializable
 	 */
 	private function getVars(bool $includeNonColumns = false): array
 	{
-		$columns = $this->repository->getStructure()->getColumns(true, false);
+		$columns = $this->getRepository()->getStructure()->getColumns(true, false);
 		$columnNames = \array_keys($columns);
 		$vars = Helpers::getModelVars($this);
 		
-		if ($this->mutation) {
+		if ($this->activeMutation) {
 			foreach ($columns as $name => $column) {
 				if ($column->hasMutations()) {
-					$this->properties[$name . Connection::MUTATION_SEPARATOR . $this->mutation] = $vars[$name];
+					$this->properties[$name . Connection::MUTATION_SEPARATOR . $this->activeMutation] = $vars[$name];
 					unset($vars[$name]);
 				}
 			}
@@ -405,7 +424,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()]);
+		$collection = $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()]);
 		
 		return $collection->update($vars, false, false);
 	}
@@ -416,7 +435,7 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function delete(): int
 	{
-		return $this->repository->many()->setWhere($this->getPKName(true), [$this->getPK()])->delete();
+		return $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()])->delete();
 	}
 	
 	/**
@@ -430,12 +449,12 @@ abstract class Entity implements \JsonSerializable
 	{
 		$array = [$this->getPKName() => $this->getPK()] + $this->getVars($includeNonColumns);
 		
-		if ($this->mutation && $groupLocales) {
-			foreach ($this->repository->getStructure()->getColumns() as $name => $column) {
+		if ($this->activeMutation && $groupLocales) {
+			foreach ($this->getRepository()->getStructure()->getColumns() as $name => $column) {
 				if ($column->hasMutations()) {
 					$array[$name] = [];
 					
-					foreach ($this->mutations as $mutation) {
+					foreach ($this->availableMutations as $mutation) {
 						$array[$name][$mutation] = $array[$name . Connection::MUTATION_SEPARATOR . $mutation] ?? null;
 						unset($array[$name . Connection::MUTATION_SEPARATOR . $mutation]);
 					}
@@ -444,7 +463,7 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		foreach ($relations as $relationName) {
-			$value = $this->getRelation($this->repository->getStructure()->getRelation($relationName));
+			$value = $this->getRelation($this->getRepository()->getStructure()->getRelation($relationName));
 			$array[$relationName] = $value instanceof CollectionRelation ? \array_keys($value->toArray()) : (string)$value;
 		}
 		
@@ -457,6 +476,17 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function jsonSerialize(): array
 	{
-		return $this->toArray(\array_keys($this->repository->getStructure()->getRelations()), true, true);
+		return $this->toArray(\array_keys($this->getRepository()->getStructure()->getRelations()), true, true);
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		$vars = \get_object_vars($this);
+		unset($vars['repository'], $vars['parentCollection']);
+		
+		return \array_keys($vars);
 	}
 }

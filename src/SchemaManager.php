@@ -121,11 +121,31 @@ class SchemaManager implements \JsonSerializable
 	}
 	
 	/**
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		$vars = \get_object_vars($this);
+		unset($vars['connection']);
+		
+		return \array_keys($vars);
+	}
+	
+	/**
 	 * Get current connection
 	 * @return \StORM\Connection
 	 */
 	public function getConnection(): \StORM\Connection
 	{
+		if (!$this->connection) {
+			throw new GeneralException('Connection is not set. Call setConnection().');
+		}
+		
 		return $this->connection;
+	}
+
+	public function setConnection(Connection $connection): void
+	{
+		$this->connection = $connection;
 	}
 }
