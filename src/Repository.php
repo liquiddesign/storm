@@ -166,14 +166,14 @@ abstract class Repository
 	
 	/**
 	 * Get entity object by condition
-	 * @param string[]|string $condition
+	 * @param string[]|string|int $condition
 	 * @param bool $needed
 	 * @param string[]|null $select
 	 * @return \StORM\Entity|null
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
 	{
-		$conditionValidTypes = ['array', 'string'];
+		$conditionValidTypes = ['array', 'string', 'int'];
 		
 		if (!\in_array(\gettype($condition), $conditionValidTypes)) {
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
