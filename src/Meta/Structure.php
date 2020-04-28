@@ -79,13 +79,13 @@ class Structure
 		$this->schemaManager = $schemaManager;
 		
 		try {
-			$customAnnotations = $schemaManager->getConnection()->getCustomAnnotations();
+			$customAnnots = $schemaManager->getConnection()->getCustomAnnotations();
 			
 			$fileName = (new \ReflectionClass($class))->getFileName();
 			
 			$dataModel = $this;
 			
-			[$this->table, $this->columns, $this->pk, $this->relations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $customAnnotations) {
+			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $customAnnots) {
 				$dependencies = [
 					Cache::FILES => $fileName,
 				];
@@ -115,9 +115,9 @@ class Structure
 					}
 				}
 				
-				$dataModel->loadCustomAnnotations($customAnnotations, $classDocComment, $propertiesDocComments);
+				$dataModel->loadCustomAnnotations($customAnnots, $classDocComment, $propertiesDocComments);
 				
-				return [$table, $columns, $pk, $relations];
+				return [$table, $columns, $pk, $relations, $dataModel->hasMutations];
 			});
 		} catch (\ReflectionException $x) {
 			throw new GeneralException("Cannot get $class reflection");

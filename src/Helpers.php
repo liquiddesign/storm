@@ -157,7 +157,7 @@ class Helpers
 				}
 				
 				$realProperty = $column . Connection::MUTATION_SEPARATOR . $language;
-				$values["$varPrefix$realProperty$varPostfix"] = (string) $value;
+				$values["$varPrefix$realProperty$varPostfix"] = \is_bool($value) ? (int) $value : $value;
 				$binds[":$varPrefix$realProperty$varPostfix"] = $realProperty;
 			}
 			

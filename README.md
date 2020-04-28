@@ -103,6 +103,7 @@ foreach ($users as $user) {
 ```
 
 TODO:
+- at update a tak bere i class ArrayHash extends stdClass implements ArrayAccess, Countable, IteratorAggregate
 - go to PHP 7.4 for full covariance https://www.php.net/manual/en/language.oop5.variance.php
 
    
