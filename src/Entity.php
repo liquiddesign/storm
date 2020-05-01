@@ -65,12 +65,14 @@ abstract class Entity implements \JsonSerializable
 			$this->$name = $value;
 		}
 	
-		foreach ($repository->getStructure()->getRelations() as $name => $relation) {
-			if ($relation->isKeyHolder()) {
-				$this->foreignKeys[$name] = $this->$name ?? null;
+		if ($repository) {
+			foreach ($repository->getStructure()->getRelations() as $name => $relation) {
+				if ($relation->isKeyHolder()) {
+					$this->foreignKeys[$name] = $this->$name ?? null;
+				}
+				
+				unset($this->$name);
 			}
-			
-			unset($this->$name);
 		}
 		
 		$this->activeMutation = $mutation;
