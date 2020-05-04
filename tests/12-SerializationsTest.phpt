@@ -178,8 +178,11 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		}, GeneralException::class);
 		
 		Assert::notEqual($stockDeserialized, $stock);
+		dump($stockDeserialized);
 		$stockDeserialized->setRepository($stocks);
 		$stock->removeParent();
+		dump($stockDeserialized);
+		dump($stock);
 		Assert::equal($stockDeserialized, $stock);
 	}
 }

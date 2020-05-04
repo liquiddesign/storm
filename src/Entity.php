@@ -66,19 +66,12 @@ abstract class Entity implements \JsonSerializable
 		}
 	
 		if ($repository) {
-			foreach ($repository->getStructure()->getRelations() as $name => $relation) {
-				if ($relation->isKeyHolder()) {
-					$this->foreignKeys[$name] = $this->$name ?? null;
-				}
-				
-				unset($this->$name);
-			}
+			$this->setRepository($repository);
 		}
 		
 		$this->activeMutation = $mutation;
 		$this->availableMutations = $mutations;
 		$this->parentCollection = $parent;
-		$this->repository = $repository;
 		$this->affectedNumber = $affectedNumber;
 	}
 	
@@ -107,7 +100,11 @@ abstract class Entity implements \JsonSerializable
 	{
 		$this->repository = $repository;
 		
-		foreach (\array_keys($repository->getStructure()->getRelations()) as $name) {
+		foreach ($repository->getStructure()->getRelations() as $name => $relation) {
+			if ($relation->isKeyHolder() && !\array_key_exists($name, $this->foreignKeys)) {
+				$this->foreignKeys[$name] = $this->$name ?? null;
+			}
+			
 			unset($this->$name);
 		}
 	}
