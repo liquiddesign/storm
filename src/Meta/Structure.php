@@ -197,7 +197,7 @@ class Structure
 	}
 	
 	/**
-	 * @return string[][]|string[]|int[][]|int[]
+	 * @return string[][]|string[][][]|int[][]|int[][][]
 	 * @throws \ReflectionException
 	 */
 	protected function getPropertiesDocComments(): array
@@ -301,7 +301,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[][] $docComments
+	 * @param string[][]|string[][][] $docComments
 	 * @return \StORM\Meta\Column[]
 	 */
 	protected function loadColumns(array $docComments): array
@@ -332,7 +332,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[][] $docComments
+	 * @param string[][]|string[][][] $docComments
 	 * @param string $table
 	 * @param string $pk
 	 * @return \StORM\Meta\Relation[]
@@ -664,7 +664,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[] $docComment
+	 * @param string[]|string[][] $docComment
 	 * @return \StORM\Meta\Table
 	 */
 	protected function loadTable(array $docComment): Table
