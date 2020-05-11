@@ -123,7 +123,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$stocks = $connection->getRepository(StockRepository::class);
 		
 		// unloaded
-		$rows = $stocks->many()->where('uuid', ['AAPL'])->orderBy(['name' => 'ASC'])->take(1);
+		$rows = $stocks->many()->where('uuid', ['AADR'])->orderBy(['name' => 'ASC'])->take(1);
 		$rowsDeserialized = \unserialize(\serialize(clone $rows));
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
@@ -139,7 +139,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal($rowsDeserialized, $rows);
 		
 		// loaded
-		$rows = $stocks->many()->where('uuid', ['AAPL'])->orderBy(['name' => 'ASC'])->take(1);
+		$rows = $stocks->many()->where('uuid', ['AADR'])->orderBy(['name' => 'ASC'])->take(1);
 		$rows->load();
 		$rowsDeserialized = \unserialize(\serialize(clone $rows));
 		
