@@ -36,9 +36,11 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$storm = $container->getByType(Connection::class);
 		$stocks = $storm->getRepository(StockRepository::class);
 		$stocks2 = $storm->getRepositoryByEntityClass(Stock::class);
+		$stocks3 = $storm->getRepositoryByName('db.stocks');
 		
 		Assert::type(StockRepository::class, $stocks);
 		Assert::type(StockRepository::class, $stocks2);
+		Assert::type(StockRepository::class, $stocks3);
 		Assert::same($stocks, $stocks2);
 	}
 	

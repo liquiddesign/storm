@@ -708,6 +708,19 @@ class Connection
 		return $this->debug;
 	}
 	
+	public function getRepositoryByName(string $repositoryName): Repository
+	{
+		
+		$repository = $this->container->getService($repositoryName);
+		$repositoryClass = \get_class($repository);
+		
+		if (!\is_subclass_of($repositoryClass, Repository::class)) {
+			throw new \InvalidArgumentException("$repositoryClass is not child of \StORM\Repository");
+		}
+		
+		return $repository;
+	}
+	
 	/**
 	 * Return repository by repository class
 	 * @param string $repositoryClass
