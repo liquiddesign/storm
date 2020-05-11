@@ -66,7 +66,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$connection = $container->getByType(Connection::class);
 		
 		// unloaded
-		$rows = $connection->rows($from)->where('uuid', ['AAPL'])->orderBy(['name' => 'ASC'])->take(1);
+		$rows = $connection->rows($from)->where('uuid', ['AADR'])->orderBy(['name' => 'ASC'])->take(1);
 		$rowsDeserialized = \unserialize(\serialize($rows));
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
@@ -78,7 +78,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal($rowsDeserialized, $rows);
 		
 		// loaded
-		$rows = $connection->rows($from)->where('uuid', ['AAPL'])->orderBy(['name' => 'ASC'])->take(1);
+		$rows = $connection->rows($from)->where('uuid', ['AADR'])->orderBy(['name' => 'ASC'])->take(1);
 		$rows->load();
 		$rowsDeserialized = \unserialize(\serialize(clone $rows));
 		
