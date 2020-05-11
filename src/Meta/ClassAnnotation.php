@@ -83,15 +83,19 @@ abstract class ClassAnnotation implements \JsonSerializable
 	
 	/**
 	 * @return string[]
+	 * @throws \ReflectionException
 	 */
 	public function jsonSerialize(): array
 	{
-		$json = [];
+		$reflectionClass = new \ReflectionClass(static::class);
+		$array = [];
 		
-		foreach ((array) $this as $name => $value) {
-			$json[$name] = $value;
+		foreach ($reflectionClass->getProperties() as $property) {
+			$property->setAccessible(true);
+			$array[$property->getName()] = $property->getValue($this);
+			$property->setAccessible(false);
 		}
 		
-		return $json;
+		return $array;
 	}
 }

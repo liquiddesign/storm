@@ -33,9 +33,9 @@ class StormTracy implements \Tracy\IBarPanel
 		return;
 	}
 	
-	protected function getTotalTime(): int
+	protected function getTotalTime(): float
 	{
-		$totalTime = 0;
+		$totalTime = 0.0;
 		
 		foreach ($this->db->getLog() as $item) {
 			$totalTime += $item->getTotalTime();
