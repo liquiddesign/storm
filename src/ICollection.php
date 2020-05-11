@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 interface ICollection
@@ -70,7 +72,7 @@ interface ICollection
 	
 	/**
 	 * Update all record equals condition and return number of affected rows
-	 * @param string[] $values
+	 * @param string[]|null[] $values
 	 * @param bool $ignore
 	 * @return int
 	 */
@@ -219,7 +221,7 @@ interface ICollection
 	/**
 	 * Set FROM clause and remove previous
 	 * @param string[] $from
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @return self
 	 */
 	public function setFrom(array $from, array $values = []): ICollection;
@@ -227,7 +229,7 @@ interface ICollection
 	/**
 	 * Add FROM clause and merge with previous
 	 * @param string[] $from
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @return self
 	 */
 	public function from(array $from, array $values = []): ICollection;
@@ -235,7 +237,7 @@ interface ICollection
 	/**
 	 * Set SELECT clause and replace previous
 	 * @param string[] $select
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @param bool $keepIndex
 	 * @return self
 	 */

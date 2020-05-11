@@ -37,7 +37,7 @@ class BasicTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$log = $connection->getLastLogItem();
 		Assert::equal('SELECT 1=:var', $log->getSql());
 		Assert::equal(['var' => 2], $log->getVars());
-		Assert::type('int', $log->getTotalTime());
+		Assert::type('float', $log->getTotalTime());
 		Assert::equal(1, $log->getAmount());
 		Assert::equal(false, $log->hasError());
 		

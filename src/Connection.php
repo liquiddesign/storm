@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use Nette\DI\Container;
@@ -37,22 +39,7 @@ class Connection
 	/**
 	 * @var string
 	 */
-	private $password;
-	
-	/**
-	 * @var string
-	 */
-	private $host;
-	
-	/**
-	 * @var string
-	 */
 	private $driver;
-	
-	/**
-	 * @var string
-	 */
-	private $dbname;
 	
 	/**
 	 * @var bool
@@ -76,7 +63,7 @@ class Connection
 	private $availableMutations = [];
 	
 	/**
-	 * @var callable
+	 * @var callable|null
 	 */
 	private $primaryKeyGenerator;
 	
@@ -129,27 +116,13 @@ class Connection
 		$this->driver = $parsedDsn[0];
 		\parse_str(\str_replace(';', '&', $parsedDsn[1]), $matches);
 		
-		foreach ($matches as $k => $v) {
-			if (!\property_exists(static::class, $k)) {
-				continue;
-			}
-			
-			$this->$k = $v;
-		}
-		
 		if ($user !== null) {
 			$this->user = $user;
 		}
 		
-		if ($password !== null) {
-			$this->password = $password;
-		}
-		
-		$this->dbname;
-		
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
-		$this->link = new \PDO($dsn, $this->user, $this->password, $this->attributes);
+		$this->link = new \PDO($dsn, $user, $password, $attributes);
 		
 		return;
 	}
@@ -234,15 +207,6 @@ class Connection
 	}
 	
 	/**
-	 * Get password of current connection
-	 * @return null|string
-	 */
-	public function getPassword(): ?string
-	{
-		return $this->password;
-	}
-	
-	/**
 	 * Get user of current connection
 	 * @return null|string
 	 */
@@ -258,15 +222,6 @@ class Connection
 	public function getDatabaseName(): ?string
 	{
 		return $this->query('SELECT DATABASE()', [], [], false)->fetchColumn(0);
-	}
-	
-	/**
-	 * Get server of current connection
-	 * @return null|string
-	 */
-	public function getHost(): ?string
-	{
-		return $this->host;
 	}
 	
 	/**
@@ -386,13 +341,23 @@ class Connection
 	/**
 	 * Create row = insert row into table
 	 * @param string $table
-	 * @param mixed[] $values
+	 * @param mixed[]|object $values
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @return \StORM\InsertResult
 	 */
-	public function createRow(string $table, array $values, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
+	public function createRow(string $table, $values, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		$vars = [];
 		$primaryKeys = [];
 		
@@ -410,16 +375,16 @@ class Connection
 		
 		$sql = $this->getSqlInsert($table, [$values], $vars, [], $ignore);
 		
-		$beforeId = $this->getLink()->lastInsertId();
+		$beforeId = (int) $this->getLink()->lastInsertId();
 		$rowCount = $this->query($sql, $vars)->rowCount();
 		
-		return new InsertResult($this, $table, false, $ignore, $rowCount, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
+		return new InsertResult($this, $table, false, $ignore, $rowCount, $beforeId, (int) $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
 	 * Create multiple rows at once
 	 * @param string $table
-	 * @param mixed[][] $manyValues
+	 * @param mixed[][]|object[] $manyValues
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
@@ -429,9 +394,20 @@ class Connection
 	{
 		$affected = 0;
 		$primaryKeys = [];
-		$beforeId = $this->getLink()->lastInsertId();
+		$beforeId = (int) $this->getLink()->lastInsertId();
 		
+		/** @var mixed[]|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
+			if (\is_object($values)) {
+				$values = Helpers::toArrayRecursive($values);
+			}
+			
+			if (!\is_array($values)) {
+				$type = \gettype($values);
+				
+				throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+			}
+			
 			$vars = [];
 			
 			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
@@ -451,23 +427,33 @@ class Connection
 			$affected += $this->query($sql, $vars)->rowCount();
 		}
 		
-		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
+		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, (int) $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
 	 * Synchronize row by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
-	 * @param mixed[] $values
+	 * @param mixed[]|object $values
 	 * @param string[]|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @return \StORM\InsertResult
 	 */
-	public function syncRow(string $table, array $values, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
+	public function syncRow(string $table, $values, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		$vars = [];
 		$primaryKeys = [];
-		$beforeId = $this->getLink()->lastInsertId();
+		$beforeId = (int) $this->getLink()->lastInsertId();
 		
 		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
 			$generatedPrimaryKey = $this->generatePrimaryKey();
@@ -485,13 +471,13 @@ class Connection
 		
 		$affected = $this->query($sql, $vars)->rowCount();
 		
-		return new InsertResult($this, $table, false, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
+		return new InsertResult($this, $table, false, $ignore, $affected, $beforeId, (int) $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
 	 * Synchronize rows by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
-	 * @param mixed[][] $manyValues
+	 * @param mixed[][]|object[] $manyValues
 	 * @param string[]|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
@@ -502,9 +488,20 @@ class Connection
 	{
 		$affected = 0;
 		$primaryKeys = [];
-		$beforeId = $this->getLink()->lastInsertId();
+		$beforeId = (int) $this->getLink()->lastInsertId();
 		
+		/** @var mixed[]|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
+			if (\is_object($values)) {
+				$values = Helpers::toArrayRecursive($values);
+			}
+			
+			if (!\is_array($values)) {
+				$type = \gettype($values);
+				
+				throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+			}
+			
 			$vars = [];
 			
 			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
@@ -523,7 +520,7 @@ class Connection
 			$affected += $this->query($sql, $vars)->rowCount();
 		}
 		
-		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, $this->getLink()->lastInsertId(), $primaryKeys);
+		return new InsertResult($this, $table, true, $ignore, $affected, $beforeId, (int) $this->getLink()->lastInsertId(), $primaryKeys);
 	}
 	
 	/**
@@ -558,7 +555,7 @@ class Connection
 			$binds = [];
 			
 			foreach ($inserts as $property => $rawValue) {
-				Helpers::bindVariables($property, $rawValue, $values, $binds, '', $i, $this->getAvailableMutations());
+				Helpers::bindVariables($property, $rawValue, $values, $binds, '', (string) $i, $this->getAvailableMutations());
 			}
 			
 			if ($i === 0) {
@@ -759,8 +756,8 @@ class Connection
 	}
 	
 	/**
-	 * Get all defined repositories in container
-	 * @return \StORM\Repository[]
+	 * Get all defined repositories names in container
+	 * @return string[]
 	 */
 	public function getAllRepositories(): array
 	{

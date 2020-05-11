@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\AlreadyExistsException;
@@ -52,7 +54,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
 	/**
-	 * @var object[]
+	 * @var object[]|null
 	 */
 	protected $items;
 	
@@ -72,7 +74,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected $classParameters = [];
 	
 	/**
-	 * @var \PDOStatement
+	 * @var \PDOStatement|null
 	 */
 	protected $sth;
 	
@@ -107,7 +109,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected $baseSelect;
 	
 	/**
-	 * @var string
+	 * @var string|null
 	 */
 	protected $index;
 	
@@ -122,7 +124,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected $varsFlags = [];
 	
 	/**
-	 * @var \StORM\Connection
+	 * @var \StORM\Connection|null
 	 */
 	protected $connection;
 	
@@ -338,12 +340,22 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	
 	/**
 	 * Update all record equals condition and return number of affected rows
-	 * @param string[] $values
+	 * @param mixed[]|object $values
 	 * @param bool $ignore
 	 * @return int
 	 */
-	public function update(array $values, bool $ignore = false): int
+	public function update($values, bool $ignore = false): int
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		if (\count($values) === 0) {
 			throw new \InvalidArgumentException('No value to update');
 		}
@@ -528,7 +540,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$return = [];
 		
 		foreach ($this->items as $index => $value) {
-			$return[$index] = $column === null ? $value : $value->$column;
+			$return[$index] = $value->$column;
 		}
 		
 		return $toArrayValues ? \array_values($return) : $return;
@@ -740,7 +752,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Add FROM clause and merge with previous
 	 * @param string[] $from
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @return self
 	 */
 	public function from(array $from, array $values = []): ICollection
@@ -763,7 +775,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Set FROM clause and remove previous
 	 * @param string[] $from
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @return self
 	 */
 	public function setFrom(array $from, array $values = []): ICollection
@@ -789,7 +801,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Set SELECT clause and replace previous
 	 * @param string[] $select
-	 * @param mixed[]|null $values
+	 * @param mixed[] $values
 	 * @param bool $keepIndex
 	 * @return self
 	 */
@@ -1266,9 +1278,9 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	
 	/**
 	 * Return the key of the current element
-	 * @return string|null
+	 * @return string|int|null
 	 */
-	public function key(): ?string
+	public function key()
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
@@ -1483,10 +1495,6 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	{
 		if (isset($this->vars[$name])) {
 			throw new AlreadyExistsException(AlreadyExistsException::BIND_VAR, $name);
-		}
-		
-		if (\is_int($name)) {
-			throw new InvalidStateException(InvalidStateException::INTEGER_BINDER);
 		}
 		
 		$this->vars[$name] = $value;

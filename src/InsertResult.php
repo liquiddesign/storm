@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\InvalidStateException;
@@ -89,7 +91,7 @@ class InsertResult
 	}
 	
 	/**
-	 * @return string[]
+	 * @return string[]|int[]
 	 */
 	public function getPrimaryKeys(): array
 	{

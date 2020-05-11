@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 class LogItem
@@ -20,9 +22,9 @@ class LogItem
 	private $sql = '';
 	
 	/**
-	 * @var int
+	 * @var float
 	 */
-	private $totalTime = 0;
+	private $totalTime = 0.0;
 	
 	/**
 	 * @var bool
@@ -69,18 +71,18 @@ class LogItem
 	
 	/**
 	 * Get total execution time
-	 * @return int
+	 * @return float
 	 */
-	public function getTotalTime(): int
+	public function getTotalTime(): float
 	{
 		return $this->totalTime;
 	}
 	
 	/**
 	 * Add time to total time
-	 * @param int $time
+	 * @param float $time
 	 */
-	public function addTime(int $time): void
+	public function addTime(float $time): void
 	{
 		$this->totalTime += $time;
 	}

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 use StORM\Exception\AnnotationException;
@@ -45,12 +47,15 @@ abstract class ClassAnnotation implements \JsonSerializable
 		$name = $this->getName();
 		$annotation = $this->getAnnotationName();
 		
+		// call setters
 		foreach ($json as $attribute => $value) {
-			if (!\property_exists(static::class, $attribute)) {
+			$method = 'set'. \ucfirst($attribute);
+			
+			if (!\method_exists($this, $method)) {
 				throw new AnnotationException(AnnotationException::ATTRIBUTE_NOT_EXISTS, "$class -> $name", "@$annotation -> $attribute");
 			}
 			
-			$this->$attribute = (string) $value;
+			\call_user_func_array([$this, $method], [$value]);
 		}
 	}
 	
@@ -83,7 +88,7 @@ abstract class ClassAnnotation implements \JsonSerializable
 	{
 		$json = [];
 		
-		foreach ($this as $name => $value) {
+		foreach ((array) $this as $name => $value) {
 			$json[$name] = $value;
 		}
 		

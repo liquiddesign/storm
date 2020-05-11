@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 abstract class PropertyAnnotation extends ClassAnnotation

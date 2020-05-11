@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\InvalidStateException;
@@ -97,9 +99,9 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$targetKey = $this->relation->getTargetKey();
 		
 		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->getConnection()->getRepositoryByEntityClass($class)->many();
+		$collection = $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
-		return $collection->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => $this->keyValue], !$checkKeys, false);
+		return $collection->update([$targetKey => $this->keyValue], !$checkKeys, false);
 	}
 	
 	/**

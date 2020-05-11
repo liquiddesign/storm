@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 class Column extends PropertyAnnotation
@@ -22,13 +24,13 @@ class Column extends PropertyAnnotation
 	
 	/**
 	 * Sql type of column
-	 * @var string
+	 * @var string|null
 	 */
 	protected $type;
 	
 	/**
 	 * Default value of column
-	 * @var string
+	 * @var string|null
 	 */
 	protected $default;
 	
@@ -46,7 +48,7 @@ class Column extends PropertyAnnotation
 	
 	/**
 	 * Mysql length of column
-	 * @var string
+	 * @var string|int|null
 	 */
 	protected $length;
 	
@@ -59,7 +61,7 @@ class Column extends PropertyAnnotation
 	/**
 	 * @var string
 	 */
-	protected $extra;
+	protected $extra = '';
 	
 	/**
 	 * @var string
@@ -69,7 +71,12 @@ class Column extends PropertyAnnotation
 	/**
 	 * @var string
 	 */
-	protected $comment;
+	protected $comment = '';
+	
+	/**
+	 * @var string|null
+	 */
+	private $charset;
 	
 	/**
 	 * @var null|bool
@@ -85,7 +92,6 @@ class Column extends PropertyAnnotation
 	 * @var bool
 	 */
 	protected $foreignKey = false;
-	
 	
 	public function isForeignKey(): bool
 	{
@@ -117,12 +123,12 @@ class Column extends PropertyAnnotation
 		$this->autoincrement = $autoincrement;
 	}
 	
-	public function getExtra(): ?string
+	public function getExtra(): string
 	{
 		return $this->extra;
 	}
 
-	public function setExtra(?string $extra): void
+	public function setExtra(string $extra): void
 	{
 		$this->extra = $extra;
 	}
@@ -136,13 +142,19 @@ class Column extends PropertyAnnotation
 	{
 		$this->mutations = $mutations;
 	}
-
-	public function getLength(): ?string
+	
+	/**
+	 * @return string|int|null
+	 */
+	public function getLength()
 	{
 		return $this->length;
 	}
-
-	public function setLength(?string $length): void
+	
+	/**
+	 * @param string|int|null $length
+	 */
+	public function setLength($length): void
 	{
 		$this->length = $length;
 	}
@@ -177,14 +189,24 @@ class Column extends PropertyAnnotation
 		$this->default = $default;
 	}
 	
-	public function getCollate(): string
+	public function getCollate(): ?string
 	{
 		return $this->collate;
 	}
 	
-	public function setCollate(string $collate): void
+	public function setCollate(?string $collate): void
 	{
 		$this->collate = $collate;
+	}
+	
+	public function getCharset(): ?string
+	{
+		return $this->charset;
+	}
+	
+	public function setCharset(?string $charset): void
+	{
+		$this->charset = $charset;
 	}
 	
 	public function getComment(): string

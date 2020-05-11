@@ -24,6 +24,13 @@ $container = new $class();
 
 /** @var \StORM\Connection $storm */
 $storm = $container->getService('storm.default');
+$storm->setAvailableMutations(['cz', 'en']);
+/** @var \DB\SectorRepository $stocks */
+$sector = $storm->getRepository(\DB\SectorRepository::class);
 
-/** @var \DB\StockRepository $stocks */
-$stocks = $storm->getRepository(\DB\StockRepository::class);
+$hash = \Nette\Utils\ArrayHash::from(['general' => true, 'name' => ['cz' => 'cc']]);
+
+$sector->createOne($hash);
+
+
+

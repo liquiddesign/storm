@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\InvalidStateException;
@@ -20,6 +22,15 @@ class Helpers
 	}
 	
 	/**
+	 * @param mixed $input
+	 * @return mixed
+	 */
+	public static function toArrayRecursive($input)
+	{
+		return \json_decode(\json_encode($input), true);
+	}
+	
+	/**
 	 * Tells if is associative array
 	 * @param mixed[] $array
 	 * @return bool
@@ -32,7 +43,7 @@ class Helpers
 	/**
 	 * Parse doc comment
 	 * @param string $s
-	 * @return string[]
+	 * @return string[][]|string[]|int[][]|int[]
 	 */
 	public static function parseDocComment(string $s): array
 	{
@@ -102,7 +113,7 @@ class Helpers
 	 */
 	public static function isValidIdentifier(string $name): bool
 	{
-		return \preg_match('/[a-z_\-0-9]/i', $name);
+		return (bool) \preg_match('/[a-z_\-0-9]/i', $name);
 	}
 	
 	/**

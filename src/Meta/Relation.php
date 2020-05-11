@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 class Relation extends PropertyAnnotation

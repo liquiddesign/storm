@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Bridges;
 
 use StORM\Connection;
@@ -11,7 +13,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 	private const DEFAULT_MUTATION = 'en';
 	
 	/**
-	 * @var string[]
+	 * @var mixed[]
 	 */
 	private $defaults = [
 		'debug' => false,

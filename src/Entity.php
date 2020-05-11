@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\GeneralException;
@@ -21,17 +23,17 @@ abstract class Entity implements \JsonSerializable
 	protected $foreignKeys = [];
 	
 	/**
-	 * @var \StORM\Meta\Relation[]
+	 * @var \StORM\Entity[]|\StORM\CollectionRelation[]|null[]
 	 */
 	protected $relations = [];
 	
 	/**
-	 * @var \StORM\CollectionEntity
+	 * @var \StORM\CollectionEntity|null
 	 */
 	protected $parentCollection;
 	
 	/**
-	 * @var \StORM\Repository
+	 * @var \StORM\Repository|null
 	 */
 	protected $repository;
 	
@@ -52,11 +54,11 @@ abstract class Entity implements \JsonSerializable
 	
 	/**
 	 * Entity constructor.
-	 * @param mixed[]|null $vars
+	 * @param mixed[] $vars
 	 * @param \StORM\Repository|null $repository
 	 * @param string|null $mutation
 	 * @param string[] $mutations
-	 * @param \StORM\CollectionEntity $parent
+	 * @param \StORM\CollectionEntity|null $parent
 	 * @param int|null $affectedNumber
 	 */
 	public function __construct(array $vars, ?Repository $repository = null, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null, ?int $affectedNumber = null)
@@ -116,17 +118,27 @@ abstract class Entity implements \JsonSerializable
 	
 	/**
 	 * Load from array and filter mess in array by column names by default
-	 * @param mixed[] $vars
+	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
-	 * @param $includePrimaryKey
+	 * @param bool $includePrimaryKey
 	 */
-	public function loadFromArray(array $vars, ?bool $filterByColumns = null, bool $includePrimaryKey = true): void
+	public function loadFromArray($values, ?bool $filterByColumns = null, bool $includePrimaryKey = true): void
 	{
-		if ($filterByColumns) {
-			$vars = $this->getRepository()->filterByColumns($vars, $includePrimaryKey, $filterByColumns);
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
 		}
 		
-		foreach ($vars as $name => $value) {
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
+		if ($filterByColumns) {
+			$values = $this->getRepository()->filterByColumns($values, $includePrimaryKey, $filterByColumns);
+		}
+		
+		foreach ($values as $name => $value) {
 			$this->$name = $value;
 		}
 		
@@ -137,9 +149,10 @@ abstract class Entity implements \JsonSerializable
 	 * Load from entity objects and skip primary key
 	 * @param \StORM\Entity $object
 	 */
-	public function loadFromObject(Entity $object): void
+	public function loadFromEntity(Entity $object): void
 	{
-		$vars = $this->getRepository()->filterByColumns($object->toArray(), false);
+		$array = $object->toArray();
+		$vars = $this->getRepository()->filterByColumns($array, false);
 		
 		foreach ($vars as $name => $value) {
 			$this->$name = $value;
@@ -371,20 +384,30 @@ abstract class Entity implements \JsonSerializable
 	
 	/**
 	 * Update entity object
-	 * @param mixed[] $properties
+	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @return int
 	 */
-	public function update(array $properties, ?bool $filterByColumns = null): int
+	public function update($values, ?bool $filterByColumns = null): int
 	{
-		foreach ($properties as $name => $value) {
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
+		foreach ($values as $name => $value) {
 			$this->$name = $value;
 		}
 		
 		/** @var \StORM\ICollectionEntity $collection */
 		$collection = $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()]);
 		
-		return $collection->update($properties, false, $filterByColumns);
+		return $collection->update($values, false, $filterByColumns);
 	}
 	
 	/**

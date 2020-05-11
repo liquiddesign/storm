@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Exception;
 
 class InvalidStateException extends \RuntimeException
 {
 	public const COLLECTION_ALREADY_LOADED = 0;
 	public const INVALID_IDENTIFIER = 2;
-	public const INTEGER_BINDER = 4;
 	public const INVALID_BINDER_VAR = 5;
 	public const KEY_HOLDER_NOT_ALLOWED = 6;
 	public const PK_IS_NOT_SET = 7;
@@ -24,8 +25,6 @@ class InvalidStateException extends \RuntimeException
 			$message = "Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops";
 		} elseif ($propertyCode === self::INVALID_IDENTIFIER) {
 			$message = "Invalid identifier: $extraMessage";
-		} elseif ($propertyCode === self::INTEGER_BINDER) {
-			$message = "Cannot bind ? only :var is allowed";
 		} elseif ($propertyCode === self::INVALID_BINDER_VAR) {
 			$message = "Cannot bind: $extraMessage";
 		} elseif ($propertyCode === self::KEY_HOLDER_NOT_ALLOWED) {

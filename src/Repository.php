@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\GeneralException;
@@ -20,17 +22,17 @@ abstract class Repository
 	public const RELATION_SEPARATOR = '_';
 	
 	/**
-	 * @var \StORM\Meta\Structure
+	 * @var \StORM\Meta\Structure|null
 	 */
 	protected $sqlStructure;
 	
 	/**
-	 * @var \StORM\Connection
+	 * @var \StORM\Connection|null
 	 */
 	protected $connection;
 	
 	/**
-	 * @var \StORM\Connection
+	 * @var \StORM\SchemaManager
 	 */
 	protected $schemaManager;
 	
@@ -213,24 +215,44 @@ abstract class Repository
 	
 	/**
 	 * Create entity row = insert row into table
-	 * @param mixed[] $values
+	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @return \StORM\Entity
 	 */
-	final public function createOne(array $values, ?bool $filterByColumns = null): Entity
+	final public function createOne($values, ?bool $filterByColumns = null): Entity
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		return $this->syncOne($values, [], $filterByColumns);
 	}
 	
 	/**
 	 * Synchronize entity row by unique index, if $columnsToUpdate is null all columns are updated
-	 * @param mixed[] $values
+	 * @param mixed[]|object $values
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @return \StORM\Entity
 	 */
-	final public function syncOne(array $values, ?array $updateProps = null, ?bool $filterByColumns = null): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = null): Entity
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		$columns = $this->getStructure()->getColumns();
 		
 		$insert = $this->filterValues($columns, $values, $filterByColumns);
@@ -275,7 +297,7 @@ abstract class Repository
 	
 	/**
 	 * Create multiple entity rows at once
-	 * @param mixed[][] $manyValues
+	 * @param mixed[][]|object[] $manyValues
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
@@ -288,7 +310,7 @@ abstract class Repository
 	
 	/**
 	 * Synchronize entity rows by unique index, if $columnsToUpdate is null all columns are updated
-	 * @param mixed[][] $manyValues
+	 * @param mixed[][]|object[] $manyValues
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
@@ -313,8 +335,19 @@ abstract class Repository
 			}
 		}
 		
+		/** @var mixed[]|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$insert = [];
+			
+			if (\is_object($values)) {
+				$values = Helpers::toArrayRecursive($values);
+			}
+			
+			if (!\is_array($values)) {
+				$type = \gettype($values);
+				
+				throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+			}
 			
 			foreach ($values as $value) {
 				$row = $this->filterValues($columns, $value, $filterByColumns);

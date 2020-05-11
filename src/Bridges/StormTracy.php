@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Bridges;
 
 class StormTracy implements \Tracy\IBarPanel
@@ -21,7 +23,7 @@ class StormTracy implements \Tracy\IBarPanel
 	/**
 	 * Construct new panel
 	 * @param \StORM\Connection $db
-	 * @param $name
+	 * @param string $name
 	 */
 	public function __construct(\StORM\Connection $db, string $name)
 	{

@@ -46,9 +46,6 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(null, $meta->getTable()->getCollate());
 		Assert::equal('utf8_czech_ci', $meta2->getTable()->getCollate());
 		
-		Assert::equal(null, $meta->getTable()->getCharset());
-		Assert::equal('utf8', $meta2->getTable()->getCharset());
-		
 		Assert::equal(null, $meta->getTable()->getEngine());
 		Assert::equal('innoDB', $meta2->getTable()->getEngine());
 		
@@ -156,7 +153,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(null, $column->getType());
 		Assert::equal(null, $column->getLength());
 		Assert::equal(null, $column->getDefault());
-		Assert::equal(null, $column->getExtra());
+		Assert::equal('', $column->getExtra());
 		Assert::equal(false, $column->isUnique());
 		Assert::equal(false, $column->isNullable());
 		Assert::equal(null, $column->isAutoincrement());
@@ -192,7 +189,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::equal(true, isset($columns['testLength']));
 		$column = $columns['testLength'];
-		Assert::equal('32', $column->getLength());
+		Assert::equal(32, $column->getLength());
 		
 		Assert::equal(true, isset($columns['testLocale']));
 		$column = $columns['testLocale'];

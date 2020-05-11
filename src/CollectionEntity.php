@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use StORM\Exception\GeneralException;
@@ -10,12 +12,12 @@ use StORM\Meta\RelationNxN;
 class CollectionEntity extends Collection implements ICollectionEntity, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
-	 * @var \StORM\Repository
+	 * @var \StORM\Repository|null
 	 */
 	private $repository;
 	
 	/**
-	 * @var \StORM\CollectionEntity[]
+	 * @var \StORM\ICollection[]
 	 */
 	private $cache;
 	
@@ -169,9 +171,6 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 				continue;
 			}
 			
-			/**
-			 * @var \StORM\Entity $relationClass
-			 */
 			$relationClass = $this->class;
 			$aliasesList = \explode('.', $aliases);
 			
@@ -193,14 +192,7 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 					$realAlias = $aliasPrefix . $alias;
 					$realAliasQuoted = $this->getConnection()->quoteIdentifier($realAlias);
 					
-					/**
-					 * @var \StORM\Entity $target
-					 */
 					$target = $relation->getTarget();
-					
-					/**
-					 * @var \StORM\Entity $source
-					 */
 					$source = $relation->getSource();
 					
 					$sourceTable = $this->getRepository()->getSchemaManager()->getStructure($source)->getTable()->getName();
@@ -316,13 +308,23 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	/**
 	 * Update all record equals condition and return number of affected rows
 	 * @override adding filter by columns
-	 * @param string[] $values
+	 * @param mixed[]|object $values
 	 * @param bool $ignore
 	 * @param bool|null $filterByColumns
 	 * @return int
 	 */
-	public function update(array $values, bool $ignore = false, ?bool $filterByColumns = null): int
+	public function update($values, bool $ignore = false, ?bool $filterByColumns = null): int
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
 		$columns = $this->getRepository()->filterByColumns($values, true, $filterByColumns);
 		
 		return parent::update($columns, $ignore);

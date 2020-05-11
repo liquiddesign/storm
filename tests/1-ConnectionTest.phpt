@@ -118,13 +118,9 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$driver = $neon['storm'][$name]['driver'];
 		$dbName = $neon['storm'][$name]['dbname'];
-		$host = $neon['storm'][$name]['host'];
 		$user = $neon['storm'][$name]['user'];
-		$password = $neon['storm'][$name]['password'];
 		
 		Assert::same($user, $connection->getUser());
-		Assert::same($password, $connection->getPassword());
-		Assert::same($host, $connection->getHost());
 		Assert::same($dbName, $connection->getDatabaseName());
 		Assert::same($driver, $connection->getDriver());
 		Assert::type('array', $connection->getAttributes());

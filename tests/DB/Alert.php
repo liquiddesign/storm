@@ -6,7 +6,7 @@ namespace DB;
  * @testClass
  * @table{"name":"stocks_alert"}
  */
-class Alert extends \StORM\Entity // @codingStandardsIgnoreLine
+class 	Alert extends \StORM\Entity // @codingStandardsIgnoreLine
 {
 	/**
 	 * @testProperty

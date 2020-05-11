@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 class Table extends ClassAnnotation
@@ -11,11 +13,6 @@ class Table extends ClassAnnotation
 	 * @var string
 	 */
 	protected $collate;
-	
-	/**
-	 * @var string
-	 */
-	protected $charset;
 	
 	/**
 	 * @var string
@@ -46,24 +43,19 @@ class Table extends ClassAnnotation
 		return $this->collate;
 	}
 	
-	public function getCharset(): ?string
-	{
-		return $this->charset;
-	}
-	
 	public function getEngine(): ?string
 	{
 		return $this->engine;
+	}
+		
+	public function setEngine(?string $engine): void
+	{
+		$this->engine = $engine;
 	}
 	
 	public function setCollate(string $collate): void
 	{
 		$this->collate = $collate;
-	}
-	
-	public function setCharset(string $charset): void
-	{
-		$this->charset = $charset;
 	}
 	
 	public function getComment(): string

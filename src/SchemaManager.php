@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM;
 
 use Nette\Caching\Cache;
@@ -8,15 +10,15 @@ use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Meta\Structure;
 
-class SchemaManager implements \JsonSerializable
+class SchemaManager
 {
 	/**
-	 * @var \Nette\Caching\IStorage
+	 * @var \Nette\Caching\Cache
 	 */
 	private $cache;
 	
 	/**
-	 * @var \StORM\Connection
+	 * @var \StORM\Connection|null
 	 */
 	private $connection;
 	
@@ -28,13 +30,12 @@ class SchemaManager implements \JsonSerializable
 	/**
 	 * SchemaManager constructor.
 	 * @param \StORM\Connection $connection
-	 * @param \Nette\Caching\IStorage $cache
+	 * @param \Nette\Caching\IStorage $storage
 	 */
-	public function __construct(Connection $connection, IStorage $cache)
+	public function __construct(Connection $connection, IStorage $storage)
 	{
 		$this->connection = $connection;
-		$cache = new Cache($cache);
-		$this->cache = $cache;
+		$this->cache = new Cache($storage);
 	}
 	
 	/**
@@ -88,9 +89,9 @@ class SchemaManager implements \JsonSerializable
 	 * Detect if table has autincrement on specific column
 	 * @param string $tableName
 	 * @param string $columnName
-	 * @return string
+	 * @return bool
 	 */
-	public function isAutoincrement(string $tableName, string $columnName): string
+	public function isAutoincrement(string $tableName, string $columnName): bool
 	{
 		$vars = [
 			'extra' => 'auto_increment',
@@ -102,22 +103,6 @@ class SchemaManager implements \JsonSerializable
 		$sql = 'select IF(column_name = :extra,1,0) FROM information_schema.columns where column_name=:column AND table_name=:table AND table_schema=:schema';
 		
 		return (bool) $this->connection->query($sql, $vars)->fetchColumn(0);
-	}
-	
-	/**
-	 * Serialize all SQL structures by registred repositories
-	 * @return mixed[]
-	 * @throws \ReflectionException
-	 */
-	public function jsonSerialize(): array
-	{
-		$json = [];
-		
-		foreach ($this->connection->getAllRepositories() as $repository) {
-			$json[$repository->getEntityClass()] = $repository->getStructure()->jsonSerialize();
-		}
-		
-		return $json;
 	}
 	
 	/**

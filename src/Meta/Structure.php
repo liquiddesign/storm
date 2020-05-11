@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace StORM\Meta;
 
 use Nette\Caching\Cache;
@@ -186,7 +188,7 @@ class Structure
 	}
 	
 	/**
-	 * @return string[]
+	 * @return string[][]|string[]|int[][]|int[]
 	 * @throws \ReflectionException
 	 */
 	protected function getClassDocComment(): array
@@ -195,7 +197,7 @@ class Structure
 	}
 	
 	/**
-	 * @return string[]
+	 * @return string[][]|string[]|int[][]|int[]
 	 * @throws \ReflectionException
 	 */
 	protected function getPropertiesDocComments(): array
@@ -299,7 +301,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[] $docComments
+	 * @param string[][] $docComments
 	 * @return \StORM\Meta\Column[]
 	 */
 	protected function loadColumns(array $docComments): array
@@ -330,7 +332,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[] $docComments
+	 * @param string[][] $docComments
 	 * @param string $table
 	 * @param string $pk
 	 * @return \StORM\Meta\Relation[]
@@ -386,9 +388,9 @@ class Structure
 	/**
 	 * @param string $name
 	 * @param string[] $parsedDocComment
-	 * @return \StORM\Meta\Column|null
+	 * @return \StORM\Meta\Column
 	 */
-	private function loadColumn(string $name, array $parsedDocComment): ?Column
+	private function loadColumn(string $name, array $parsedDocComment): Column
 	{
 		$class = $this->entityClass;
 		
@@ -441,7 +443,7 @@ class Structure
 	 * @param string $sourcePk
 	 * @return \StORM\Meta\Relation
 	 */
-	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, string $sourcePk): ?Relation
+	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, string $sourcePk): Relation
 	{
 		$class = $this->entityClass;
 		
@@ -466,7 +468,6 @@ class Structure
 		
 		if ($jsonType) {
 			$loaded = $relation->loadFromType($jsonType);
-			/** @var \StORM\Entity $target */
 			$target = $relation->getTarget();
 			
 			if ($loaded) {
@@ -680,7 +681,7 @@ class Structure
 			$json = $this->parseJson($docComment[Table::getAnnotationName()]);
 			
 			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $docComment);
+				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $docComment[Table::getAnnotationName()]);
 			}
 			
 			$table->loadFromArray($json);
@@ -692,7 +693,7 @@ class Structure
 	}
 	
 	/**
-	 * @param $string
+	 * @param string $string
 	 * @return string[]|null
 	 */
 	private function parseJson(string $string): ?array
