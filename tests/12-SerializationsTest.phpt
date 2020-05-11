@@ -92,6 +92,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::notEqual($rowsDeserialized, $rows);
 		Assert::true($rows->isLoaded());
 		Assert::false($rowsDeserialized->isLoaded());
+		
 		$rowsDeserialized->load();
 		Assert::equal($rowsDeserialized, $rows);
 	}
