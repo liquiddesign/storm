@@ -18,7 +18,7 @@ class Column extends PropertyAnnotation
 	
 	/**
 	 * Type of the column
-	 * @var string
+	 * @var string|null
 	 */
 	protected $propertyType;
 	
@@ -229,12 +229,12 @@ class Column extends PropertyAnnotation
 		$this->type = $type;
 	}
 	
-	public function setPropertyType(string $type): void
+	public function setPropertyType(?string $type): void
 	{
 		$this->propertyType = $type;
 	}
 	
-	public function getPropertyType(): string
+	public function getPropertyType(): ?string
 	{
 		return $this->propertyType;
 	}
