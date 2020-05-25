@@ -82,7 +82,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(true, isset($constraints['testForce']));
 		$constraint = $constraints['testForce'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
-		Assert::equal('testForce', $constraint->getName());
+		Assert::equal('test_testForce', $constraint->getName());
 		Assert::equal(\DB\Test::class, $constraint->getSource());
 		Assert::equal('DB\Test3', $constraint->getTarget());
 		Assert::equal('fk_test', $constraint->getSourceKey());
@@ -109,7 +109,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(true, isset($constraints['accountMultiple3']));
 		$constraint = $constraints['accountMultiple3'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
-		Assert::equal('accountMultiple3', $constraint->getName());
+		Assert::equal('test_accountMultiple3', $constraint->getName());
 		Assert::equal('tests', $constraint->getSource());
 		Assert::equal('tests2', $constraint->getTarget());
 		Assert::equal('fk_test', $constraint->getSourceKey());
@@ -122,7 +122,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::equal(true, isset($indexes['testUnique']));
 		$index = $indexes['testUnique'];
-		Assert::equal('testUnique', $index->getName());
+		Assert::equal('test_testUnique', $index->getName());
 		Assert::equal(\DB\Test::class, $index->getEntityClass());
 		Assert::equal(['testUnique'], $index->getColumns());
 		Assert::equal(true, $index->isUnique());

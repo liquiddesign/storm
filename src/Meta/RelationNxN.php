@@ -6,6 +6,8 @@ namespace StORM\Meta;
 
 class RelationNxN extends Relation
 {
+	public const TABLE_NAME_GLUE = '_nxn_';
+	
 	private const ANNOTATION = 'relationnxn';
 	
 	/**
@@ -20,9 +22,19 @@ class RelationNxN extends Relation
 	protected $sourceViaKey;
 	
 	/**
+	 * @var string|null
+	 */
+	protected $sourceKeyType;
+	
+	/**
 	 * @var string
 	 */
 	protected $targetViaKey;
+	
+	/**
+	 * @var string|null
+	 */
+	protected $targetKeyType;
 
 	public function getVia(): string
 	{
@@ -52,6 +64,26 @@ class RelationNxN extends Relation
 	public function setTargetViaKey(string $targetViaKey): void
 	{
 		$this->targetViaKey = $targetViaKey;
+	}
+	
+	public function getSourceKeyType(): ?string
+	{
+		return $this->sourceKeyType;
+	}
+	
+	public function setSourceKeyType(?string $sourceKeyType): void
+	{
+		$this->sourceKeyType = $sourceKeyType;
+	}
+	
+	public function getTargetKeyType(): ?string
+	{
+		return $this->targetKeyType;
+	}
+	
+	public function setTargetKeyType(?string $targetKeyType): void
+	{
+		$this->targetKeyType = $targetKeyType;
 	}
 	
 	/**

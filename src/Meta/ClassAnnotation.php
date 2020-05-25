@@ -83,7 +83,6 @@ abstract class ClassAnnotation implements \JsonSerializable
 	
 	/**
 	 * @return string[]
-	 * @throws \ReflectionException
 	 */
 	public function jsonSerialize(): array
 	{

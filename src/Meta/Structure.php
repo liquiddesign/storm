@@ -16,6 +16,8 @@ class Structure
 {
 	private const ANNOTATION_VAR = 'var';
 	
+	private const NAME_SEPARATOR = '_';
+	
 	private const INTERFACE_PREFIX = 'I';
 	
 	private const ANNOTATION_TYPE_CLASS = 'class';
@@ -106,13 +108,14 @@ class Structure
 					$columns = [$pk->getName() => $pk] + $columns;
 				}
 				
-				$relations = $dataModel->loadRelations($propertiesDocComments, $table->getName(), $pk->getName());
+				$relations = $dataModel->loadRelations($propertiesDocComments, $table->getName(), $pk);
 				
 				foreach ($relations as $relation) {
 					if ($relation->isKeyHolder()) {
 						$fk = new Column($dataModel->getEntityClass(), $relation->getName());
 						$fk->setName($relation->getSourceKey());
 						$fk->setForeignKey(true);
+						$fk->setPropertyType($relation->getKeyType());
 						$columns[$relation->getName()] = $fk;
 					}
 				}
@@ -334,10 +337,10 @@ class Structure
 	/**
 	 * @param string[][]|string[][][] $docComments
 	 * @param string $table
-	 * @param string $pk
+	 * @param \StORM\Meta\Column $pk
 	 * @return \StORM\Meta\Relation[]
 	 */
-	protected function loadRelations(array $docComments, string $table, string $pk): array
+	protected function loadRelations(array $docComments, string $table, Column $pk): array
 	{
 		$relations = [];
 		$class = $this->getEntityClass();
@@ -427,6 +430,11 @@ class Structure
 		return $column;
 	}
 	
+	protected function setPrefix(string $name): string
+	{
+		return $this->getTable()->getName() . self::NAME_SEPARATOR . $name;
+	}
+	
 	/**
 	 * Tells if has some mutation columns
 	 * @return bool
@@ -440,10 +448,10 @@ class Structure
 	 * @param string $name
 	 * @param string[] $parsedDocComment
 	 * @param string $sourceTable
-	 * @param string $sourcePk
+	 * @param \StORM\Meta\Column $sourcePk
 	 * @return \StORM\Meta\Relation
 	 */
-	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, string $sourcePk): Relation
+	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, Column $sourcePk): Relation
 	{
 		$class = $this->entityClass;
 		
@@ -472,23 +480,26 @@ class Structure
 			
 			if ($loaded) {
 				if ($relation instanceof RelationNxN) {
-					$relation->setSourceKey($sourcePk);
-					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
-					$relation->setVia($sourceTable . '_nxn_' . $this->schemaManager->getStructure($target)->getTable()->getName());
+					$relation->setSourceKey($sourcePk->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setVia($sourceTable . RelationNxN::TABLE_NAME_GLUE . $this->schemaManager->getStructure($target)->getTable()->getName());
 					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
 					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($target))->getShortName()));
+					$relation->setSourceKeyType($sourcePk->getPropertyType());
+					$relation->setTargetKeyType($this->schemaManager->getStructure($target)->getPK()->getPropertyType());
 				} elseif ($relation->isKeyHolder()) {
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
-					$relation->setTargetKey($target === $class ? $sourcePk : $this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target)->getPK()->getName());
+					$relation->setKeyType($target === $class ? $sourcePk->getPropertyType() : $this->schemaManager->getStructure($target)->getPK()->getPropertyType());
 				} else {
-					$relation->setSourceKey($sourcePk);
+					$relation->setSourceKey($sourcePk->getName());
 					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
+					$relation->setKeyType($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
 				}
 			}
 		}
 		
 		$relation->loadFromArray($json);
-		
 		$relation->validate();
 		
 		return $relation;
@@ -529,7 +540,7 @@ class Structure
 		foreach ($columns as $column) {
 			if ($column->isUnique()) {
 				$index = new Index($class);
-				$index->setName($column->getPropertyName());
+				$index->setName($this->setPrefix($column->getPropertyName()));
 				$index->setUnique(true);
 				$index->setColumns([$column->getPropertyName()]);
 				$index->validate();
@@ -540,7 +551,7 @@ class Structure
 		foreach ($this->getRelations() as $relation) {
 			if ($relation->isKeyHolder()) {
 				$index = new Index($class);
-				$index->setName($relation->getPropertyName());
+				$index->setName($this->setPrefix($relation->getName()));
 				$index->setColumns([$relation->getSourceKey()]);
 				$index->validate();
 				$indexes[$relation->getPropertyName()] = $index;
@@ -651,8 +662,8 @@ class Structure
 			}
 			
 			$object = new Constraint($class, $relation->getPropertyName());
-			$object->setName($name);
 			$object->setDefaultsFromRelation($relation);
+			$object->setName($this->setPrefix($name));
 			
 			$object->loadFromArray($json);
 			$object->validate();

@@ -29,6 +29,11 @@ class Relation extends PropertyAnnotation
 	protected $targetKey;
 	
 	/**
+	 * @var string|null
+	 */
+	protected $keyType;
+	
+	/**
 	 * @var bool
 	 */
 	protected $isKeyHolder;
@@ -72,6 +77,16 @@ class Relation extends PropertyAnnotation
 	public function setTargetKey(string $targetKey): void
 	{
 		$this->targetKey = $targetKey;
+	}
+	
+	public function getKeyType(): ?string
+	{
+		return $this->keyType;
+	}
+	
+	public function setKeyType(?string $keyType): void
+	{
+		$this->keyType = $keyType;
 	}
 	
 	public function isKeyHolder(): ?bool
