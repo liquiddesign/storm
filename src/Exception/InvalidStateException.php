@@ -4,47 +4,69 @@ declare(strict_types=1);
 
 namespace StORM\Exception;
 
-class InvalidStateException extends \RuntimeException
+use StORM\IDumper;
+
+class InvalidStateException extends \RuntimeException implements IContextException
 {
-	public const COLLECTION_ALREADY_LOADED = 0;
+	public const CONNECTION_NOT_SET = 0;
+	public const COLLECTION_ALREADY_LOADED = 1;
 	public const INVALID_IDENTIFIER = 2;
-	public const INVALID_BINDER_VAR = 5;
-	public const KEY_HOLDER_NOT_ALLOWED = 6;
-	public const PK_IS_NOT_SET = 7;
-	public const GROUP_BY_NOT_ALLOWED = 8;
-	public const INDEX_AND_STAR_WITHOUT_PREFIX = 9;
-	public const ORDER_BY_NOT_ALLOWED = 10;
-	public const IGNORE = 11;
-	public const SYNCED = 12;
+	public const INVALID_BINDER_VAR = 3;
+	public const KEY_HOLDER_NOT_ALLOWED = 4;
+	public const PK_IS_NOT_SET = 5;
+	public const GROUP_BY_NOT_ALLOWED = 6;
+	public const INDEX_AND_STAR_WITHOUT_PREFIX = 7;
+	public const ORDER_BY_NOT_ALLOWED = 8;
+	public const IGNORE = 9;
+	public const SYNCED = 10;
 	
-	public function __construct(int $propertyCode, ?string $extraMessage = null)
+	/**
+	 * @var \StORM\ICollection|\StORM\Entity|null
+	 */
+	private $context;
+	
+	/**
+	 * InvalidStateException constructor.
+	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @param int $errorCode
+	 * @param string|null $extraMessage
+	 */
+	public function __construct($context, int $errorCode, ?string $extraMessage = null)
 	{
 		$message = null;
 		
-		if ($propertyCode === self::COLLECTION_ALREADY_LOADED) {
+		if ($errorCode === self::CONNECTION_NOT_SET) {
+			$message = "Connection is not set. Call setConnection()";
+		} elseif ($errorCode === self::COLLECTION_ALREADY_LOADED) {
 			$message = "Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops";
-		} elseif ($propertyCode === self::INVALID_IDENTIFIER) {
+		} elseif ($errorCode === self::INVALID_IDENTIFIER) {
 			$message = "Invalid identifier: $extraMessage";
-		} elseif ($propertyCode === self::INVALID_BINDER_VAR) {
+		} elseif ($errorCode === self::INVALID_BINDER_VAR) {
 			$message = "Cannot bind: $extraMessage";
-		} elseif ($propertyCode === self::KEY_HOLDER_NOT_ALLOWED) {
+		} elseif ($errorCode === self::KEY_HOLDER_NOT_ALLOWED) {
 			$message = 'Keyholder relation is not supported in CollectionRelation';
-		} elseif ($propertyCode === self::PK_IS_NOT_SET) {
+		} elseif ($errorCode === self::PK_IS_NOT_SET) {
 			$message = "Primary key $extraMessage is not set";
-		} elseif ($propertyCode === self::GROUP_BY_NOT_ALLOWED) {
+		} elseif ($errorCode === self::GROUP_BY_NOT_ALLOWED) {
 			$message = 'GROUP BY clause is not allowed in delete or update';
-		} elseif ($propertyCode === self::ORDER_BY_NOT_ALLOWED) {
+		} elseif ($errorCode === self::ORDER_BY_NOT_ALLOWED) {
 			$message = 'ORDER BY clause is not allowed in delete, remove by ->orderBy([])';
-		} elseif ($propertyCode === self::INDEX_AND_STAR_WITHOUT_PREFIX) {
+		} elseif ($errorCode === self::INDEX_AND_STAR_WITHOUT_PREFIX) {
 			$message = "Cannot use index '$extraMessage' with '*' without prefix'";
-		} elseif ($propertyCode === self::IGNORE) {
+		} elseif ($errorCode === self::IGNORE) {
 			$message = "Cannot get autoincrement primary keys with IGNORE = true and multiple inserts";
-		} elseif ($propertyCode === self::SYNCED) {
+		} elseif ($errorCode === self::SYNCED) {
 			$message = "Cannot get is synced with multiple inserts";
 		}
 		
 		$message = $message ?: $extraMessage;
+		$this->context = $context;
 		
-		parent::__construct($message, $propertyCode);
+		parent::__construct($message, $errorCode);
+	}
+	
+	public function getContext(): ?IDumper
+	{
+		return $this->context;
 	}
 }

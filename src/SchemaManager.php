@@ -7,11 +7,15 @@ namespace StORM;
 use Nette\Caching\Cache;
 use Nette\Caching\IStorage;
 use StORM\Exception\GeneralException;
-use StORM\Exception\NotExistsException;
 use StORM\Meta\Structure;
 
 class SchemaManager
 {
+	/**
+	 * @var string[]
+	 */
+	private $customAnnotations = [];
+	
 	/**
 	 * @var \Nette\Caching\Cache
 	 */
@@ -47,7 +51,7 @@ class SchemaManager
 	{
 		if (!isset($this->dataModels[$class])) {
 			if (!\class_exists($class)) {
-				throw new NotExistsException(NotExistsException::CLASS_NAME, $class);
+				throw new \InvalidArgumentException("Class $class not exists");
 			}
 			
 			if (!\StORM\Meta\Structure::isEntityClass($class)) {
@@ -106,17 +110,6 @@ class SchemaManager
 	}
 	
 	/**
-	 * @return string[]
-	 */
-	public function __sleep(): array
-	{
-		$vars = \get_object_vars($this);
-		unset($vars['connection']);
-		
-		return \array_keys($vars);
-	}
-	
-	/**
 	 * Get current connection
 	 * @return \StORM\Connection
 	 */
@@ -132,5 +125,32 @@ class SchemaManager
 	public function setConnection(Connection $connection): void
 	{
 		$this->connection = $connection;
+	}
+	
+	/**
+	 * @param string[] $customAnnotations
+	 */
+	public function setCustomAnnotations(array $customAnnotations): void
+	{
+		$this->customAnnotations = $customAnnotations;
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function getCustomAnnotations(): array
+	{
+		return $this->customAnnotations;
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		$vars = \get_object_vars($this);
+		unset($vars['connection']);
+		
+		return \array_keys($vars);
 	}
 }

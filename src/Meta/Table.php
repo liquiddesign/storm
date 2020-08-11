@@ -4,38 +4,43 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-class Table extends ClassAnnotation
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
+class Table extends AnnotationClass
 {
-	private const ANNOTATION = 'table';
 	private const DEFAULT_ENTITY_NAMESPACE = 'DB';
 	
 	/**
-	 * @var string
+	 * @var string|null
 	 */
 	protected $collate;
 	
 	/**
-	 * @var string
+	 * @var string|null
 	 */
 	protected $engine;
 	
 	/**
 	 * @var string
 	 */
-	protected $comment;
+	protected $comment = '';
 	
-	
-	public function __construct(string $class)
+	public function __construct(?string $class)
 	{
-		$this->name = $this->getTableNameFromClass($class);
 		parent::__construct($class);
+		
+		$this->name = $this->getTableNameFromClass($class);
 	}
 	
-	private function getTableNameFromClass(string $model): string
+	public function getSchema(): Schema
 	{
-		$db = self::DEFAULT_ENTITY_NAMESPACE;
-		
-		return \strtolower(\str_replace("\\", '_', \str_replace("$db\\", '', $model)));
+		return Expect::structure([
+			'name' => Expect::string(null),
+			'engine' => Expect::string(null),
+			'collate' => Expect::string(null),
+			'comment' => Expect::string(null),
+		]);
 	}
 	
 	public function getCollate(): ?string
@@ -53,7 +58,7 @@ class Table extends ClassAnnotation
 		$this->engine = $engine;
 	}
 	
-	public function setCollate(string $collate): void
+	public function setCollate(?string $collate): void
 	{
 		$this->collate = $collate;
 	}
@@ -67,17 +72,16 @@ class Table extends ClassAnnotation
 	{
 		$this->comment = $comment;
 	}
-
-	
-	public function validate(): void
-	{
-		$this->checkRequired(['name']);
-		
-		return;
-	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'table';
+	}
+	
+	private function getTableNameFromClass(string $model): string
+	{
+		$db = self::DEFAULT_ENTITY_NAMESPACE;
+		
+		return \strtolower(\str_replace("\\", '_', \str_replace("$db\\", '', $model)));
 	}
 }

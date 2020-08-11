@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace StORM;
 
 use StORM\Exception\AlreadyExistsException;
-use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotFoundException;
 
-class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+/**
+ * Class Collection
+ * @template T of object
+ */
+class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	protected const DEFAULT_JOIN = 'LEFT';
 	
@@ -17,7 +20,10 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	
 	protected const UNIQUE_BINDER_PREFIX = '__';
 	
-	protected const MAX_LIMIT = '18446744073709551615'; //according mysql
+	/**
+	 * according MySQL
+	 */
+	protected const MAX_LIMIT = '18446744073709551615';
 	
 	protected const MODIFIER_WHERE = 'WHERE';
 	
@@ -54,6 +60,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
 	/**
+	 * @phpstan-var T[]|null
 	 * @var object[]|null
 	 */
 	protected $items;
@@ -64,6 +71,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	protected $keys;
 	
 	/**
+	 * @phpstan-var class-string<T>
 	 * @var string
 	 */
 	protected $class;
@@ -166,7 +174,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function getConnection(): Connection
 	{
 		if (!$this->connection) {
-			throw new GeneralException('Connection is not set. Call setConnection().');
+			throw new InvalidStateException($this, InvalidStateException::CONNECTION_NOT_SET);
 		}
 		
 		return $this->connection;
@@ -197,6 +205,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Get fetch class
 	 * @param mixed[] $params
+	 * @phpstan-return class-string<T>
 	 * @return string
 	 */
 	public function getFetchClass(array &$params = []): string
@@ -258,14 +267,14 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	
 	/**
 	 * Take 1, fetch fetch the column and close cursor
-	 * @param string $property
+	 * @param string|null $property
 	 * @param bool $needed
 	 * @return null|string|bool
 	 */
-	public function firstValue(string $property, bool $needed = false)
+	public function firstValue(?string $property = null, bool $needed = false)
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->take(1);
@@ -276,7 +285,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$sth->closeCursor();
 		
 		if ($result === false && $needed) {
-			throw new NotFoundException($this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
 		return $result;
@@ -285,36 +294,40 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
-	 * @return object|null|string|bool
+	 * @phpstan-return T|null
+	 * @return object|null
 	 */
-	public function first(bool $needed = false)
+	public function first(bool $needed = false): ?object
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->take(1);
 		
 		$sth = $this->getPDOStatement();
 		$sth->setFetchMode(...$this->getFetchParameters());
-		$result = $sth->fetch();
+		/** @var mixed $object */
+		$object = $sth->fetch();
+		
 		$sth->closeCursor();
 		
-		if ($result === false && $needed) {
-			throw new NotFoundException($this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+		if ($object === false && $needed) {
+			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
-		return $result;
+		return $object ? null : $object;
 	}
 	
 	/**
 	 * Fetch object and move cursor
-	 * @return mixed
+	 * @phpstan-return T|null
+	 * @return object|null
 	 */
-	public function fetch()
+	public function fetch(): ?object
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$stmt = $this->getPDOStatement();
@@ -380,34 +393,15 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		if ($indexSelect && isset($this->modifiers[self::MODIFIER_SELECT][0]) && $this->modifiers[self::MODIFIER_SELECT][0] === '*') {
 			if (\count($this->modifiers[self::MODIFIER_FROM]) > 1) {
-				throw new InvalidStateException(InvalidStateException::INDEX_AND_STAR_WITHOUT_PREFIX, $this->index);
+				throw new InvalidStateException($this, InvalidStateException::INDEX_AND_STAR_WITHOUT_PREFIX, $this->index);
 			}
 			
 			$this->modifiers[self::MODIFIER_SELECT][0] = $this->getPrefix() . $this->modifiers[self::MODIFIER_SELECT][0];
 		}
 		
 		$sql = '';
-		$sql .= Helpers::createSqlClauseString(self::MODIFIER_SELECT, \array_merge($indexSelect, $this->modifiers[self::MODIFIER_SELECT]), ',', ' AS ');
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
-		
-		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
-			$type = $join[0];
-			$aliases = $join[1];
-			$condition = $join[2];
-			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
-		}
-		
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_GROUP_BY, $this->modifiers[self::MODIFIER_GROUP_BY], ',');
-		$sql .= $this->modifiers[self::MODIFIER_HAVING] === null ? '' : ' ' . self::MODIFIER_HAVING . ' ' . $this->modifiers[self::MODIFIER_HAVING];
-		$sql .=  Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
-		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
-		
-		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
-			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
-		}
-		
-		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		$sql .= $this->createSqlPrefix(true, true, true, $indexSelect);
+		$sql .= $this->createSqlSuffix(true, true);
 		
 		$sql = $this->replaceLiterals($sql, $this->vars);
 		
@@ -421,34 +415,18 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function getSqlDelete(): string
 	{
 		if ($this->modifiers[self::MODIFIER_GROUP_BY]) {
-			throw new InvalidStateException(InvalidStateException::GROUP_BY_NOT_ALLOWED);
+			throw new InvalidStateException($this, InvalidStateException::GROUP_BY_NOT_ALLOWED);
 		}
 		
 		if ($this->modifiers[self::MODIFIER_ORDER_BY]) {
-			throw new InvalidStateException(InvalidStateException::ORDER_BY_NOT_ALLOWED);
+			throw new InvalidStateException($this, InvalidStateException::ORDER_BY_NOT_ALLOWED);
 		}
 		
 		$alias = $this->getPrefix(false);
 		
 		$sql = "DELETE $alias ";
-		$sql .= Helpers::createSqlClauseString(self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
-		
-		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
-			$type = $join[0];
-			$aliases = $join[1];
-			$condition = $join[2];
-			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
-		}
-		
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
-		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
-		
-		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
-			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
-		}
-		
-		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		$sql .= $this->createSqlPrefix(false, true, true);
+		$sql .= $this->createSqlSuffix(false, false);
 		
 		$sql = $this->replaceLiterals($sql, $this->vars);
 		
@@ -464,7 +442,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function getSqlUpdate(array &$updates, bool $ignore = false): string
 	{
 		if ($this->modifiers[self::MODIFIER_GROUP_BY]) {
-			throw new InvalidStateException(InvalidStateException::GROUP_BY_NOT_ALLOWED);
+			throw new InvalidStateException($this, InvalidStateException::GROUP_BY_NOT_ALLOWED);
 		}
 		
 		$values = $binds = [];
@@ -479,25 +457,9 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		$sql = '';
 		$sql .= Helpers::createSqlClauseString("UPDATE$flags", $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
-		
-		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
-			$type = $join[0];
-			$aliases = $join[1];
-			$condition = $join[2];
-			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
-		}
-		
+		$sql .= $this->createSqlPrefix(false, false, true);
 		$sql .= Helpers::createSqlClauseString(' SET', $binds, ',', '=') . ' ';
-		
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
-		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
-		
-		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
-			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
-		}
-		
-		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		$sql .= $this->createSqlSuffix(false, true);
 		
 		$sql = $this->replaceLiterals($sql, $updates + $this->vars);
 		
@@ -525,7 +487,8 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	 * Convert collection to array of object or strings
 	 * @param string|null $column
 	 * @param bool $toArrayValues
-	 * @return string[]|object[]
+	 * @phpstan-return T[]|mixed[]
+	 * @return mixed[]|object[]
 	 */
 	public function toArray(?string $column = null, bool $toArrayValues = false): array
 	{
@@ -590,7 +553,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setIndex(?string $index): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->index = $index;
@@ -618,6 +581,11 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		$distinct = $unique ? 'DISTINCT ' : '';
 		
 		return (int) $this->func('COUNT', [$column ? "$distinct$column" : '*']);
+	}
+	
+	public function isEmpty(): bool
+	{
+		return (bool) $this->count();
 	}
 	
 	/**
@@ -686,7 +654,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setWhere(?string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		if ($expression === null) {
@@ -707,7 +675,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function where(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->processWhere($expression, $values, false, false);
@@ -724,7 +692,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setWhereNot(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->processWhere($expression, $values, true, true);
@@ -741,7 +709,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function whereNot(string $expression, $values = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->processWhere($expression, $values, true, false);
@@ -758,7 +726,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function from(array $from, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->addAlias($from, self::MODIFIER_FROM);
@@ -781,7 +749,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setFrom(array $from, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->removeVars(self::MODIFIER_FROM_FLAG);
@@ -808,7 +776,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setSelect(array $select, array $values = [], bool $keepIndex = false): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->removeVars(self::MODIFIER_SELECT_FLAG);
@@ -835,7 +803,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function select(array $select, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_SELECT] = \array_merge($this->modifiers[self::MODIFIER_SELECT], $select);
@@ -847,7 +815,6 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		return $this;
 	}
 	
-	
 	/**
 	 * Add LIMIT clause
 	 * @param int|null $number
@@ -856,7 +823,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function take(?int $number): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_LIMIT] = $number;
@@ -872,7 +839,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function skip(?int $number): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_OFFSET] = $number;
@@ -889,7 +856,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function page(int $page, int $onPage): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->skip(($page - 1) * $onPage);
@@ -907,7 +874,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setOrderBy(array $order, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_ORDER_BY] = $order;
@@ -929,7 +896,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function orderBy(array $order, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_ORDER_BY] = \array_merge($this->modifiers[self::MODIFIER_ORDER_BY], $order);
@@ -951,7 +918,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setGroupBy(array $groups, ?string $having = null, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_GROUP_BY] = $groups;
@@ -975,7 +942,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->modifiers[self::MODIFIER_GROUP_BY] = \array_merge($this->modifiers[self::MODIFIER_GROUP_BY], $groups);
@@ -997,7 +964,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setFullGroupBy(array $exceptColumns, ?string $having = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$groups = $this->modifiers[self::MODIFIER_SELECT];
@@ -1023,7 +990,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function setJoin(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		if (!$type) {
@@ -1056,7 +1023,7 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	public function join(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN): ICollection
 	{
 		if ($this->isLoaded()) {
-			throw new InvalidStateException(InvalidStateException::COLLECTION_ALREADY_LOADED);
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		if (!$type) {
@@ -1073,7 +1040,6 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		return $this;
 	}
-	
 	
 	/**
 	 * Specify data which should be serialized to JSON
@@ -1094,72 +1060,37 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	}
 	
 	/**
-	 * Get real SQL string
-	 * @return string
-	 */
-	public function __toString(): string
-	{
-		return '(' . $this->getSql() . ')';
-	}
-	
-	/**
 	 * Dump modifiers, sql, binders and state of collection
+	 * @param bool $return
+	 * @return string|null
 	 */
-	public function dump(): void
+	public function dump(bool $return = false): ?string
 	{
-		echo 'MODIFIERS:<br>';
-		\dump($this->modifiers);
-		echo 'SQL:<br>';
-		\dump($this->getSql());
-		echo 'BINDERS:<br>';
-		\dump($this->getVars());
-		echo 'STATE:<br>';
-		\dump('Get class: ' . $this->class);
-		\dump('Is loaded: ' . ($this->isLoaded() ? 'yes' : 'no'));
-		\dump('Internal index:' . ($this->index ?? 'none'));
-		\dump('Internal array count:' . ($this->items !== null ? \count($this->items) : 0));
-	}
-	
-	private function getPrefix(bool $dot = true): ?string
-	{
-		if (!$this->modifiers[self::MODIFIER_FROM]) {
+		$dump = '<br>';
+		$dump .= '<strong>' . $this->getSql() . '</strong>';
+		$dump .= '<hr>';
+		$dump .= '<strong>MODIFIERS:</strong> ';
+		$dump .= \json_encode($this->getModifiers(), \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= '<strong>BINDERS:</strong> ';
+		$dump .= \json_encode($this->getVars(), \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= '<strong>ALIASES:</strong> ';
+		$dump .= \json_encode($this->aliases, \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= 'Connection: ' . $this->getConnection()->getName() . '<br>';
+		$dump .= 'Get class: ' . $this->class . '<br>';
+		$dump .= 'Is loaded: ' . ($this->isLoaded() ? 'yes' : 'no') . '<br>';
+		$dump .= 'Internal index:' . ($this->index ?? 'none') . '<br>';
+		$dump .= 'Internal array count:' . ($this->items !== null ? \count($this->items) : 0) . '<br>';
+		
+		if (!$return) {
+			echo $dump;
+			
 			return null;
 		}
 		
-		$tableName = \reset($this->modifiers[self::MODIFIER_FROM]);
-		$alias = \key($this->modifiers[self::MODIFIER_FROM]);
-		$dot = $dot ? '.' : '';
-		
-		if ($alias === 0) {
-			return "$tableName$dot";
-		}
-		
-		return $alias ? "$alias$dot" : '';
-	}
-	
-	protected function init(): void
-	{
-		$this->setSelect($this->baseSelect, [], true);
-		
-		$this->modifiers[self::MODIFIER_FROM] = [];
-		
-		if ($this->baseFrom !== null) {
-			$this->setFrom($this->baseFrom);
-		}
-		
-		$this->modifiers[self::MODIFIER_JOIN] = [];
-		$this->modifiers[self::MODIFIER_WHERE] = [];
-		$this->modifiers[self::MODIFIER_GROUP_BY] = [];
-		$this->modifiers[self::MODIFIER_HAVING] = null;
-		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
-		$this->modifiers[self::MODIFIER_LIMIT] = null;
-		$this->modifiers[self::MODIFIER_OFFSET] = null;
-		
-		$this->binderCounter = 0;
-		$this->vars = [];
-		$this->varsFlags = [];
-		$this->affectedNumber = null;
-		$this->possibleValues  = [];
+		return $dump;
 	}
 	
 	/**
@@ -1181,49 +1112,6 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 	}
 	
 	/**
-	 * @param mixed[] $vars
-	 * @return mixed[]
-	 */
-	protected function parseVars(array $vars): array
-	{
-		foreach ($vars as $name => $value) {
-			if (\is_scalar($value) || \is_null($value)) {
-				$vars[$name] = \is_bool($value) ? (int) $value : $value;
-				
-				continue;
-			}
-			
-			if ($value instanceof Entity) {
-				$vars[$name] = (string)$value;
-				
-				continue;
-			}
-			
-			$type = \is_object($value) ? \get_class($value) : \gettype($value);
-			
-			throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$name of $type");
-		}
-		
-		return $vars;
-	}
-	
-	/**
-	 * @param string $sql
-	 * @param mixed[] $vars
-	 * @return string
-	 */
-	protected function replaceLiterals(string $sql, array $vars): string
-	{
-		foreach ($vars as $name => $value) {
-			if ($value instanceof Literal) {
-				$sql = \str_replace(":$name", (string) $value, $sql);
-			}
-		}
-		
-		return $sql;
-	}
-	
-	/**
 	 * Get PDO statement handle. Ff its not created, it will be
 	 * @return \PDOStatement
 	 */
@@ -1234,20 +1122,6 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		}
 		
 		return $this->sth;
-	}
-	
-	/**
-	 * @return mixed[]
-	 */
-	protected function getFetchParameters(): array
-	{
-		$mode = \PDO::FETCH_CLASS;
-		
-		if ($this->index !== null) {
-			$mode |= \PDO::FETCH_UNIQUE;
-		}
-		
-		return [$mode, $this->class, $this->classParameters];
 	}
 	
 	/**
@@ -1342,7 +1216,9 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		}
 		
 		if (!isset($this->items[$offset])) {
-			throw new NotFoundException($this->index ? [$this->index] : [$this->index => $offset], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+			$source = \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM];
+			
+			throw new NotFoundException($this, $this->index ? [$this->index] : [$this->index => $offset], $source);
 		}
 		
 		return $this->items[$offset];
@@ -1377,6 +1253,124 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		
 		unset($this->keys[\array_search($offset, $this->keys)]);
 		unset($this->items[$offset]);
+	}
+	
+	/**
+	 * @param mixed[] $vars
+	 * @return mixed[]
+	 */
+	protected function parseVars(array $vars): array
+	{
+		foreach ($vars as $name => $value) {
+			if (\is_scalar($value) || \is_null($value)) {
+				$vars[$name] = \is_bool($value) ? (int) $value : $value;
+				
+				continue;
+			}
+			
+			if ($value instanceof Entity) {
+				$vars[$name] = (string)$value;
+				
+				continue;
+			}
+			
+			$type = \is_object($value) ? \get_class($value) : \gettype($value);
+			
+			throw new InvalidStateException($this, InvalidStateException::INVALID_BINDER_VAR, "$name of $type");
+		}
+		
+		return $vars;
+	}
+	
+	/**
+	 * @param string $sql
+	 * @param mixed[] $vars
+	 * @return string
+	 */
+	protected function replaceLiterals(string $sql, array $vars): string
+	{
+		foreach ($vars as $name => $value) {
+			if ($value instanceof Literal) {
+				$sql = \str_replace(":$name", (string) $value, $sql);
+			}
+		}
+		
+		return $sql;
+	}
+	
+	/**
+	 * @return mixed[]
+	 */
+	protected function getFetchParameters(): array
+	{
+		$mode = \PDO::FETCH_CLASS;
+		
+		if ($this->index !== null) {
+			$mode |= \PDO::FETCH_UNIQUE;
+		}
+		
+		return [$mode, $this->class, $this->classParameters];
+	}
+	
+	protected function init(): void
+	{
+		$this->setSelect($this->baseSelect, [], true);
+		
+		$this->modifiers[self::MODIFIER_FROM] = [];
+		
+		if ($this->baseFrom !== null) {
+			$this->setFrom($this->baseFrom);
+		}
+		
+		$this->modifiers[self::MODIFIER_JOIN] = [];
+		$this->modifiers[self::MODIFIER_WHERE] = [];
+		$this->modifiers[self::MODIFIER_GROUP_BY] = [];
+		$this->modifiers[self::MODIFIER_HAVING] = null;
+		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
+		$this->modifiers[self::MODIFIER_LIMIT] = null;
+		$this->modifiers[self::MODIFIER_OFFSET] = null;
+		
+		$this->binderCounter = 0;
+		$this->vars = [];
+		$this->varsFlags = [];
+		$this->affectedNumber = null;
+		$this->possibleValues = [];
+	}
+	
+	/**
+	 * @param string $name
+	 * @param mixed $value
+	 * @param int $modifierFlag
+	 */
+	protected function bindVar(string $name, $value, int $modifierFlag): void
+	{
+		if (isset($this->vars[$name])) {
+			throw new AlreadyExistsException($this, AlreadyExistsException::BIND_VAR, $name);
+		}
+		
+		$this->vars[$name] = $value;
+		
+		if (isset($this->varsFlags[$name])) {
+			$this->varsFlags[$name] |= $modifierFlag;
+		} else {
+			$this->varsFlags[$name] = $modifierFlag;
+		}
+		
+		return;
+	}
+	
+	protected function removeVars(int $flagToRemove): void
+	{
+		foreach ($this->varsFlags as $var => $flag) {
+			$this->varsFlags[$var] = $flag & ~$flagToRemove;
+			
+			if ($this->varsFlags[$var] !== 0) {
+				continue;
+			}
+			
+			unset($this->varsFlags[$var]);
+			unset($this->vars[$var]);
+		}
 	}
 	
 	private function generateBinder(): string
@@ -1486,40 +1480,52 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		return;
 	}
 	
-	/**
-	 * @param string $name
-	 * @param mixed $value
-	 * @param int $modifierFlag
-	 */
-	protected function bindVar(string $name, $value, int $modifierFlag): void
+	private function createSqlPrefix(bool $select, bool $from, bool $join, array $indexSelect = []): string
 	{
-		if (isset($this->vars[$name])) {
-			throw new AlreadyExistsException(AlreadyExistsException::BIND_VAR, $name);
+		$sql = '';
+		
+		if ($select) {
+			$sql .= Helpers::createSqlClauseString(self::MODIFIER_SELECT, \array_merge($indexSelect, $this->modifiers[self::MODIFIER_SELECT]), ',', ' AS ');
 		}
 		
-		$this->vars[$name] = $value;
-		
-		if (isset($this->varsFlags[$name])) {
-			$this->varsFlags[$name] |= $modifierFlag;
-		} else {
-			$this->varsFlags[$name] = $modifierFlag;
+		if ($from) {
+			$sql .= Helpers::createSqlClauseString(($select ? ' ' : '') . self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
 		}
 		
-		return;
+		if ($join) {
+			foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
+				[$type, $aliases, $condition] = $join;
+				$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
+			}
+		}
+		
+		return $sql;
 	}
 	
-	protected function removeVars(int $flagToRemove): void
+	private function createSqlSuffix(bool $having, bool $orderBy): string
 	{
-		foreach ($this->varsFlags as $var => $flag) {
-			$this->varsFlags[$var] = $flag & ~$flagToRemove;
-			
-			if ($this->varsFlags[$var] !== 0) {
-				continue;
-			}
-			
-			unset($this->varsFlags[$var]);
-			unset($this->vars[$var]);
+		$sql = '';
+		
+		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
+	
+		if ($having) {
+			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_GROUP_BY, $this->modifiers[self::MODIFIER_GROUP_BY], ',');
+			$sql .= $this->modifiers[self::MODIFIER_HAVING] === null ? '' : ' ' . self::MODIFIER_HAVING . ' ' . $this->modifiers[self::MODIFIER_HAVING];
 		}
+		
+		if ($orderBy) {
+			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
+		}
+		
+		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
+		
+		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
+			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
+		}
+		
+		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		
+		return $sql;
 	}
 	
 	/**
@@ -1538,11 +1544,11 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 			}
 			
 			if (!Helpers::isValidIdentifier($alias)) {
-				throw new InvalidStateException(InvalidStateException::INVALID_IDENTIFIER, $alias);
+				throw new InvalidStateException($this, InvalidStateException::INVALID_IDENTIFIER, $alias);
 			}
 			
 			if (isset($this->aliases[$alias])) {
-				throw new AlreadyExistsException(AlreadyExistsException::ALIAS, $alias);
+				throw new AlreadyExistsException($this, AlreadyExistsException::ALIAS, $alias);
 			}
 			
 			$this->aliases[$alias] = $modifier;
@@ -1559,10 +1565,27 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		}
 	}
 	
+	private function getPrefix(bool $dot = true): ?string
+	{
+		if (!$this->modifiers[self::MODIFIER_FROM]) {
+			return null;
+		}
+		
+		$tableName = \reset($this->modifiers[self::MODIFIER_FROM]);
+		$alias = \key($this->modifiers[self::MODIFIER_FROM]);
+		$dot = $dot ? '.' : '';
+		
+		if ($alias === 0) {
+			return "$tableName$dot";
+		}
+		
+		return $alias ? "$alias$dot" : '';
+	}
+	
 	/**
 	 * @return string[]
 	 */
-	public function __sleep(): array
+	public function __sleep()
 	{
 		$this->clear();
 		
@@ -1570,5 +1593,14 @@ class Collection implements ICollection, \Iterator, \ArrayAccess, \JsonSerializa
 		unset($vars['connection'], $vars['sth']);
 		
 		return \array_keys($vars);
+	}
+	
+	/**
+	 * Get real SQL string
+	 * @return string
+	 */
+	public function __toString(): string
+	{
+		return '(' . $this->getSql() . ')';
 	}
 }

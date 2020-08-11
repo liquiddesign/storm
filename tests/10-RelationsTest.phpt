@@ -2,8 +2,10 @@
 
 namespace Tests;
 
+use DB\Industry;
 use DB\IndustryRepository;
 use DB\Sector;
+use DB\Stock;
 use DB\StockRepository;
 use Nette\DI\Container;
 use StORM\CollectionRelation;
@@ -28,8 +30,8 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$connection = $container->getByType(Connection::class);
 		
-		$stocks = $connection->getRepository(StockRepository::class);
-		
+		$stocks = $connection->getRepository(Stock::class);
+
 		/** @var \DB\Stock $stock */
 		$stock = $stocks->one('AAPL');
 		
@@ -83,8 +85,8 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$connection = $container->getByType(Connection::class);
 		$connection->setPrimaryKeyGenerator([Connection::class, 'generateUuid']);
 		
-		$stocks = $connection->getRepository(StockRepository::class);
-		$industries = $connection->getRepository(IndustryRepository::class);
+		$stocks = $connection->getRepository(Stock::class);
+		$industries = $connection->getRepository(Industry::class);
 		
 		/** @var \DB\Stock $stock */
 		$stock = $stocks->one('MS');
@@ -144,7 +146,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testAutojoin(Container $container): void
 	{
 		$connection = $container->getByType(Connection::class);
-		$stocks = $connection->getRepository(StockRepository::class);
+		$stocks = $connection->getRepository(Stock::class);
 		$collection = $stocks->many()->setWhere("industry.type.sector.uuid = :uuid", ['uuid' => 'energy']);
 		$collection->load();
 		Assert::count(3, $collection->getModifiers()['JOIN']);

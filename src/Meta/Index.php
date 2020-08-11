@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-class Index extends ClassAnnotation
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
+class Index extends AnnotationClass
 {
-	private const ANNOTATION = 'index';
-	
 	/**
 	 * Column names in array which index is on
 	 * @var string[]
@@ -56,36 +57,17 @@ class Index extends ClassAnnotation
 		$this->columns[] = $column;
 	}
 	
-	/**
-	 * @param mixed[] $json
-	 * @return void
-	 */
-	public function loadFromArray(array $json): void
+	public function getSchema(): Schema
 	{
-		if (isset($json['name'])) {
-			$this->name = (string) $json['name'];
-		}
-		
-		if (isset($json['unique'])) {
-			$this->unique = (bool) $json['unique'];
-		}
-		
-		if (isset($json['columns'])) {
-			$this->columns = (array) $json['columns'];
-		}
-		
-		return;
-	}
-	
-	public function validate(): void
-	{
-		$this->checkRequired(['name', 'columns']);
-		
-		return;
+		return Expect::structure([
+			'name' => Expect::string()->required(),
+			'columns' => Expect::listOf('string')->min(1),
+			'unique' => Expect::bool(false),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'index';
 	}
 }

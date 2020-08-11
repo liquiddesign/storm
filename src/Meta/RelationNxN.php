@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
 class RelationNxN extends Relation
 {
 	public const TABLE_NAME_GLUE = '_nxn_';
-	
-	private const ANNOTATION = 'relationnxn';
 	
 	/**
 	 * Table which is used to join
@@ -102,16 +103,24 @@ class RelationNxN extends Relation
 		return;
 	}
 	
-	public function validate(): void
+	public function getSchema(): Schema
 	{
-		$this->checkRequired(['sourceViaKey', 'targetViaKey', 'via']);
-		parent::validate();
-		
-		return;
+		return Expect::structure([
+			'name' => Expect::string(null),
+			'source' => Expect::string(null),
+			'target' => Expect::string(null),
+			'sourceKey' => Expect::string(null),
+			'targetKey' => Expect::string(null),
+			'via' => Expect::string(null),
+			'sourceViaKey' => Expect::string(null),
+			'targetViaKey' => Expect::string(null),
+			'sourceKeyType' => Expect::string(null),
+			'targetViaKeyType' => Expect::string(null),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'relationnxn';
 	}
 }

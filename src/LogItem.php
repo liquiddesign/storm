@@ -14,12 +14,12 @@ class LogItem
 	/**
 	 * @var mixed[]
 	 */
-	private $vars = [];
+	private $vars;
 	
 	/**
 	 * @var string
 	 */
-	private $sql = '';
+	private $sql;
 	
 	/**
 	 * @var float

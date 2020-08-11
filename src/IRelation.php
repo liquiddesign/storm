@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
-interface ICollectionRelation extends ICollectionEntity
+interface IRelation
 {
 	/**
 	 * Relate records by primary key lists and return affected rows

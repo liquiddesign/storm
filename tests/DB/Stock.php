@@ -46,13 +46,13 @@ class Stock extends Entity // @codingStandardsIgnoreLine
 	
 	/**
 	 * @relation
-	 * @var \DB\Alert[]|\StORM\ICollectionRelation
+	 * @var \DB\Alert[]|\StORM\IRelation
 	 */
 	public $alerts;
 	
 	/**
 	 * @relationNxN
-	 * @var \DB\Tag[]|\StORM\ICollectionRelation
+	 * @var \DB\Tag[]|\StORM\IRelation
 	 */
 	public $tags;
 	

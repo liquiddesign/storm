@@ -102,13 +102,3 @@ foreach ($users as $user) {
 }
 ```
 
-TODO:
-- go to PHP 7.4 for full covariance https://www.php.net/manual/en/language.oop5.variance.php
-- repository input class for better inheritance
-- support repository class to add to support generic templates
-- phpstan template generic types
-- phpstan phpstorm plugin
-- unique can be null in index, nullableKey in constraint
-- monozst dat tridu modelu do repozitare
-
-   

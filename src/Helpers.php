@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StORM;
 
 use StORM\Exception\InvalidStateException;
+use StORM\Exception\NotExistsException;
 
 /**
  * Helpers class
@@ -53,11 +54,11 @@ class Helpers
 			return [];
 		}
 		
-		if (\preg_match('#^[ \t\*]*+([^\s@].*)#mi', $content[1], $matches)) {
+		if (\preg_match('#^[ \t*]*+([^\s@].*)#mi', $content[1], $matches)) {
 			$options[0] = \trim($matches[1]);
 		}
 		
-		\preg_match_all('#^[ \t\*]*@(\w+)([^\w\r\n].*)?#mi', $content[1], $matches, \PREG_SET_ORDER);
+		\preg_match_all('#^[ \t*]*@(\w+)([^\w\r\n].*)?#mi', $content[1], $matches, \PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$ref = &$options[\strtolower($match[1])];
@@ -159,15 +160,16 @@ class Helpers
 	 */
 	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations): void
 	{
-		$column = \str_replace('.', '_', $property); // cannot bind "."
+		// cannot bind character "."
+		$column = \str_replace('.', '_', $property);
 		
 		if (\is_array($rawValue)) {
-			foreach ($rawValue as $language => $value) {
-				if (!\in_array($language, $mutations)) {
-					throw new \InvalidArgumentException("Language $language is not in available languages");
+			foreach ($rawValue as $mutation => $value) {
+				if (!isset($mutations[$mutation])) {
+					throw new \InvalidArgumentException("Language $mutation is not in available languages");
 				}
 				
-				$realProperty = $column . Connection::MUTATION_SEPARATOR . $language;
+				$realProperty = $column . $mutations[$mutation] ?? '';
 				$values["$varPrefix$realProperty$varPostfix"] = \is_bool($value) ? (int) $value : $value;
 				$binds[":$varPrefix$realProperty$varPostfix"] = $realProperty;
 			}
@@ -197,6 +199,34 @@ class Helpers
 		
 		$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
 		
-		throw new InvalidStateException(InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
+		throw new InvalidStateException(null, InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
+	}
+	
+	/**
+	 * @param mixed[] $values
+	 * @param string[] $columns
+	 * @param bool $silent
+	 * @return mixed[]
+	 */
+	public static function filterInputArray(array $values, array $columns, bool $silent = true): array
+	{
+		$mess = [];
+		
+		foreach ($values as $name => $value) {
+			if (\in_array($name, $columns)) {
+				continue;
+			}
+			
+			$mess[$name] = $value;
+			unset($values[$name]);
+		}
+		
+		if (!$silent && $mess) {
+			foreach (\array_keys($mess) as $property) {
+				throw new NotExistsException(null, NotExistsException::PROPERTY, $property, 'array', $columns);
+			}
+		}
+		
+		return $values;
 	}
 }

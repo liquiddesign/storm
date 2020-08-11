@@ -9,7 +9,11 @@ use StORM\Exception\NotExistsException;
 use StORM\Meta\Relation;
 use StORM\Meta\RelationNxN;
 
-class CollectionEntity extends Collection implements ICollectionEntity, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+/**
+ * Class Collection
+ * @template T of \StORM\Entity
+ */
+class CollectionEntity extends Collection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
 	 * @var \StORM\Repository|null
@@ -24,22 +28,22 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 	/**
 	 * @var int
 	 */
-	private $skipSelectLength = 0;
+	private $skipSelectLength;
 	
 	/**
 	 * @var bool
 	 */
-	private $passParentToEntities;
+	private $isOptimilization;
 	
 	/**
 	 * Collection constructor.
 	 * @param \StORM\Repository $repository
-	 * @param bool $passParentToEntities
+	 * @param bool $isOptimization
 	 */
-	public function __construct(Repository $repository, bool $passParentToEntities = true)
+	public function __construct(Repository $repository, bool $isOptimization = true)
 	{
 		$this->repository = $repository;
-		$this->passParentToEntities = $passParentToEntities;
+		$this->isOptimilization = $isOptimization;
 		
 		$classParameters = $this->createClassParameters();
 		$index = $repository->getStructure()->getPK()->getName();
@@ -49,51 +53,6 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		
 		parent::__construct($this->repository->getConnection(), $repository->getDefaultFrom(), $repository->getDefaultSelect(), $repository->getEntityClass(), $classParameters, $index);
 	}
-	
-	/**
-	 * @return mixed[]
-	 */
-	private function createClassParameters(): array
-	{
-		$repository = $this->repository;
-		$connection = $this->repository->getConnection();
-		$hasMutations = $repository->getStructure()->hasMutations();
-		$classParameters = [[], $this->getRepository(), $hasMutations ? $connection->getMutation() : null, $hasMutations ? $connection->getAvailableMutations() : []];
-		
-		if ($this->passParentToEntities) {
-			$classParameters[] = $this;
-		}
-		
-		return $classParameters;
-	}
-	
-	/**
-	 * Call user filters on repository
-	 * @param mixed[][] $filters
-	 * @param bool $silent
-	 * @return \StORM\ICollectionEntity
-	 */
-	public function filter(array $filters, bool $silent = false): ICollectionEntity
-	{
-		$collection = $this;
-		
-		foreach ($filters as $name => $value) {
-			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
-			
-			if (\method_exists($this->getRepository(), $realName)) {
-				\call_user_func_array([$this->getRepository(), $realName], [$value, $collection]);
-				
-				continue;
-			}
-			
-			if (!$silent) {
-				throw new NotExistsException(NotExistsException::FILTER, $realName, $this->class, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->getRepository())));
-			}
-		}
-		
-		return $collection;
-	}
-	
 	
 	/**
 	 * Get collection repository
@@ -120,6 +79,11 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		return $this->getRepository()->getConnection();
 	}
 	
+	public function isOptimization()
+	{
+		return $this->isOptimilization;
+	}
+	
 	public function setConnection(Connection $connection): void
 	{
 		unset($connection);
@@ -140,7 +104,7 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
-			$targetRepository = $this->getConnection()->getRepositoryByEntityClass($relation->getTarget());
+			$targetRepository = $this->getConnection()->getRepository($relation->getTarget());
 			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
 			
@@ -152,94 +116,6 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		}
 		
 		return $this->cache[$cacheId][$pk] ?? null;
-	}
-	
-	private function parseExpression(string &$expression): void
-	{
-		$regexp = self::REGEXP_AUTOJOIN;
-		
-		$matches = [];
-		\preg_match_all($regexp, $expression, $matches, \PREG_OFFSET_CAPTURE);
-		
-		foreach ($matches[0] as $found) {
-			$aliases = $found[0];
-			$offset = $found[1];
-			$aliases = \substr($aliases, 0, -1);
-			
-			// if prefix exists i will avoid it
-			if (isset($this->aliases[$aliases])) {
-				continue;
-			}
-			
-			$relationClass = $this->class;
-			$aliasesList = \explode('.', $aliases);
-			
-			if (\count($aliasesList) > 1) {
-				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset, 0);
-				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset + \strlen($aliases) + 1, 0);
-			}
-			
-			$aliasPrefix = '';
-			
-			foreach ($aliasesList as $alias) {
-				if (!isset($this->aliases[$alias])) {
-					$relation = $this->getRepository()->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
-					
-					if (!$relation) {
-						throw new NotExistsException(NotExistsException::RELATION, $alias, $relationClass, \array_keys($this->aliases));
-					}
-					
-					$realAlias = $aliasPrefix . $alias;
-					$realAliasQuoted = $this->getConnection()->quoteIdentifier($realAlias);
-					
-					$target = $relation->getTarget();
-					$source = $relation->getSource();
-					
-					$sourceTable = $this->getRepository()->getSchemaManager()->getStructure($source)->getTable()->getName();
-					$sourceAlias = $this->tableAliases[$sourceTable] ?? $sourceTable;
-					$sourceAliasQuoted = $this->getConnection()->quoteIdentifier($sourceAlias);
-					
-					$targetTable = $this->getRepository()->getSchemaManager()->getStructure($target)->getTable()->getName();
-					$sourceKey = $relation->getSourceKey();
-					$targetKey = $relation->getTargetKey();
-					
-					if ($relation instanceof RelationNxN) {
-						$via = $relation->getVia();
-						$viaTargetKey = $relation->getTargetViaKey();
-						$viaSourceKey = $relation->getSourceViaKey();
-						$this->join([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey");
-						$this->join([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey");
-					} else {
-						$this->join([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey");
-					}
-					
-					$relationClass = $target;
-					$aliasPrefix = "$realAlias.";
-				}
-			}
-		}
-	}
-	
-	private function autojoin(): void
-	{
-		$modifiersToParse = [self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY, self::MODIFIER_WHERE];
-		$i = 0;
-		
-		foreach (\array_keys($this->modifiers[self::MODIFIER_SELECT]) as $k) {
-			if ($i++ < $this->skipSelectLength) {
-				continue;
-			}
-			
-			$this->parseExpression($this->modifiers[self::MODIFIER_SELECT][$k]);
-		}
-		
-		foreach ($modifiersToParse as $modifierName) {
-			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
-				$this->parseExpression($this->modifiers[$modifierName][$k]);
-			}
-		}
-		
-		return;
 	}
 	
 	/**
@@ -305,35 +181,110 @@ class CollectionEntity extends Collection implements ICollectionEntity, \Iterato
 		return $this->possibleValues[$column] ?? $this->possibleValues[Repository::DEFAULT_ALIAS . '.' . $column] ?? [];
 	}
 	
-	/**
-	 * Update all record equals condition and return number of affected rows
-	 * @override adding filter by columns
-	 * @param mixed[]|object $values
-	 * @param bool $ignore
-	 * @param bool|null $filterByColumns
-	 * @return int
-	 */
-	public function update($values, bool $ignore = false, ?bool $filterByColumns = null): int
+	private function autojoin(): void
 	{
-		if (\is_object($values)) {
-			$values = Helpers::toArrayRecursive($values);
-		}
+		$modifiersToParse = [self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY, self::MODIFIER_WHERE];
+		$i = 0;
 		
-		if (!\is_array($values)) {
-			$type = \gettype($values);
+		foreach (\array_keys($this->modifiers[self::MODIFIER_SELECT]) as $k) {
+			if ($i++ < $this->skipSelectLength) {
+				continue;
+			}
 			
-			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+			$this->parseExpression($this->modifiers[self::MODIFIER_SELECT][$k]);
 		}
 		
-		$columns = $this->getRepository()->filterByColumns($values, true, $filterByColumns);
+		foreach ($modifiersToParse as $modifierName) {
+			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
+				$this->parseExpression($this->modifiers[$modifierName][$k]);
+			}
+		}
 		
-		return parent::update($columns, $ignore);
+		return;
+	}
+	
+	/**
+	 * @return mixed[]
+	 */
+	private function createClassParameters(): array
+	{
+		$repository = $this->repository;
+		$connection = $this->repository->getConnection();
+		$hasMutations = $repository->getStructure()->hasMutations();
+		
+		return [[], $this, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $connection->getMutation() : null];
+	}
+	
+	private function parseExpression(string &$expression): void
+	{
+		$regexp = self::REGEXP_AUTOJOIN;
+		
+		$matches = [];
+		\preg_match_all($regexp, $expression, $matches, \PREG_OFFSET_CAPTURE);
+		
+		foreach ($matches[0] as $found) {
+			$aliases = $found[0];
+			$offset = $found[1];
+			$aliases = \substr($aliases, 0, -1);
+			
+			// if prefix exists i will avoid it
+			if (isset($this->aliases[$aliases])) {
+				continue;
+			}
+			
+			$relationClass = $this->class;
+			$aliasesList = \explode('.', $aliases);
+			
+			if (\count($aliasesList) > 1) {
+				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset, 0);
+				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset + \strlen($aliases) + 1, 0);
+			}
+			
+			$aliasPrefix = '';
+			
+			foreach ($aliasesList as $alias) {
+				if (!isset($this->aliases[$alias])) {
+					$relation = $this->getRepository()->getSchemaManager()->getStructure($relationClass)->getRelation($alias);
+					
+					if (!$relation) {
+						throw new NotExistsException($this, NotExistsException::RELATION, $alias, $relationClass, \array_keys($this->aliases));
+					}
+					
+					$realAlias = $aliasPrefix . $alias;
+					$realAliasQuoted = $this->getConnection()->quoteIdentifier($realAlias);
+					
+					$target = $relation->getTarget();
+					$source = $relation->getSource();
+					
+					$sourceTable = $this->getRepository()->getSchemaManager()->getStructure($source)->getTable()->getName();
+					$sourceAlias = $this->tableAliases[$sourceTable] ?? $sourceTable;
+					$sourceAliasQuoted = $this->getConnection()->quoteIdentifier($sourceAlias);
+					
+					$targetTable = $this->getRepository()->getSchemaManager()->getStructure($target)->getTable()->getName();
+					$sourceKey = $relation->getSourceKey();
+					$targetKey = $relation->getTargetKey();
+					
+					if ($relation instanceof RelationNxN) {
+						$via = $relation->getVia();
+						$viaTargetKey = $relation->getTargetViaKey();
+						$viaSourceKey = $relation->getSourceViaKey();
+						$this->join([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey");
+						$this->join([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey");
+					} else {
+						$this->join([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey");
+					}
+					
+					$relationClass = $target;
+					$aliasPrefix = "$realAlias.";
+				}
+			}
+		}
 	}
 	
 	/**
 	 * @return string[]
 	 */
-	public function __sleep(): array
+	public function __sleep()
 	{
 		$this->clear();
 		$this->setClassParameters([]);

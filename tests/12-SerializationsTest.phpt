@@ -2,10 +2,12 @@
 
 namespace Tests;
 
+use DB\Stock;
 use DB\StockRepository;
 use Nette\DI\Container;
 use StORM\Connection;
 use StORM\Exception\GeneralException;
+use StORM\Exception\InvalidStateException;
 use StORM\SchemaManager;
 use Tester\Assert;
 
@@ -71,7 +73,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getConnection();
-		}, GeneralException::class);
+		}, InvalidStateException::class);
 		
 		Assert::notEqual($rowsDeserialized, $rows);
 		$rowsDeserialized->setConnection($connection);
@@ -84,7 +86,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getConnection();
-		}, GeneralException::class);
+		}, InvalidStateException::class);
 		
 		Assert::notEqual($rowsDeserialized, $rows);
 		$rowsDeserialized->setConnection($connection);
@@ -105,7 +107,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testRepository(Container $container)
 	{
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
+		$stocks = $storm->getRepository(Stock::class);
 		
 		Assert::exception(static function () use ($stocks): void {
 			serialize($stocks);
@@ -120,7 +122,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testCollectionEntity(Container $container)
 	{
 		$connection = $container->getByType(Connection::class);
-		$stocks = $connection->getRepository(StockRepository::class);
+		$stocks = $connection->getRepository(Stock::class);
 		
 		// unloaded
 		$rows = $stocks->many()->where('uuid', ['AADR'])->orderBy(['name' => 'ASC'])->take(1);
@@ -169,19 +171,19 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testEntity(Container $container)
 	{
 		$connection = $container->getByType(Connection::class);
-		$stocks = $connection->getRepository(StockRepository::class);
+		$stocks = $connection->getRepository(Stock::class);
 		
 		$stock = $stocks->one('AAPL');
+		$parent = $stock->getParent();
 		$stockDeserialized = \unserialize(\serialize(clone $stock));
 		
 		Assert::exception(static function () use ($stockDeserialized): void {
-			$stockDeserialized->getRepository();
+			$stockDeserialized->getParent();
 		}, GeneralException::class);
 		
 		Assert::notEqual($stockDeserialized, $stock);
 		
-		$stockDeserialized->setRepository($stocks);
-		$stock->removeParent();
+		$stockDeserialized->setParent($parent);
 		
 		Assert::equal($stockDeserialized, $stock);
 	}

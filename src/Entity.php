@@ -9,8 +9,9 @@ use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
 use StORM\Meta\Relation;
+use StORM\Meta\Structure;
 
-abstract class Entity implements \JsonSerializable
+abstract class Entity implements \JsonSerializable, IDumper
 {
 	/**
 	 * @var mixed[]
@@ -28,14 +29,9 @@ abstract class Entity implements \JsonSerializable
 	protected $relations = [];
 	
 	/**
-	 * @var \StORM\CollectionEntity|null
+	 * @var \StORM\IEntityParent|null
 	 */
-	protected $parentCollection;
-	
-	/**
-	 * @var \StORM\Repository|null
-	 */
-	protected $repository;
+	protected $parent;
 	
 	/**
 	 * @var string
@@ -48,33 +44,24 @@ abstract class Entity implements \JsonSerializable
 	protected $availableMutations;
 	
 	/**
-	 * @var int|null
-	 */
-	protected $affectedNumber;
-	
-	/**
 	 * Entity constructor.
 	 * @param mixed[] $vars
-	 * @param \StORM\Repository|null $repository
-	 * @param string|null $mutation
+	 * @param \StORM\IEntityParent|null $parent
 	 * @param string[] $mutations
-	 * @param \StORM\CollectionEntity|null $parent
-	 * @param int|null $affectedNumber
+	 * @param string|null $mutation
 	 */
-	public function __construct(array $vars, ?Repository $repository = null, ?string $mutation = null, array $mutations = [], ?CollectionEntity $parent = null, ?int $affectedNumber = null)
+	public function __construct(array $vars, ?IEntityParent $parent = null, array $mutations = [], ?string $mutation = null)
 	{
 		foreach ($vars as $name => $value) {
 			$this->$name = $value;
 		}
 	
-		if ($repository) {
-			$this->setRepository($repository);
+		if ($parent) {
+			$this->setParent($parent);
 		}
 		
 		$this->activeMutation = $mutation;
 		$this->availableMutations = $mutations;
-		$this->parentCollection = $parent;
-		$this->affectedNumber = $affectedNumber;
 	}
 	
 	/**
@@ -83,26 +70,25 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function removeParent(): void
 	{
-		$this->parentCollection = null;
-		$this->affectedNumber = null;
+		$this->parent = null;
 		
 		return;
 	}
 	
-	public function getRepository(): Repository
+	public function getParent(): IEntityParent
 	{
-		if (!$this->repository) {
-			throw new GeneralException('Repository is not set. Call setRepository().');
+		if (!$this->parent) {
+			throw new GeneralException('Parent is not set. Call setParent().');
 		}
 		
-		return $this->repository;
+		return $this->parent;
 	}
 	
-	public function setRepository(Repository $repository): void
+	public function setParent(IEntityParent $parent): void
 	{
-		$this->repository = $repository;
+		$this->parent = $parent;
 		
-		foreach ($repository->getStructure()->getRelations() as $name => $relation) {
+		foreach ($parent->getRepository()->getStructure()->getRelations() as $name => $relation) {
 			if ($relation->isKeyHolder() && !\array_key_exists($name, $this->foreignKeys)) {
 				$this->foreignKeys[$name] = $this->$name ?? null;
 			}
@@ -111,18 +97,18 @@ abstract class Entity implements \JsonSerializable
 		}
 	}
 	
-	public function getAffectedNumber(): ?int
+	public function isStored(): bool
 	{
-		return $this->affectedNumber;
+		return $this->parent instanceof ICollection;
 	}
 	
 	/**
 	 * Load from array and filter mess in array by column names by default
 	 * @param mixed[]|object $values
-	 * @param bool|null $filterByColumns
+	 * @param bool $silentFilter
 	 * @param bool $includePrimaryKey
 	 */
-	public function loadFromArray($values, ?bool $filterByColumns = null, bool $includePrimaryKey = true): void
+	public function loadFromArray($values, bool $silentFilter = true, bool $includePrimaryKey = true): void
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -134,9 +120,7 @@ abstract class Entity implements \JsonSerializable
 			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
 		}
 		
-		if ($filterByColumns) {
-			$values = $this->getRepository()->filterByColumns($values, $includePrimaryKey, $filterByColumns);
-		}
+		$values = Helpers::filterInputArray($values, \array_keys($this->getStructure()->getColumns($includePrimaryKey)), $silentFilter);
 		
 		foreach ($values as $name => $value) {
 			$this->$name = $value;
@@ -151,28 +135,28 @@ abstract class Entity implements \JsonSerializable
 	 */
 	public function loadFromEntity(Entity $object): void
 	{
-		$array = $object->toArray();
-		$vars = $this->getRepository()->filterByColumns($array, false);
-		
-		foreach ($vars as $name => $value) {
-			$this->$name = $value;
-		}
+		$this->loadFromArray($object->toArray(), true, false);
 		
 		return;
 	}
 	
-	private function getPKName(bool $realColumn = false): string
-	{
-		return $realColumn ? $this->getRepository()->getStructure()->getPK()->getName() : $this->getRepository()->getStructure()->getPK()->getPropertyName();
-	}
-	
 	/**
-	 * Get primary key value
-	 * @return string
+	 * Get primary key value by parent structure, if not set return first element
+	 * @return string|int
 	 */
-	public function getPK(): string
+	public function getPK()
 	{
-		$pkName = $this->getPKName();
+		if (!$this->parent) {
+			$firstElement = \reset($this->properties);
+			
+			if (!$firstElement) {
+				throw new InvalidStateException($this, InvalidStateException::PK_IS_NOT_SET);
+			}
+			
+			return $firstElement;
+		}
+		
+		$pkName = $this->getStructure()->getPK()->getPropertyName();
 		
 		if (isset($this->$pkName)) {
 			return $this->$pkName;
@@ -182,92 +166,7 @@ abstract class Entity implements \JsonSerializable
 			return $this->properties[$pkName];
 		}
 		
-		throw new InvalidStateException(InvalidStateException::PK_IS_NOT_SET, $pkName);
-	}
-	
-	/**
-	 * Convert to string = return primary key value
-	 * @return string
-	 */
-	public function __toString(): string
-	{
-		try {
-			return $this->getPK();
-		} catch (InvalidStateException $x) {
-			return '';
-		}
-	}
-	
-	/**
-	 * Get relation from properities
-	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\Entity
-	 */
-	protected function getRelationFromProperties(Relation $relation): Entity
-	{
-		$relatedClass = $relation->getTarget();
-		$name = $relation->getName();
-		$length = \strlen($name) + \strlen(Repository::RELATION_SEPARATOR);
-		$data = [];
-		
-		foreach ($this->properties as $property => $value) {
-			if (\strpos($property, $name . Repository::RELATION_SEPARATOR) === false) {
-				continue;
-			}
-			
-			$data[\substr($property, $length)] = $value;
-		}
-		
-		$repository = $this->getRepository()->getConnection()->getRepositoryByEntityClass($relatedClass);
-		
-		return new $relatedClass($data, $repository);
-	}
-	
-	/**
-	 * Get relation from relation
-	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\CollectionRelation|\StORM\Entity|null
-	 */
-	protected function getRelation(Relation $relation)
-	{
-		if ($relation->isKeyHolder()) {
-			$name = $relation->getName();
-			
-			if (!isset($this->foreignKeys[$name])) {
-				return null;
-			}
-			
-			if ($this->parentCollection && $this->parentCollection->isLoaded()) {
-				$object = $this->parentCollection->getRelatedObject($relation, $this->foreignKeys[$name]);
-				
-				if ($object === null) {
-					throw new NotFoundException([$name => $this->foreignKeys[$name]], $relation->getTarget());
-				}
-				
-				return $object;
-			}
-			
-			return $this->getRepository()->getConnection()->getRepositoryByEntityClass($relation->getTarget())->one($this->foreignKeys[$name], true);
-		}
-		
-		return new CollectionRelation($this->getRepository(), $relation, $this->getPK());
-	}
-	
-	/**
-	 * Set property
-	 * @param string $name
-	 * @param mixed $value
-	 * @return void
-	 */
-	public function __set(string $name, $value): void
-	{
-		if (\array_key_exists($name, $this->foreignKeys)) {
-			$this->foreignKeys[$name] = $value === null ? null : (string) $value;
-		} else {
-			$this->properties[$name] = $value;
-		}
-		
-		return;
+		throw new InvalidStateException($this, InvalidStateException::PK_IS_NOT_SET, $pkName);
 	}
 	
 	/**
@@ -287,19 +186,19 @@ abstract class Entity implements \JsonSerializable
 		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->activeMutation)) {
 			$this->$property = $value;
 			
-			if (\array_key_exists($property . Connection::MUTATION_SEPARATOR . $this->activeMutation, $this->properties)) {
-				$this->properties[$property . Connection::MUTATION_SEPARATOR . $this->activeMutation] = $value;
+			if (\array_key_exists($property . $this->getMutationSuffix(), $this->properties)) {
+				$this->properties[$property . $this->getMutationSuffix()] = $value;
 			}
 			
 			return;
 		}
 		
 		if ($mutation && $this->activeMutation) {
-			if (!\in_array($mutation, $this->availableMutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
+			if (!isset($this->availableMutations[$mutation])) {
+				throw new NotExistsException($this, NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
 			}
 			
-			$property .= Connection::MUTATION_SEPARATOR . $mutation;
+			$property .= $this->getMutationSuffix($mutation);
 		}
 		
 		$this->properties[$property] = $value;
@@ -326,20 +225,227 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		if ($mutation && $this->activeMutation) {
-			if (!\in_array($mutation, $this->availableMutations)) {
-				throw new NotExistsException(NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
+			if (!isset($this->availableMutations[$mutation])) {
+				throw new NotExistsException($this, NotExistsException::MUTATION, $mutation, null, $this->availableMutations);
 			}
 			
-			$property .= Connection::MUTATION_SEPARATOR . $mutation;
+			$property .= $this->getMutationSuffix($mutation);
 		}
 		
 		if (!\array_key_exists($property, $this->properties)) {
-			$keys = \array_keys($this->foreignKeys) + \array_keys($vars) + \array_keys($vars) + \array_keys($this->properties);
-			
-			throw new NotExistsException(NotExistsException::VALUE, $property, static::class, $keys);
+			throw new NotExistsException($this, NotExistsException::VALUE, $property, static::class, $this->getHintProperties());
 		}
 		
 		return $this->properties[$property];
+	}
+	
+	/**
+	 * Update entity object
+	 * @param mixed[]|mixed[][]|object $values
+	 * @param bool $silentFilter
+	 * @param bool $includePrimaryKey
+	 * @return int
+	 */
+	public function update($values, bool $silentFilter = true, bool $includePrimaryKey = true): int
+	{
+		$this->loadFromArray($values, $silentFilter, $includePrimaryKey);
+		
+		$values = $this->getParent()->getRepository()->propertiesToColumns($values);
+		
+		return $this->getParent()->getRepository()->find($this)->update($values, false);
+	}
+	
+	/**
+	 * Update all properties and if $propertiesToUpdate is not null update certains columns
+	 * @param string[]|null $propertiesToUpdate
+	 * @return int
+	 */
+	public function updateAll(?array $propertiesToUpdate = null): int
+	{
+		$vars = $this->getVars(false);
+		
+		if ($propertiesToUpdate !== null) {
+			$vars = \array_intersect_key($vars, \array_flip($propertiesToUpdate));
+		}
+		
+		$vars = $this->getParent()->getRepository()->propertiesToColumns($vars);
+		
+		return $this->getParent()->getRepository()->find($this)->update($vars, false);
+	}
+	
+	/**
+	 * Delete coresponding row from database and return number affected affected rows
+	 * @return int
+	 */
+	public function delete(): int
+	{
+		return $this->getParent()->getRepository()->find($this)->delete();
+	}
+	
+	/**
+	 * Convert entity to array. You can name relation to load. Collection are converted to array. If $expandRelations is set to null, all relation is loaded.
+	 * @param string[] $relations
+	 * @param bool $groupLocales
+	 * @param bool $includeNonColumns
+	 * @return mixed[]
+	 */
+	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false): array
+	{
+		$array = [$this->getStructure()->getPK()->getPropertyName() => $this->getPK()] + $this->getVars($includeNonColumns);
+		
+		if ($this->activeMutation && $groupLocales) {
+			foreach ($this->getStructure()->getColumns() as $name => $column) {
+				if ($column->hasMutations()) {
+					$array[$name] = [];
+					
+					foreach ($this->availableMutations as $mutation => $suffix) {
+						$array[$name][$mutation] = $array[$name . $suffix] ?? null;
+						unset($array[$name . $suffix]);
+					}
+				}
+			}
+		}
+		
+		foreach ($relations as $relationName) {
+			$value = $this->getRelation($this->getStructure()->getRelation($relationName));
+			$array[$relationName] = $value instanceof CollectionRelation ? \array_keys($value->toArray()) : (string)$value;
+		}
+		
+		return $array;
+	}
+	
+	/**
+	 * Convert all properties to array. All relations are loaded. Objects are converted to primary keys and collections to array of primary keys
+	 * @return mixed[]
+	 */
+	public function jsonSerialize(): array
+	{
+		return $this->toArray(\array_keys($this->getStructure()->getRelations()), true, true);
+	}
+	
+	/**
+	 * Dump entity info
+	 * @param bool $return
+	 * @return string|null
+	 */
+	public function dump(bool $return = false): ?string
+	{
+		$dump = '<br>';
+		$dump .= '<strong>PROPERTIES:</strong> ';
+		$dump .= \json_encode($this->properties, \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= '<strong>FOREIGN KEYS:</strong> ';
+		$dump .= \json_encode($this->foreignKeys, \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= '<strong>RELATIONS:</strong> ';
+		$dump .= \json_encode($this->relations, \JSON_PRETTY_PRINT);
+		$dump .= '<hr>';
+		$dump .= 'Parent: ' . ($this->parent ? \get_class($this->parent) : 'NULL') . '<br>';
+		$dump .= 'Active mutation: ' . $this->activeMutation . '<br>';
+		$dump .= 'Mutations: ' . \json_encode($this->availableMutations, \JSON_PRETTY_PRINT) . '<br>';
+		
+		if (!$return) {
+			echo $dump;
+			
+			return null;
+		}
+		
+		return $dump;
+	}
+	
+	/**
+	 * Get relation from properities
+	 * @param \StORM\Meta\Relation $relation
+	 * @return \StORM\Entity
+	 */
+	protected function getRelationFromProperties(Relation $relation): Entity
+	{
+		$relatedClass = $relation->getTarget();
+		$name = $relation->getName();
+		$length = \strlen($name) + \strlen(Repository::RELATION_SEPARATOR);
+		$data = [];
+		
+		foreach ($this->properties as $property => $value) {
+			if (\strpos($property, $name . Repository::RELATION_SEPARATOR) === false) {
+				continue;
+			}
+			
+			$data[\substr($property, $length)] = $value;
+		}
+		
+		$repository = $this->getParent()->getConnection()->getRepository($relatedClass);
+		
+		return new $relatedClass($data, $repository);
+	}
+	
+	/**
+	 * Get relation from relation
+	 * @param \StORM\Meta\Relation $relation
+	 * @return \StORM\CollectionRelation|\StORM\Entity|null
+	 */
+	protected function getRelation(Relation $relation)
+	{
+		if ($relation->isKeyHolder()) {
+			$name = $relation->getName();
+			
+			if (!isset($this->foreignKeys[$name])) {
+				return null;
+			}
+			
+			if ($this->parent && $this->parent instanceof CollectionEntity && $this->parent->isLoaded() && $this->parent->isOptimization()) {
+				$object = $this->parent->getRelatedObject($relation, $this->foreignKeys[$name]);
+				
+				if ($object === null) {
+					throw new NotFoundException($this->parent, [$name => $this->foreignKeys[$name]], $relation->getTarget());
+				}
+				
+				return $object;
+			}
+			
+			return $this->getParent()->getConnection()->getRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
+		}
+		
+		return new CollectionRelation($this->getParent()->getConnection()->getRepository(static::class), $relation, $this->getPK());
+	}
+	
+	protected function getStructure(): Structure
+	{
+		return $this->getParent()->getRepository()->getStructure();
+	}
+	
+	protected function getMutationSuffix(?string $mutation = null): string
+	{
+		return $this->availableMutations[$mutation ?: $this->activeMutation] ?? '';
+	}
+	
+	/**
+	 * @param bool $includeNonColumns
+	 * @return mixed[]
+	 */
+	protected function getVars(bool $includeNonColumns = false): array
+	{
+		$columns = $this->getStructure()->getColumns(true, false);
+		$columnNames = \array_keys($columns);
+		$vars = Helpers::getModelVars($this);
+		
+		if ($this->activeMutation) {
+			foreach ($columns as $name => $column) {
+				if ($column->hasMutations()) {
+					$this->properties[$name . $this->getMutationSuffix()] = $vars[$name];
+					unset($vars[$name]);
+				}
+			}
+		}
+		
+		return ($includeNonColumns ? $vars : \array_intersect_key($vars, \array_flip($columnNames))) + $this->properties + $this->foreignKeys;
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	private function getHintProperties(): array
+	{
+		return \array_keys($this->foreignKeys) + \array_keys($this->relations) + \array_keys(Helpers::getModelVars($this)) + \array_keys($this->properties);
 	}
 	
 	/**
@@ -358,17 +464,17 @@ abstract class Entity implements \JsonSerializable
 		}
 		
 		// init relation
-		$relation = $this->getRepository()->getStructure()->getRelation($name);
+		$relation = $this->getStructure()->getRelation($name);
 		
-		if ($relation) {
-			if ($relation->isKeyHolder() && isset($this->properties[$name . Repository::RELATION_SEPARATOR . $relation->getTargetKey()])) {
-				return $this->relations[$name] = $this->getRelationFromProperties($relation);
-			}
-			
-			return $this->relations[$name] = $this->getRelation($relation);
+		if (!$relation) {
+			throw new NotExistsException($this, NotExistsException::VALUE, $name, static::class, $this->getHintProperties());
 		}
 		
-		throw new NotExistsException(NotExistsException::VALUE, $name, static::class, \array_keys($this->properties) + \array_keys($this->relations));
+		if ($relation->isKeyHolder() && isset($this->properties[$name . Repository::RELATION_SEPARATOR . $relation->getTargetKey()])) {
+			return $this->relations[$name] = $this->getRelationFromProperties($relation);
+		}
+		
+		return $this->relations[$name] = $this->getRelation($relation);
 	}
 	
 	/**
@@ -381,124 +487,34 @@ abstract class Entity implements \JsonSerializable
 		return \array_key_exists($name, $this->properties);
 	}
 	
-	
 	/**
-	 * Update entity object
-	 * @param mixed[]|object $values
-	 * @param bool|null $filterByColumns
-	 * @return int
+	 * Set property
+	 * @param string $name
+	 * @param mixed $value
+	 * @return void
 	 */
-	public function update($values, ?bool $filterByColumns = null): int
+	public function __set(string $name, $value): void
 	{
-		if (\is_object($values)) {
-			$values = Helpers::toArrayRecursive($values);
+		if (\array_key_exists($name, $this->foreignKeys)) {
+			$this->foreignKeys[$name] = $value === null ? null : (string) $value;
+		} else {
+			$this->properties[$name] = $value;
 		}
 		
-		if (!\is_array($values)) {
-			$type = \gettype($values);
-			
-			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
-		}
-		
-		foreach ($values as $name => $value) {
-			$this->$name = $value;
-		}
-		
-		/** @var \StORM\ICollectionEntity $collection */
-		$collection = $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()]);
-		
-		return $collection->update($values, false, $filterByColumns);
+		return;
 	}
 	
 	/**
-	 * @param bool $includeNonColumns
-	 * @return mixed[]
+	 * Convert to string = return primary key value in string
+	 * @return string
 	 */
-	private function getVars(bool $includeNonColumns = false): array
+	public function __toString(): string
 	{
-		$columns = $this->getRepository()->getStructure()->getColumns(true, false);
-		$columnNames = \array_keys($columns);
-		$vars = Helpers::getModelVars($this);
-		
-		if ($this->activeMutation) {
-			foreach ($columns as $name => $column) {
-				if ($column->hasMutations()) {
-					$this->properties[$name . Connection::MUTATION_SEPARATOR . $this->activeMutation] = $vars[$name];
-					unset($vars[$name]);
-				}
-			}
+		try {
+			return (string) $this->getPK();
+		} catch (InvalidStateException $x) {
+			return '';
 		}
-		
-		return ($includeNonColumns ? $vars : \array_intersect_key($vars, \array_flip($columnNames))) + $this->properties + $this->foreignKeys;
-	}
-	
-	/**
-	 * Update all objects if $propertiesToUpdate is not null update certains columns
-	 * @param string[]|null $propertiesToUpdate
-	 * @return int
-	 */
-	public function updateAll(?array $propertiesToUpdate = null): int
-	{
-		$vars = $this->getVars(false);
-		
-		if ($propertiesToUpdate !== null) {
-			$vars = \array_intersect_key($vars, \array_flip($propertiesToUpdate));
-		}
-		
-		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()]);
-		
-		return $collection->update($vars, false, false);
-	}
-	
-	/**
-	 * Delete coresponding row from database and return number affected affected rows
-	 * @return int
-	 */
-	public function delete(): int
-	{
-		return $this->getRepository()->many()->setWhere($this->getPKName(true), [$this->getPK()])->delete();
-	}
-	
-	/**
-	 * Convert entity to array. You can name relation to load. Collection are converted to array. If $expandRelations is set to null, all relation is loaded.
-	 * @param string[] $relations
-	 * @param bool $groupLocales
-	 * @param bool $includeNonColumns
-	 * @return mixed[]
-	 */
-	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false): array
-	{
-		$array = [$this->getPKName() => $this->getPK()] + $this->getVars($includeNonColumns);
-		
-		if ($this->activeMutation && $groupLocales) {
-			foreach ($this->getRepository()->getStructure()->getColumns() as $name => $column) {
-				if ($column->hasMutations()) {
-					$array[$name] = [];
-					
-					foreach ($this->availableMutations as $mutation) {
-						$array[$name][$mutation] = $array[$name . Connection::MUTATION_SEPARATOR . $mutation] ?? null;
-						unset($array[$name . Connection::MUTATION_SEPARATOR . $mutation]);
-					}
-				}
-			}
-		}
-		
-		foreach ($relations as $relationName) {
-			$value = $this->getRelation($this->getRepository()->getStructure()->getRelation($relationName));
-			$array[$relationName] = $value instanceof CollectionRelation ? \array_keys($value->toArray()) : (string)$value;
-		}
-		
-		return $array;
-	}
-	
-	/**
-	 * Convert all properties to array. All relations are loaded. Objects are converted to primary keys and collections to array of primary keys
-	 * @return mixed[]
-	 */
-	public function jsonSerialize(): array
-	{
-		return $this->toArray(\array_keys($this->getRepository()->getStructure()->getRelations()), true, true);
 	}
 	
 	/**
@@ -507,7 +523,7 @@ abstract class Entity implements \JsonSerializable
 	public function __sleep(): array
 	{
 		$vars = \get_object_vars($this);
-		unset($vars['repository'], $vars['parentCollection']);
+		unset($vars['parent'], $vars['relations']);
 		
 		return \array_keys($vars);
 	}

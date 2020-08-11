@@ -9,6 +9,11 @@ use StORM\Exception\InvalidStateException;
 class InsertResult
 {
 	/**
+	 * PDO rowCount return 2 if row is updated
+	 */
+	public const UPDATE_AFFECTED_COUNT = 2;
+	
+	/**
 	 * @var \StORM\Connection
 	 */
 	private $connection;
@@ -79,10 +84,10 @@ class InsertResult
 	public function isSynced(): bool
 	{
 		if ($this->multiple) {
-			throw new InvalidStateException(InvalidStateException::SYNCED);
+			throw new InvalidStateException(null, InvalidStateException::SYNCED);
 		}
 		
-		return $this->rowCount === 2;
+		return $this->rowCount === self::UPDATE_AFFECTED_COUNT;
 	}
 	
 	public function getLastInsertedId(): ?int
@@ -97,7 +102,7 @@ class InsertResult
 	{
 		if (!$this->primaryKeys) {
 			if ($this->ignore === null && $this->multiple) {
-				throw new InvalidStateException(InvalidStateException::IGNORE);
+				throw new InvalidStateException(null, InvalidStateException::IGNORE);
 			}
 			
 			if ($this->idBefore !== $this->idAfter) {

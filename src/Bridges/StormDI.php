@@ -4,63 +4,85 @@ declare(strict_types=1);
 
 namespace StORM\Bridges;
 
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
 use StORM\Connection;
-use StORM\Exception\GeneralException;
+use StORM\Exception\IContextException;
 use StORM\SchemaManager;
 
 class StormDI extends \Nette\DI\CompilerExtension
 {
 	private const DEFAULT_MUTATION = 'en';
 	
-	/**
-	 * @var mixed[]
-	 */
-	private $defaults = [
-		'debug' => false,
-		'autowired' => null,
-		'driver' => 'mysql',
-		'host' => '127.0.0.1',
-		'dbname' => null,
-		'user' => 'root',
-		'password' => '',
-		'charset' => 'utf8',
-		'collate' => 'utf8_general_ci',
-		'mutations' => [self::DEFAULT_MUTATION],
-		'primaryKeyGenerator' => null,
-		'customAnnotations' => [],
-	];
+	public function getConfigSchema(): Schema
+	{
+		return Expect::structure([
+			'connections' => Expect::arrayOf(Expect::structure([
+				'driver' => Expect::string('mysql'),
+				'host' => Expect::string()->required(),
+				'dbname' => Expect::string()->required(),
+				'user' => Expect::string()->required(),
+				'password' => Expect::string('')->required(),
+				'charset' => Expect::string('utf8'),
+				'collate' => Expect::string('utf8_general_ci'),
+				'primaryKeyGenerator' => Expect::string(null),
+				'mutations' => Expect::arrayOf('string')->default([self::DEFAULT_MUTATION => ''])->min(1),
+			]))->min(1),
+			'schema' => Expect::structure([
+				'customAnnotations' => Expect::arrayOf('string')->default([]),
+			]),
+			'debug' => Expect::bool(false),
+		]);
+	}
 	
 	public function loadConfiguration(): void
 	{
-		$configs = $this->getConfig();
 		$first = true;
 		
-		foreach ((array) $configs as $name => $config) {
-			$config += $this->defaults;
+		/** @var \stdClass $configuration */
+		$configuration = $this->getConfig();
+		
+		foreach ($configuration->connections as $name => $config) {
+			$config = (array) $config;
 			
-			if ($config['dbname'] === null) {
-				throw new GeneralException('"dbname" is not set in extension configuration');
-			}
-			
-			if ($config['autowired'] === null) {
+			if (!isset($config['autowired'])) {
 				$config['autowired'] = $first;
 			}
 			
-			$this->setupDatabase($name, $config);
+			$this->setupDatabase($name, $config, $configuration->debug);
 			$first = false;
 		}
 		
 		/** @var \Nette\DI\ContainerBuilder $builder */
 		$builder = $this->getContainerBuilder();
+		$schemaManager = $builder->addDefinition($this->prefix('schemaManager'))->setType(SchemaManager::class)->setAutowired(true);
 		
-		$builder->addDefinition($this->prefix('storm'))->setClass(SchemaManager::class)->setAutowired(true);
+		if ($configuration->schema->customAnnotations) {
+			$schemaManager->addSetup('setCustomAnnotations', [$configuration->schema->customAnnotations]);
+		}
+		
+		if ($configuration->debug) {
+			\Tracy\Debugger::getBlueScreen()->addPanel(static function (?\Throwable $e) {
+				if ($e instanceof IContextException && $e->getContext()) {
+					return [
+						'tab' => \get_class($e->getContext()),
+						'panel' => $e->getContext()->dump(true),
+					];
+				}
+				
+				return [];
+			});
+		}
+		
+		return;
 	}
 	
 	/**
 	 * @param string $name
 	 * @param string[] $config
+	 * @param bool $debug
 	 */
-	private function setupDatabase(string $name, array $config): void
+	private function setupDatabase(string $name, array $config, bool $debug): void
 	{
 		$driver = $config['driver'];
 		$databaseName = $config['dbname'];
@@ -77,11 +99,11 @@ class StormDI extends \Nette\DI\CompilerExtension
 		
 		/** @var \Nette\DI\ContainerBuilder $builder */
 		$builder = $this->getContainerBuilder();
-		$connection = $builder->addDefinition($this->prefix($name))->setClass(Connection::class)->setAutowired($config['autowired'])
+		$connection = $builder->addDefinition($this->prefix($name))->setType(Connection::class)->setAutowired($config['autowired'])
 			->addSetup('connect', [$name, $dsn, $config['user'], $config['password'], $attributes])
-			->addSetup('setDebug', [$config['debug']]);
+			->addSetup('setDebug', [$debug]);
 		
-		if ($config['debug']) {
+		if ($debug) {
 			$connection->addSetup('@Tracy\Bar::addPanel', [
 				new \Nette\DI\Definitions\Statement(StormTracy::class, ['name' => $name,]),
 			]);
@@ -93,10 +115,6 @@ class StormDI extends \Nette\DI\CompilerExtension
 		
 		if ($config['mutations']) {
 			$connection->addSetup('setAvailableMutations', [$config['mutations']]);
-		}
-		
-		if ($config['customAnnotations']) {
-			$connection->addSetup('setCustomAnnotations', [$config['customAnnotations']]);
 		}
 		
 		return;

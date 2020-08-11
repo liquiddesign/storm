@@ -34,14 +34,12 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testGetting(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
-		$stocks2 = $storm->getRepositoryByEntityClass(Stock::class);
-		$stocks3 = $storm->getRepositoryByName('db.stocks');
+		$stocks2 = $storm->getRepository(Stock::class);
+		$stocks3 = $container->getService('db.stocks');
 		
-		Assert::type(StockRepository::class, $stocks);
 		Assert::type(StockRepository::class, $stocks2);
 		Assert::type(StockRepository::class, $stocks3);
-		Assert::same($stocks, $stocks2);
+		Assert::same($stocks2, $stocks3);
 	}
 	
 	/**
@@ -53,7 +51,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testMetadata(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$types = $storm->getRepository(TypeRepository::class);
+		$types = $storm->getRepository(Type::class);
 		$alias = TypeRepository::DEFAULT_ALIAS;
 		
 		Assert::type(Structure::class, $types->getStructure());
@@ -77,9 +75,9 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testObjects(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
-		$types = $storm->getRepository(TypeRepository::class);
-		$sectors = $storm->getRepository(SectorRepository::class);
+		$stocks = $storm->getRepository(Stock::class);
+		$types = $storm->getRepository(Type::class);
+		$sectors = $storm->getRepository(Sector::class);
 		
 		Assert::type(Stock::class, $stocks->one('AAPL'));
 		Assert::type(Stock::class, $stocks->one(['uuid' => 'AAPL']));
@@ -99,7 +97,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$params = [];
 		$class = $collection->getFetchClass($params);
 		Assert::same(Type::class, $class);
-		Assert::same([[], $types, null, [], $collection], $params);
+		Assert::same([[], $collection, [], null], $params);
 		
 		$params = [];
 		$collection = $sectors->many();
@@ -107,7 +105,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same(Sector::class, $class);
 		$lang = $storm->getMutation();
 		$availableLanguages = $storm->getAvailableMutations();
-		Assert::same([[], $sectors, $lang, $availableLanguages, $collection], $params);
+		Assert::same([[], $collection, $availableLanguages, $lang], $params);
 	}
 	
 	/**
@@ -119,7 +117,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testCreateOne(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$types = $storm->getRepository(TypeRepository::class);
+		$types = $storm->getRepository(Type::class);
 		$id = 'test-create-one';
 		
 		// 1. standart creating and maping property to column
@@ -129,7 +127,9 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::type(Type::class, $object1);
 		$object2 = $types->one($id);
 		$object1->removeParent();
+		$object2->removeParent();
 		Assert::equal($object1, $object2);
+		
 		
 		// 2. using generated pk
 		$types->many()->delete();
@@ -137,6 +137,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
 		$object1->removeParent();
+		$object2->removeParent();
 		Assert::equal($object1, $object2);
 		
 		// 3. invalid property name
@@ -151,6 +152,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
 		$object1->removeParent();
+		$object2->removeParent();
 		Assert::equal($object1, $object2);
 		
 		
@@ -160,6 +162,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		$object2 = $types->one($object1->getPK());
 		$object1->removeParent();
+		$object2->removeParent();
 		Assert::equal($object1, $object2);
 	}
 	
@@ -193,7 +196,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testCreateMany(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$types = $storm->getRepository(TypeRepository::class);
+		$types = $storm->getRepository(Type::class);
 		
 		// 1. standart creating and maping property to column
 		$types->many()->delete();
@@ -235,7 +238,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		// 5. do not filter property name
 		$types->many()->delete();
 		$data = [['myName' => 'test', 'fk_sector' => 'energy']];
-		$collection = $types->createMany($data, false);
+		$collection = $types->createMany($data, null);
 		Assert::equal(1, $types->many()->count());
 		Assert::same($data[0]['myName'], $collection->firstValue('myName'));
 		
@@ -243,7 +246,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$types->many()->delete();
 		$data = $this->generateMockData(3);
 		$data[2]['id'] = $data[1]['id'];
-		$collection = $types->createMany($data, null, true);
+		$collection = $types->createMany($data, false, true);
 		Assert::equal(2, $types->many()->count());
 		Assert::same(2, $collection->getAffectedNumber());
 		Assert::same(['id-0', 'id-1', 'id-1'], $collection->getPossibleValues('id'));
@@ -261,7 +264,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testSyncOne(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$types = $storm->getRepository(TypeRepository::class);
+		$types = $storm->getRepository(Type::class);
 		$id = 'test-create-one';
 		
 		
@@ -272,10 +275,12 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(1, $types->many()->count());
 		Assert::type(Type::class, $object1);
 		$object2 = $types->one($id);
-		$object1->removeParent();
-		Assert::equal($object1, $object2);
 		Assert::same('test2', $object2->myName);
 		Assert::same('finance', $object2->sector->uuid);
+		Assert::same('finance', $object1->sector->uuid);
+		$object1->removeParent();
+		$object2->removeParent();
+		Assert::equal($object1, $object2);
 		
 		// 2, sync selected
 		$types->many()->delete();
@@ -298,7 +303,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testSyncMany(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$types = $storm->getRepository(TypeRepository::class);
+		$types = $storm->getRepository(Type::class);
 		
 		// 1. sync all
 		$types->many()->delete();

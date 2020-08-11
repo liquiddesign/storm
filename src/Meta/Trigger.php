@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-class Trigger extends ClassAnnotation
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
+class Trigger extends AnnotationClass
 {
-	private const ANNOTATION = 'trigger';
-	
 	/**
 	 * Action to trigger
 	 * @var string
@@ -56,15 +57,18 @@ class Trigger extends ClassAnnotation
 		$this->statement = $statement;
 	}
 	
-	public function validate(): void
+	public function getSchema(): Schema
 	{
-		$this->checkRequired(['name', 'manipulation', 'timing', 'statement']);
-		
-		return;
+		return Expect::structure([
+			'name' => Expect::string()->required(),
+			'manipulation' => Expect::string()->required(),
+			'timing' => Expect::string()->required(),
+			'statement' => Expect::string()->required(),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'trigger';
 	}
 }

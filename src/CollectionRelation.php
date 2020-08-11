@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace StORM;
 
 use StORM\Exception\InvalidStateException;
+use StORM\Exception\NotFoundException;
 use StORM\Meta\Relation;
 use StORM\Meta\RelationNxN;
 
-class CollectionRelation extends CollectionEntity implements ICollectionRelation, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+/**
+ * Class CollectionRelation
+ * @template T of \StORM\Entity
+ */
+class CollectionRelation extends CollectionEntity implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
 	 * @var \StORM\Meta\Relation
@@ -32,34 +37,16 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$this->keyValue = $keyValue;
 		
 		if ($relation->isKeyHolder()) {
-			throw new InvalidStateException(InvalidStateException::KEY_HOLDER_NOT_ALLOWED);
+			throw new InvalidStateException($this, InvalidStateException::KEY_HOLDER_NOT_ALLOWED);
 		}
 		
-		parent::__construct($repository->getConnection()->getRepositoryByEntityClass($relation->getTarget()));
-	}
-	
-	protected function init(): void
-	{
-		parent::init();
-		
-		if ($this->relation instanceof RelationNxN) {
-			$via = $this->relation->getVia();
-			$viaTargetKey = $this->relation->getTargetViaKey();
-			$viaSourceKey = $this->relation->getSourceViaKey();
-			$targetKey = $this->relation->getTargetKey();
-			$this->setJoin(['via' => $via], "via.$viaTargetKey=this.$targetKey");
-			$this->setWhere("via.$viaSourceKey", $this->keyValue);
-		} else {
-			$this->setWhere($this->relation->getTargetKey(), [$this->keyValue]);
-		}
-		
-		return;
+		parent::__construct($repository->getConnection()->getRepository($relation->getTarget()));
 	}
 	
 	/**
 	 * Relate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
-	 * @param mixed[] $primaryKeys
+	 * @param string[]|int[]|string[][]|int[][] $primaryKeys
 	 * @param bool $checkKeys
 	 * @param string|null $primaryKeyName You can specify column name and method will generate primary keys for that columns
 	 * @return int
@@ -98,16 +85,25 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		/** @var \StORM\CollectionEntity $collection */
-		$collection = $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
+		/** @var \StORM\ICollection $collection */
+		$collection = $this->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
-		return $collection->update([$targetKey => $this->keyValue], !$checkKeys, false);
+		if ($checkKeys) {
+			$resultArray = (clone $collection)->toArray('uuid');
+			$desiredArray = \array_combine(\array_values($primaryKeys), \array_values($primaryKeys));
+			
+			if ($diff = \array_diff_key($desiredArray, $resultArray)) {
+				throw new NotFoundException($this, $diff, $desiredArray);
+			}
+		}
+		
+		return $collection->update([$targetKey => $this->keyValue]);
 	}
 	
 	/**
 	 * Unrelate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
-	 * @param mixed[] $primaryKeys
+	 * @param string[]|int[] $primaryKeys
 	 * @return int
 	 */
 	public function unrelate(array $primaryKeys): int
@@ -128,7 +124,7 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
+		return $this->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
 	}
 	
 	/**
@@ -154,6 +150,24 @@ class CollectionRelation extends CollectionEntity implements ICollectionRelation
 		$sourceKey = $this->relation->getSourceKey();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepositoryByEntityClass($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+		return $this->getConnection()->getRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+	}
+	
+	protected function init(): void
+	{
+		parent::init();
+		
+		if ($this->relation instanceof RelationNxN) {
+			$via = $this->relation->getVia();
+			$viaTargetKey = $this->relation->getTargetViaKey();
+			$viaSourceKey = $this->relation->getSourceViaKey();
+			$targetKey = $this->relation->getTargetKey();
+			$this->setJoin(['via' => $via], "via.$viaTargetKey=this.$targetKey");
+			$this->setWhere("via.$viaSourceKey", $this->keyValue);
+		} else {
+			$this->setWhere($this->relation->getTargetKey(), [$this->keyValue]);
+		}
+		
+		return;
 	}
 }

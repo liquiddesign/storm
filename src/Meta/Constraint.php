@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-use StORM\Exception\AnnotationException;
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+use StORM\SchemaManager;
 
-class Constraint extends PropertyAnnotation
+class Constraint extends AnnotationProperty
 {
 	public const ACTION_NO = 'NO ACTION';
 	public const ACTION_SET_NULL = 'SET NULL';
 	public const ACTION_CASCADE = 'CASCADE';
-	private const ANNOTATION = 'constraint';
 	
 	/**
 	 * @var string
@@ -112,29 +113,37 @@ class Constraint extends PropertyAnnotation
 		$this->targetKey = $relation->getTargetKey();
 	}
 	
-	public function validate(): void
+	public function setDefaultsFromRelationNxN(SchemaManager $schemaManager, RelationNxN $relation, string $type): void
 	{
-		$class = $this->class;
-		$name = $this->name;
-		$annotation = $this->getAnnotationName();
-		$allowedActions = [self::ACTION_CASCADE, self::ACTION_SET_NULL, self::ACTION_NO];
-		$required = ['name', 'source', 'target', 'sourceKey', 'targetKey'];
-		
-		$this->checkRequired($required);
-		
-		if ($this->onDelete && !\in_array($this->onDelete, $allowedActions)) {
-			throw new AnnotationException(AnnotationException::ATTRIBUTE_VALUE_NOT_ALLOWED, "$class -> $name", "@$annotation -> onDelete", \implode(',', $allowedActions));
+		if (!\in_array($type, ['source', 'target'])) {
+			throw new \InvalidArgumentException("Type can be 'source' or 'target', '$type' given.");
 		}
 		
-		if ($this->onUpdate && !\in_array($this->onUpdate, $allowedActions)) {
-			throw new AnnotationException(AnnotationException::ATTRIBUTE_VALUE_NOT_ALLOWED, "$class -> $name", "@$annotation -> onUpdate", \implode(',', $allowedActions));
-		}
+		$glue = \ucfirst($type);
+		$this->name = $relation->getVia() . \StORM\Meta\Structure::NAME_SEPARATOR . $type;
+		$this->source = $relation->getVia();
+		$this->sourceKey = \call_user_func([$relation, 'get' . $glue . 'ViaKey']);
+		$this->target = $schemaManager->getStructure(\call_user_func([$relation, 'get' . $glue]))->getTable()->getName();
+		$this->targetKey =\call_user_func([$relation, 'get' . $glue . 'Key']);
+	}
+	
+	public function getSchema(): Schema
+	{
+		$allowedActions = [self::ACTION_CASCADE, self::ACTION_SET_NULL, self::ACTION_NO, null];
 		
-		return;
+		return Expect::structure([
+			'name' => Expect::string(),
+			'source' => Expect::string(),
+			'target' => Expect::string(),
+			'sourceKey' => Expect::string(),
+			'targetKey' => Expect::string(),
+			'onUpdate' => Expect::anyOf(...$allowedActions)->default(null),
+			'onDelete' => Expect::anyOf(...$allowedActions)->default(null),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'constraint';
 	}
 }

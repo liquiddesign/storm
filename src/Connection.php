@@ -6,11 +6,20 @@ namespace StORM;
 
 use Nette\DI\Container;
 use StORM\Exception\GeneralException;
-use StORM\Exception\NotExistsException;
 use StORM\Meta\Structure;
 
 class Connection
 {
+	/**
+	 * Mysql quote char
+	 */
+	private const QUOTE_CHAR_MYSQL = '`';
+	
+	/**
+	 * Mssql quote char
+	 */
+	private const QUOTE_CHAR_OTHER = '"';
+	
 	/**
 	 * @var \Nette\DI\Container
 	 */
@@ -53,6 +62,16 @@ class Connection
 	private $quoteChar;
 	
 	/**
+	 * @var \StORM\LogItem[]
+	 */
+	private $log = [];
+	
+	/**
+	 * @var callable|null
+	 */
+	private $primaryKeyGenerator;
+	
+	/**
 	 * @var string
 	 */
 	private $mutation;
@@ -61,36 +80,6 @@ class Connection
 	 * @var string[]
 	 */
 	private $availableMutations = [];
-	
-	/**
-	 * @var callable|null
-	 */
-	private $primaryKeyGenerator;
-	
-	/**
-	 * @var string[]
-	 */
-	private $customAnnotations = [];
-	
-	/**
-	 * @var \StORM\LogItem[]
-	 */
-	private $log = [];
-	
-	/**
-	 * Mysql quote char
-	 */
-	private const QUOTE_CHAR_MYSQL = '`';
-	
-	/**
-	 * Mssql quote char
-	 */
-	private const QUOTE_CHAR_OTHER = '"';
-	
-	/**
-	 * Mutation separator
-	 */
-	public const MUTATION_SEPARATOR = '_';
 	
 	/**
 	 * Connection constructor.
@@ -147,63 +136,6 @@ class Connection
 		}
 		
 		return $this->link;
-	}
-	
-	/**
-	 * Generate 24 chars long uuid
-	 * @return string
-	 */
-	public static function generateUuid(): string
-	{
-		return \str_replace('.', '', \uniqid('', true) . \rand(10, 99));
-	}
-	
-	/**
-	 * Set primary key generator
-	 * If callback is null, primary key will be handled as autoincrement
-	 * @param callable|null $callback
-	 */
-	public function setPrimaryKeyGenerator(?callable $callback): void
-	{
-		$this->primaryKeyGenerator = $callback;
-		
-		return;
-	}
-	
-	/**
-	 * Set avalailable mutation codes
-	 * @param string[] $mutations
-	 */
-	public function setAvailableMutations(array $mutations): void
-	{
-		foreach ($mutations as $mutation) {
-			if (\strlen($mutation) !== 2) {
-				throw new \InvalidArgumentException('Length of language should be 2');
-			}
-		}
-		
-		$this->availableMutations = \array_values($mutations);
-		$this->mutation = \reset($mutations);
-	}
-	
-	/**
-	 * Get available mutations codes
-	 * @return string[]
-	 */
-	public function getAvailableMutations(): array
-	{
-		return $this->availableMutations;
-	}
-	
-	/**
-	 * Generate primary key
-	 * @return null|string
-	 */
-	public function generatePrimaryKey(): ?string
-	{
-		$generator = $this->primaryKeyGenerator;
-		
-		return $generator ? (string) $generator() : null;
 	}
 	
 	/**
@@ -309,22 +241,6 @@ class Connection
 	}
 	
 	/**
-	 * @param string[] $customAnnotations
-	 */
-	public function setCustomAnnotations(array $customAnnotations): void
-	{
-		$this->customAnnotations = $customAnnotations;
-	}
-	
-	/**
-	 * @return string[]
-	 */
-	public function getCustomAnnotations(): array
-	{
-		return $this->customAnnotations;
-	}
-	
-	/**
 	 * Get collection of rows
 	 * @param string[]|null $from
 	 * @param string[] $select
@@ -361,17 +277,7 @@ class Connection
 		$vars = [];
 		$primaryKeys = [];
 		
-		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
-			$generatedPrimaryKey = $this->generatePrimaryKey();
-			
-			if ($generatedPrimaryKey) {
-				$values[$nonAutoincrementPK] = $generatedPrimaryKey;
-			}
-		}
-		
-		if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
-			$primaryKeys[] = $values[$nonAutoincrementPK];
-		}
+		$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
 		
 		$sql = $this->getSqlInsert($table, [$values], $vars, [], $ignore);
 		
@@ -398,29 +304,9 @@ class Connection
 		
 		/** @var mixed[]|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
-			if (\is_object($values)) {
-				$values = Helpers::toArrayRecursive($values);
-			}
-			
-			if (!\is_array($values)) {
-				$type = \gettype($values);
-				
-				throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
-			}
+			$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
 			
 			$vars = [];
-			
-			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
-				$generatedPrimaryKey = $this->generatePrimaryKey();
-				
-				if ($generatedPrimaryKey) {
-					$values[$nonAutoincrementPK] = $generatedPrimaryKey;
-				}
-			}
-			
-			if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
-				$primaryKeys[] = $values[$nonAutoincrementPK];
-			}
 			
 			$sql = $this->getSqlInsert($table, $values, $vars, [], $ignore);
 			
@@ -441,32 +327,11 @@ class Connection
 	 */
 	public function syncRow(string $table, $values, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
-		if (\is_object($values)) {
-			$values = Helpers::toArrayRecursive($values);
-		}
-		
-		if (!\is_array($values)) {
-			$type = \gettype($values);
-			
-			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
-		}
-		
-		$vars = [];
 		$primaryKeys = [];
 		$beforeId = (int) $this->getLink()->lastInsertId();
 		
-		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
-			$generatedPrimaryKey = $this->generatePrimaryKey();
-			
-			if ($generatedPrimaryKey) {
-				$values[$nonAutoincrementPK] = $generatedPrimaryKey;
-			}
-		}
-		
-		if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
-			$primaryKeys[] = $values[$nonAutoincrementPK];
-		}
-		
+		$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
+		$vars = [];
 		$sql = $this->getSqlInsert($table, [$values], $vars, $columnsToUpdate, $ignore);
 		
 		$affected = $this->query($sql, $vars)->rowCount();
@@ -492,30 +357,8 @@ class Connection
 		
 		/** @var mixed[]|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
-			if (\is_object($values)) {
-				$values = Helpers::toArrayRecursive($values);
-			}
-			
-			if (!\is_array($values)) {
-				$type = \gettype($values);
-				
-				throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
-			}
-			
+			$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
 			$vars = [];
-			
-			if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
-				$generatedPrimaryKey = $this->generatePrimaryKey();
-				
-				if ($generatedPrimaryKey) {
-					$values[$nonAutoincrementPK] = $generatedPrimaryKey;
-				}
-			}
-			
-			if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
-				$primaryKeys[] = $values[$nonAutoincrementPK];
-			}
-			
 			$sql = $this->getSqlInsert($table, $values, $vars, $columnsToUpdate, $ignore);
 			$affected += $this->query($sql, $vars)->rowCount();
 		}
@@ -640,37 +483,6 @@ class Connection
 	}
 	
 	/**
-	 * Sleep
-	 * @return string[]
-	 */
-	public function __sleep(): array
-	{
-		throw new GeneralException('StORM connections are unserializable');
-	}
-	
-	
-	/**
-	 * @param string $sql
-	 * @param mixed[] $vars
-	 * @return \StORM\LogItem
-	 */
-	private function log(string $sql, array $vars): LogItem
-	{
-		$item = new LogItem($sql, $vars);
-		
-		if (isset($this->log[$sql])) {
-			$item->setAmount($this->log[$sql]->getAmount() + 1);
-			$item->setVars($vars);
-			$item->addTime($this->log[$sql]->getTotalTime());
-			unset($this->log[$sql]);
-		}
-		
-		$this->log[$sql] = $item;
-		
-		return $item;
-	}
-	
-	/**
 	 * Get all logged items if debug mode is on
 	 * @return \StORM\LogItem[]
 	 */
@@ -708,51 +520,16 @@ class Connection
 		return $this->debug;
 	}
 	
-	public function getRepositoryByName(string $repositoryName): Repository
-	{
-		
-		$repository = $this->container->getService($repositoryName);
-		$repositoryClass = \get_class($repository);
-		
-		if (!\is_subclass_of($repositoryClass, Repository::class)) {
-			throw new \InvalidArgumentException("$repositoryClass is not child of \StORM\Repository");
-		}
-		
-		return $repository;
-	}
-	
-	/**
-	 * Return repository by repository class
-	 * @param string $repositoryClass
-	 * @return \StORM\Repository
-	 * @throws \Nette\DI\MissingServiceException
-	 */
-	public function getRepository(string $repositoryClass): Repository
-	{
-		if (!\class_exists($repositoryClass)) {
-			throw new NotExistsException(NotExistsException::CLASS_NAME, $repositoryClass);
-		}
-		
-		if (!\is_subclass_of($repositoryClass, Repository::class)) {
-			throw new \InvalidArgumentException("$repositoryClass is not child of \StORM\Repository");
-		}
-		
-		/** @var \StORM\Repository $repository */
-		$repository = $this->container->getByType($repositoryClass);
-		
-		return $repository;
-	}
-	
 	/**
 	 * Return repository by entity class
 	 * @param string $entityClass
 	 * @return \StORM\Repository
 	 * @throws \Nette\DI\MissingServiceException
 	 */
-	public function getRepositoryByEntityClass(string $entityClass): Repository
+	public function getRepository(string $entityClass): Repository
 	{
 		if (!\class_exists($entityClass)) {
-			throw new NotExistsException(NotExistsException::CLASS_NAME, $entityClass);
+			throw new \InvalidArgumentException("$entityClass class not exists");
 		}
 		
 		if (!\is_subclass_of($entityClass, Entity::class)) {
@@ -778,12 +555,31 @@ class Connection
 	}
 	
 	/**
-	 * Set mutation
-	 * @param string $mutation
+	 * Set primary key generator
+	 * If callback is null, primary key will be handled as autoincrement
+	 * @param callable|null $callback
 	 */
+	public function setPrimaryKeyGenerator(?callable $callback): void
+	{
+		$this->primaryKeyGenerator = $callback;
+		
+		return;
+	}
+	
+	/**
+	 * Generate primary key
+	 * @return null|string
+	 */
+	public function generatePrimaryKey(): ?string
+	{
+		$generator = $this->primaryKeyGenerator;
+		
+		return $generator ? (string) $generator() : null;
+	}
+	
 	public function setMutation(string $mutation): void
 	{
-		if (!\in_array($mutation, $this->availableMutations)) {
+		if (!isset($this->availableMutations[$mutation])) {
 			throw new \InvalidArgumentException("Mutation $mutation is not in available mutations");
 		}
 		
@@ -792,14 +588,42 @@ class Connection
 		return;
 	}
 	
-	/**
-	 * Get current language suffix
-	 * @param bool $prefixed
-	 * @return string;
-	 */
-	public function getMutation(bool $prefixed = false): string
+	public function getMutation(): string
 	{
-		return $prefixed ? self::MUTATION_SEPARATOR . $this->mutation : $this->mutation;
+		return $this->mutation;
+	}
+	
+	public function getMutationSuffix(): string
+	{
+		return $this->availableMutations[$this->mutation] ?? '';
+	}
+	
+	/**
+	 * @deprecated Use getMutationSuffix instead
+	 * @return string
+	 */
+	public function getLangSuffix(): string
+	{
+		return $this->getMutationSuffix();
+	}
+	
+	/**
+	 * Get available mutations codes
+	 * @return string[]
+	 */
+	public function getAvailableMutations(): array
+	{
+		return $this->availableMutations;
+	}
+	
+	/**
+	 * Set avalailable mutation codes => suffix
+	 * @param string[] $mutations
+	 */
+	public function setAvailableMutations(array $mutations): void
+	{
+		$this->availableMutations = $mutations;
+		$this->mutation = \key($mutations);
 	}
 	
 	/**
@@ -809,5 +633,69 @@ class Connection
 	public function setDebug(bool $debug): void
 	{
 		$this->debug = $debug;
+	}
+	
+	/**
+	 * Generate 24 chars long uuid
+	 * @return string
+	 */
+	public static function generateUuid(): string
+	{
+		return \str_replace('.', '', \uniqid('', true) . \rand(10, 99));
+	}
+	
+	private function prepareInputArray($values, array &$primaryKeys, ?string $nonAutoincrementPK): array
+	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
+		if ($nonAutoincrementPK && !isset($values[$nonAutoincrementPK])) {
+			if ($generatedPrimaryKey = $this->generatePrimaryKey()) {
+				$values[$nonAutoincrementPK] = $generatedPrimaryKey;
+			}
+		}
+		
+		if ($nonAutoincrementPK && isset($values[$nonAutoincrementPK])) {
+			$primaryKeys[] = $values[$nonAutoincrementPK];
+		}
+		
+		return $values;
+	}
+	
+	/**
+	 * @param string $sql
+	 * @param mixed[] $vars
+	 * @return \StORM\LogItem
+	 */
+	private function log(string $sql, array $vars): LogItem
+	{
+		$item = new LogItem($sql, $vars);
+		
+		if (isset($this->log[$sql])) {
+			$item->setAmount($this->log[$sql]->getAmount() + 1);
+			$item->setVars($vars);
+			$item->addTime($this->log[$sql]->getTotalTime());
+			unset($this->log[$sql]);
+		}
+		
+		$this->log[$sql] = $item;
+		
+		return $item;
+	}
+	
+	/**
+	 * Sleep
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		throw new GeneralException('StORM connections are unserializable');
 	}
 }

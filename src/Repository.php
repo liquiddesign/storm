@@ -9,7 +9,11 @@ use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
 use StORM\Meta\Structure;
 
-abstract class Repository
+/**
+ * Class Repository
+ * @template T of \StORM\Entity
+ */
+abstract class Repository implements IEntityParent
 {
 	public const DEFAULT_ALIAS = 'this';
 	
@@ -48,16 +52,8 @@ abstract class Repository
 	}
 	
 	/**
-	 * Sleep
-	 * @return string[]
-	 */
-	public function __sleep(): array
-	{
-		throw new GeneralException('StORM connections are unserializable');
-	}
-	
-	/**
 	 * Get entity class
+	 * @phpstan-return class-string<T>
 	 * @return string
 	 */
 	final public function getEntityClass(): string
@@ -93,56 +89,6 @@ abstract class Repository
 	}
 	
 	/**
-	 * Filter array by column names
-	 * @param mixed[] $values
-	 * @param bool $includePK
-	 * @param bool|null $mode
-	 * @return mixed[]
-	 */
-	public function filterByColumns(array &$values, bool $includePK = true, ?bool $mode = null): array
-	{
-		$columns = $this->getStructure()->getColumns($includePK);
-		
-		return $this->filterValues($columns, $values, $mode);
-	}
-	
-	/**
-	 * @param mixed[] $columns
-	 * @param mixed[] $values
-	 * @param bool|null $filterByColumns
-	 * @return mixed[]
-	 */
-	private function filterValues(array $columns, array &$values, ?bool $filterByColumns): array
-	{
-		$insert = [];
-		$mess = [];
-		
-		foreach ($values as $name => $value) {
-			if (isset($columns[$name])) {
-				$insert[$columns[$name]->getName()] = $value;
-			} else {
-				$mess[$name] = $value;
-				
-				if ($filterByColumns === true) {
-					unset($values[$name]);
-				}
-			}
-		}
-		
-		if ($filterByColumns === null && $mess) {
-			foreach (\array_keys($mess) as $property) {
-				throw new NotExistsException(NotExistsException::PROPERTY, $property, $this->getEntityClass(), \array_keys($columns));
-			}
-		}
-		
-		if ($filterByColumns === false && $mess) {
-			$insert += $mess;
-		}
-		
-		return $insert;
-	}
-	
-	/**
 	 * Get SQL structure object
 	 * @return \StORM\Meta\Structure
 	 */
@@ -158,12 +104,13 @@ abstract class Repository
 	
 	/**
 	 * Create new collection
-	 * @param bool $passParentToEntities
-	 * @return \StORM\ICollectionEntity
+	 * @param bool $optimization
+	 * @phpstan-return \StORM\CollectionEntity<T>
+	 * @return \StORM\ICollection
 	 */
-	final public function many(bool $passParentToEntities = true): ICollectionEntity
+	final public function many(bool $optimization = true): ICollection
 	{
-		return new CollectionEntity($this, $passParentToEntities);
+		return new CollectionEntity($this, $optimization);
 	}
 	
 	/**
@@ -171,6 +118,7 @@ abstract class Repository
 	 * @param string[]|string|int $condition
 	 * @param bool $needed
 	 * @param string[]|null $select
+	 * @phpstam-return T|null
 	 * @return \StORM\Entity|null
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
@@ -181,6 +129,7 @@ abstract class Repository
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
 		}
 		
+		/** @var \StORM\CollectionEntity $collection */
 		$collection = $this->many(false);
 		
 		if ($select !== null) {
@@ -201,25 +150,40 @@ abstract class Repository
 		$object = $collection->first();
 		
 		if (!$object && $needed) {
-			throw new NotFoundException(\is_string($condition) ? [$this->getStructure()->getPK()->getName() => $condition] : $condition, static::class);
+			throw new NotFoundException($collection, \is_string($condition) ? [$this->getStructure()->getPK()->getName() => $condition] : $condition, static::class);
 		}
 		
 		if (!$object) {
 			return null;
 		}
 		
-		$object->removeParent();
-		
 		return $object;
+	}
+	
+	/**
+	 * Create new collection with condition by entities PK
+	 * @param \StORM\Entity $entity
+	 * @phpstan-return \StORM\CollectionEntity<T>
+	 * @return \StORM\ICollection
+	 */
+	final public function find(Entity $entity): ICollection
+	{
+		return $this->many()->setWhere($entity->getParent()->getRepository()->getStructure()->getPK()->getName(), $entity->getPK());
+	}
+	
+	final public function getRepository(): Repository
+	{
+		return $this;
 	}
 	
 	/**
 	 * Create entity row = insert row into table
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
+	 * @phpstam-return T
 	 * @return \StORM\Entity
 	 */
-	final public function createOne($values, ?bool $filterByColumns = null): Entity
+	final public function createOne($values, ?bool $filterByColumns = false): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -239,9 +203,10 @@ abstract class Repository
 	 * @param mixed[]|object $values
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
+	 * @phpstam-return T
 	 * @return \StORM\Entity
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = null): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -255,12 +220,18 @@ abstract class Repository
 		
 		$columns = $this->getStructure()->getColumns();
 		
-		$insert = $this->filterValues($columns, $values, $filterByColumns);
+		$joinRelations = $this->createRelations($values, $updateProps === null);
+		
+		if ($filterByColumns !== null) {
+			$values = Helpers::filterInputArray($values, \array_keys($columns), (bool)$filterByColumns);
+		}
+		
+		$insert = $this->propertiesToColumns($values);
 		
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
 				if (!isset($columns[$name])) {
-					throw new NotExistsException(NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
+					throw new NotExistsException(null, NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
 				
 				$updateProps[$key] = $columns[$name]->getName();
@@ -292,7 +263,22 @@ abstract class Repository
 		
 		$hasMutations = $this->getStructure()->hasMutations();
 		
-		return new $class($values, $this, $hasMutations ? $this->connection->getMutation() : null, $hasMutations ? $this->connection->getAvailableMutations() : [], null, $rowCount);
+		$object = new $class($values, $this, $hasMutations ? $this->connection->getAvailableMutations() : [], $hasMutations ? $this->connection->getMutation() : null);
+		
+		if ($rowCount === InsertResult::UPDATE_AFFECTED_COUNT) {
+			$object->setParent($this->find($object));
+		}
+		
+		// update all subject
+		foreach ($joinRelations as $relation => $keys) {
+			if ($object->$relation instanceof IRelation) {
+				$object->$relation->relate($keys);
+			}
+			
+			continue;
+		}
+		
+		return $object;
 	}
 	
 	/**
@@ -301,9 +287,10 @@ abstract class Repository
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
-	 * @return \StORM\CollectionEntity
+	 * @phpstan-return \StORM\ICollection<T>
+	 * @return \StORM\ICollection
 	 */
-	final public function createMany(array $manyValues, ?bool $filterByColumns = null, bool $ignore = false, int $chunkSize = 100): CollectionEntity
+	final public function createMany(array $manyValues, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): ICollection
 	{
 		return $this->syncMany($manyValues, [], $filterByColumns, $ignore, $chunkSize);
 	}
@@ -315,9 +302,10 @@ abstract class Repository
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
-	 * @return \StORM\CollectionEntity
+	 * @phpstan-return \StORM\ICollection<T>
+	 * @return \StORM\ICollection
 	 */
-	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = null, bool $ignore = false, int $chunkSize = 100): CollectionEntity
+	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): ICollection
 	{
 		$affected = 0;
 		
@@ -328,7 +316,7 @@ abstract class Repository
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
 				if (!isset($columns[$name])) {
-					throw new NotExistsException(NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
+					throw new NotExistsException(null, NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
 				
 				$updateProps[$key] = $columns[$name]->getName();
@@ -350,7 +338,14 @@ abstract class Repository
 			}
 			
 			foreach ($values as $value) {
-				$row = $this->filterValues($columns, $value, $filterByColumns);
+				$primaryKey = null;
+				$joinRelations = $this->createRelations($value, $updateProps === null);
+				
+				if ($filterByColumns !== null) {
+					$value = Helpers::filterInputArray($value, \array_keys($columns), (bool)$filterByColumns);
+				}
+				
+				$row = $this->propertiesToColumns($value);
 				
 				if (!isset($row[$pk->getName()]) && !$pk->isAutoincrement()) {
 					$primaryKey = $this->connection->generatePrimaryKey();
@@ -361,7 +356,16 @@ abstract class Repository
 				}
 				
 				if (isset($row[$pk->getName()])) {
-					$primaryKeys[] = $row[$pk->getName()];
+					$primaryKeys[] = $primaryKey = $row[$pk->getName()];
+				}
+				
+				foreach ($joinRelations as $name => $keys) {
+					if (!$primaryKey) {
+						throw new \InvalidArgumentException("Primary key not found for joining relations.");
+					}
+					
+					$collectionRelation = new CollectionRelation($this, $this->getStructure()->getRelation($name), $primaryKey);
+					$collectionRelation->relate($keys);
 				}
 				
 				$insert[] = $row;
@@ -383,7 +387,7 @@ abstract class Repository
 			continue;
 		}
 		
-		/** @var \StORM\CollectionEntity $collection */
+		/** @var \StORM\ICollection $collection */
 		$collection = $primaryKeys ? $this->many()->setWhere(self::DEFAULT_ALIAS . '.' . $pk->getName(), $primaryKeys) : $this->many()->setWhere('1=0');
 		$collection->setAffectedNumber($affected);
 		
@@ -400,15 +404,6 @@ abstract class Repository
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
 	{
 		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore);
-	}
-	
-	private function getPrimaryKeyNextValue(bool $check = true): int
-	{
-		if ($check && (int) $this->connection->getLink()->lastInsertId() === 0) {
-			throw new GeneralException('Cannot get last inserted ID in autoincrement PK');
-		}
-		
-		return (int) $this->connection->getLink()->lastInsertId();
 	}
 	
 	/**
@@ -428,7 +423,7 @@ abstract class Repository
 	public function getRelationSelect(string $relation): array
 	{
 		if (!$this->getStructure()->hasRelation($relation)) {
-			throw new NotExistsException(NotExistsException::RELATION, $relation, $this->getEntityClass(), \array_keys($this->getStructure()->getRelations()));
+			throw new NotExistsException(null, NotExistsException::RELATION, $relation, $this->getEntityClass(), \array_keys($this->getStructure()->getRelations()));
 		}
 		
 		$relation = $this->getStructure()->getRelation($relation);
@@ -445,5 +440,110 @@ abstract class Repository
 	public function getDefaultFrom(): array
 	{
 		return [self::DEFAULT_ALIAS => $this->getStructure()->getTable()->getName()];
+	}
+	
+	/**
+	 * Call user filters on collection
+	 * @param \StORM\ICollection $collection
+	 * @param mixed[][] $filters
+	 * @param bool $silent
+	 * @phpstan-return \StORM\ICollection<T>
+	 * @return \StORM\ICollection
+	 */
+	public function filter(ICollection $collection, array $filters, bool $silent = false): ICollection
+	{
+		foreach ($filters as $name => $value) {
+			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
+			
+			if (\method_exists($this, $realName)) {
+				\call_user_func_array([$this, $realName], [$value, $collection]);
+				
+				continue;
+			}
+			
+			if ($silent) {
+				continue;
+			}
+			
+			// throw exception
+			$suggestions = '';
+			$class = static::class;
+			
+			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this)))) {
+				$suggestions = " Do you mean '$match'?";
+			}
+			
+			throw new \InvalidArgumentException("Filter in Repository $class not found.$suggestions");
+		}
+		
+		return $collection;
+	}
+	
+	/**
+	 * Convert properties to columns
+	 * @param mixed[] $values
+	 * @return mixed[]
+	 */
+	public function propertiesToColumns(array $values): array
+	{
+		$columns = $this->getStructure()->getColumns(true);
+		$return = [];
+		
+		foreach ($values as $name => $value) {
+			if (!isset($columns[$name])) {
+				$return[$name] = $value;
+				
+				continue;
+			}
+			
+			$return[$columns[$name]->getName()] = $value;
+		}
+		
+		return $return;
+	}
+	
+	private function getPrimaryKeyNextValue(bool $check = true): int
+	{
+		if ($check && (int) $this->connection->getLink()->lastInsertId() === 0) {
+			throw new GeneralException('Cannot get last inserted ID in autoincrement PK');
+		}
+		
+		return (int) $this->connection->getLink()->lastInsertId();
+	}
+	
+	/**
+	 * @param mixed[] $values
+	 * @param bool $sync
+	 * @return int[][]|string[][]
+	 */
+	private function createRelations(array &$values, bool $sync): array
+	{
+		$joinRelations = [];
+		
+		foreach ($this->getStructure()->getRelations() as $relation) {
+			$name = $relation->getPropertyName();
+			
+			if (!isset($values[$name]) || !\is_array($values[$name])) {
+				continue;
+			}
+			
+			if ($relation->isKeyHolder()) {
+				$values[$name] = $this->getConnection()->getRepository($relation->getTarget())->syncOne($values[$name], $sync ? null : []);
+			} else {
+				$joinRelations[$name] = \array_values($values[$name]);
+				unset($values[$name]);
+			}
+		}
+		
+		return $joinRelations;
+	}
+	
+	/**
+	 * Sleep
+	 * @return string[]
+	 */
+	public function __sleep(): array
+	{
+		throw new GeneralException('StORM connections are unserializable');
 	}
 }

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-class Relation extends PropertyAnnotation
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
+class Relation extends AnnotationProperty
 {
-	private const ANNOTATION = 'relation';
-	
 	/**
 	 * @var string
 	 */
@@ -37,7 +38,6 @@ class Relation extends PropertyAnnotation
 	 * @var bool
 	 */
 	protected $isKeyHolder;
-	
 	
 	public function getSource(): string
 	{
@@ -125,15 +125,19 @@ class Relation extends PropertyAnnotation
 		return false;
 	}
 	
-	public function validate(): void
+	public function getSchema(): Schema
 	{
-		$this->checkRequired(['name', 'source', 'target', 'sourceKey', 'targetKey']);
-		
-		return;
+		return Expect::structure([
+			'name' => Expect::string(null),
+			'source' => Expect::string(null),
+			'target' => Expect::string(null),
+			'sourceKey' => Expect::string(null),
+			'targetKey' => Expect::string(null),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'relation';
 	}
 }

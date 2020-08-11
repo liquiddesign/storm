@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace StORM\Meta;
 
 use Nette\Caching\Cache;
-use StORM\Connection;
 use StORM\Exception\AnnotationException;
 use StORM\Exception\GeneralException;
 use StORM\Helpers;
@@ -14,9 +13,9 @@ use StORM\SchemaManager;
 
 class Structure
 {
-	private const ANNOTATION_VAR = 'var';
+	public const NAME_SEPARATOR = '_';
 	
-	private const NAME_SEPARATOR = '_';
+	private const ANNOTATION_VAR = 'var';
 	
 	private const INTERFACE_PREFIX = 'I';
 	
@@ -83,13 +82,13 @@ class Structure
 		$this->schemaManager = $schemaManager;
 		
 		try {
-			$customAnnots = $schemaManager->getConnection()->getCustomAnnotations();
+			$annotations = $schemaManager->getCustomAnnotations();
 			
 			$fileName = (new \ReflectionClass($class))->getFileName();
 			
 			$dataModel = $this;
 			
-			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $customAnnots) {
+			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $annotations) {
 				$dependencies = [
 					Cache::FILES => $fileName,
 				];
@@ -120,7 +119,7 @@ class Structure
 					}
 				}
 				
-				$dataModel->loadCustomAnnotations($customAnnots, $classDocComment, $propertiesDocComments);
+				$dataModel->loadCustomAnnotations($annotations, $classDocComment, $propertiesDocComments);
 				
 				return [$table, $columns, $pk, $relations, $dataModel->hasMutations];
 			});
@@ -160,10 +159,324 @@ class Structure
 		return $this->customPropertyAnnotations[\strtolower($annotationName)][$property] ?? null;
 	}
 	
+	public function getEntityClass(): ?string
+	{
+		return $this->entityClass;
+	}
+	
+	public function getTable(): Table
+	{
+		return $this->table;
+	}
+	
+	public function getPK(): Column
+	{
+		return $this->pk;
+	}
+	
+	/**
+	 * @param string $expressionPrefix
+	 * @param string $aliasPrefix
+	 * @return string[]
+	 */
+	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = ''): array
+	{
+		if (!$this->getColumns()) {
+			return ["$expressionPrefix*"];
+		}
+		
+		$select = [];
+		$locales = [];
+		
+		$pk = $this->getPK();
+		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
+		
+		foreach ($this->getColumns() as $column) {
+			if ($column->hasMutations()) {
+				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $this->schemaManager->getConnection()->getMutationSuffix();
+				$locales[] = $column;
+			} else {
+				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName();
+			}
+		}
+		
+		foreach ($locales as $column) {
+			foreach ($this->schemaManager->getConnection()->getAvailableMutations() as $suffix) {
+				$localeColumn = $column->getName() . $suffix;
+				$localeProperty = $column->getPropertyName() . $suffix;
+				$select[$aliasPrefix . $localeProperty] = $expressionPrefix . $localeColumn;
+			}
+		}
+		
+		return $select;
+	}
+	
+	/**
+	 * @param bool $includePK
+	 * @param bool $includeFK
+	 * @return \StORM\Meta\Column[]
+	 */
+	public function getColumns(bool $includePK = true, bool $includeFK = true): array
+	{
+		if ($includePK && $includeFK) {
+			return $this->columns;
+		}
+		
+		return \array_filter($this->columns, static function (Column $value) use ($includePK, $includeFK) {
+			return ($includePK && !$value->isPrimaryKey()) || ($includeFK && !$value->isForeignKey());
+		});
+	}
+	
+	/**
+	 * @return \StORM\Meta\Relation[]
+	 */
+	public function getRelations(): array
+	{
+		return $this->relations;
+	}
+	
+	/**
+	 * Tells if has some mutation columns
+	 * @return bool
+	 */
+	public function hasMutations(): bool
+	{
+		return $this->hasMutations;
+	}
+	
+	public function hasColumn(string $name): bool
+	{
+		return isset($this->columns[$name]);
+	}
+	
+	public function getColumn(string $name): ?Column
+	{
+		return $this->columns[$name] ?? null;
+	}
+	
+	public function hasRelation(string $name): bool
+	{
+		return isset($this->relations[$name]);
+	}
+
+	public function getRelation(string $name): ?Relation
+	{
+		return $this->relations[$name] ?? null;
+	}
+	
+	/**
+	 * @return \StORM\Meta\Index[]
+	 * @throws \StORM\Exception\GeneralException
+	 * @throws \StORM\Exception\AnnotationException
+	 * @throws \ReflectionException
+	 */
+	public function getIndexes(): array
+	{
+		$columns = $this->getColumns();
+		$indexes = [];
+		$class = $this->entityClass;
+		
+		foreach ($columns as $column) {
+			if ($column->isUnique()) {
+				$index = new Index($class);
+				$index->setName($this->setPrefix($column->getPropertyName()));
+				$index->setUnique(true);
+				$index->setColumns([$column->getPropertyName()]);
+				
+				$indexes[$column->getPropertyName()] = $index;
+			}
+		}
+		
+		foreach ($this->getRelations() as $relation) {
+			if ($relation->isKeyHolder()) {
+				$index = new Index($class);
+				$index->setName($this->setPrefix($relation->getName()));
+				$index->setColumns([$relation->getSourceKey()]);
+				$indexes[$relation->getPropertyName()] = $index;
+			}
+		}
+		
+		$docComment = $this->getClassDocComment();
+		
+		if (!isset($docComment[Index::getAnnotationName()])) {
+			return [];
+		}
+		
+		$indexDefinitions = $docComment[Index::getAnnotationName()];
+		
+		if (!\is_array($indexDefinitions)) {
+			$indexDefinitions = [$indexDefinitions];
+		}
+		
+		foreach ($indexDefinitions as $rawIndexDefinition) {
+			$json = $this->parseJson($rawIndexDefinition);
+			
+			if ($json === null) {
+				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawIndexDefinition);
+			}
+			
+			$index = new Index($class);
+			$index->loadFromArray($json);
+			$indexes[$index->getName()] = $index;
+		}
+		
+		return $indexes;
+	}
+	
+	/**
+	 * @return \StORM\Meta\Trigger[]
+	 * @throws \StORM\Exception\GeneralException
+	 * @throws \StORM\Exception\AnnotationException
+	 * @throws \ReflectionException
+	 */
+	public function getTriggers(): array
+	{
+		$triggers = [];
+		$class = $this->entityClass;
+		
+		$docComment = $this->getClassDocComment();
+		
+		if (!isset($docComment[Trigger::getAnnotationName()])) {
+			return [];
+		}
+		
+		$triggerDefinitions = $docComment[Trigger::getAnnotationName()];
+		
+		if (!\is_array($triggerDefinitions)) {
+			$triggerDefinitions = [$triggerDefinitions];
+		}
+		
+		foreach ($triggerDefinitions as $rawTriggerDefinition) {
+			$json = $this->parseJson($rawTriggerDefinition);
+			
+			if ($json === null) {
+				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawTriggerDefinition);
+			}
+			
+			$trigger = new Trigger($class);
+			$trigger->loadFromArray($json);
+			$triggers[$trigger->getName()] = $trigger;
+		}
+		
+		return $triggers;
+	}
+	
+	/**
+	 * @return \StORM\Meta\Constraint[]
+	 * @throws \ReflectionException
+	 */
+	public function getConstraints(): array
+	{
+		$constraints = [];
+		$class = $this->entityClass;
+		
+		$properties = $this->getPropertiesDocComments();
+		
+		foreach ($properties as $name => $docComment) {
+			if (!isset($docComment[Constraint::getAnnotationName()])) {
+				continue;
+			}
+			
+			if (\is_array($docComment[Constraint::getAnnotationName()])) {
+				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class::$name", Constraint::getAnnotationName());
+			}
+			
+			$json = $this->parseJson($docComment[Constraint::getAnnotationName()]);
+			
+			if ($json === null) {
+				throw new AnnotationException(AnnotationException::JSON_PARSE, "$class:$name", $docComment[Constraint::getAnnotationName()]);
+			}
+			
+			$relation = $this->getRelation($name);
+			
+			if (!$relation) {
+				throw new AnnotationException(AnnotationException::STANDALONE_CONSTRAINT, "$class::$name");
+			}
+			
+			if (!$relation->isKeyHolder()) {
+				throw new AnnotationException(AnnotationException::NO_KEY_HOLDER_CONSTRAINT, "$class::$name");
+			}
+			
+			$object = new Constraint($class, $relation->getPropertyName());
+			$object->setDefaultsFromRelation($relation);
+			$object->setSource($this->schemaManager->getStructure($object->getSource())->getTable()->getName());
+			$object->setTarget($this->schemaManager->getStructure($object->getTarget())->getTable()->getName());
+			$object->setName($this->setPrefix($name));
+			$object->loadFromArray($json);
+			
+			$constraints[$object->getName()] = $object;
+		}
+		
+		return $constraints;
+	}
+	
+	/**
+	 * @return mixed[]
+	 * @throws \ReflectionException
+	 */
+	public function jsonSerialize(): array
+	{
+		$json = [
+			'table' => $this->getTable()->jsonSerialize(),
+			'columns' => [],
+			'relations' => [],
+			'constraints' => [],
+			'indexes' => [],
+			'triggers' => [],
+		];
+		
+		foreach ($this->getColumns() as $column) {
+			$json['columns'][] = $column->jsonSerialize();
+		}
+		
+		foreach ($this->getRelations() as $relation) {
+			$json['relations'][] = $relation->jsonSerialize();
+		}
+		
+		foreach ($this->getConstraints() as $constraint) {
+			$json['constraints'][] = $constraint->jsonSerialize();
+		}
+		
+		foreach ($this->getIndexes() as $index) {
+			$json['indexes'][] = $index->jsonSerialize();
+		}
+		
+		foreach ($this->getTriggers() as $trigger) {
+			$json['triggers'][] = $trigger->jsonSerialize();
+		}
+		
+		return $json;
+	}
+	
+	public static function isEntityClass(string $class): bool
+	{
+		return \is_subclass_of($class, \StORM\Entity::class);
+	}
+	
+	public static function getRepositoryClassFromEntityClass(string $entityClass): string
+	{
+		return $entityClass . (new \ReflectionClass(Repository::class))->getShortName();
+	}
+	
+	public static function getEntityClassFromInterface(string $repositoryClass): string
+	{
+		return \substr($repositoryClass, \strlen(self::INTERFACE_PREFIX));
+	}
+	
+	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
+	{
+		return self::INTERFACE_PREFIX . $repositoryClass;
+	}
+	
+	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
+	{
+		return \substr($repositoryClass, 0, (\strrpos($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName())));
+	}
+	
 	/**
 	 * @param string[] $customAnnotations
-	 * @param string[]  $classDocComment
-	 * @param string[][]  $propertiesDocComments
+	 * @param string[] $classDocComment
+	 * @param string[][] $propertiesDocComments
 	 */
 	protected function loadCustomAnnotations(array $customAnnotations, array $classDocComment, array $propertiesDocComments): void
 	{
@@ -188,106 +501,6 @@ class Structure
 			
 			continue;
 		}
-	}
-	
-	/**
-	 * @return string[][]|string[]|int[][]|int[]
-	 * @throws \ReflectionException
-	 */
-	protected function getClassDocComment(): array
-	{
-		return Helpers::parseDocComment((new \ReflectionClass($this->entityClass))->getDocComment());
-	}
-	
-	/**
-	 * @return string[][]|string[][][]|int[][]|int[][][]
-	 * @throws \ReflectionException
-	 */
-	protected function getPropertiesDocComments(): array
-	{
-		$properties = [];
-		
-		foreach (\array_keys(\get_class_vars($this->entityClass)) as $name) {
-			$properties[$name] = Helpers::parseDocComment((new \ReflectionProperty($this->entityClass, $name))->getDocComment());
-		}
-		
-		return $properties;
-	}
-	
-	public static function isEntityClass(string $class): bool
-	{
-		return \is_subclass_of($class, \StORM\Entity::class);
-	}
-	
-	public static function getRepositoryClassFromEntityClass(string $entityClass): string
-	{
-		return $entityClass . (new \ReflectionClass(Repository::class))->getShortName();
-	}
-	
-	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
-	{
-		return self::INTERFACE_PREFIX . $repositoryClass;
-	}
-	
-	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
-	{
-		return \substr($repositoryClass, 0, (\strrpos($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName())));
-	}
-	
-	public function getEntityClass(): ?string
-	{
-		return $this->entityClass;
-	}
-	
-	public function getTable(): Table
-	{
-		return $this->table;
-	}
-	
-	public function getPK(): Column
-	{
-		return $this->pk;
-	}
-	
-	/**
-	 * @param string $expressionPrefix
-	 * @param string $aliasPrefix
-	 * @return string[]
-	 */
-	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = ''): array
-	{
-		$activeLanguage = $this->schemaManager->getConnection()->getMutation();
-		$languages = $this->schemaManager->getConnection()->getAvailableMutations();
-		
-		if (!$this->getColumns()) {
-			return ["$expressionPrefix*"];
-		}
-		
-		$select = [];
-		$locales = [];
-		$languageSeparator = Connection::MUTATION_SEPARATOR;
-		
-		$pk = $this->getPK();
-		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
-		
-		foreach ($this->getColumns() as $column) {
-			if ($column->hasMutations()) {
-				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $languageSeparator . $activeLanguage;
-				$locales[] = $column;
-			} else {
-				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName();
-			}
-		}
-		
-		foreach ($locales as $column) {
-			foreach ($languages as $language) {
-				$localeColumn = $column->getName() . $languageSeparator . $language;
-				$localeProperty = $column->getPropertyName() . $languageSeparator . $language;
-				$select[$aliasPrefix . $localeProperty] = $expressionPrefix . $localeColumn;
-			}
-		}
-		
-		return $select;
 	}
 	
 	protected function loadPK(string $tableName): \StORM\Meta\Column
@@ -365,27 +578,56 @@ class Structure
 	}
 	
 	/**
-	 * @param bool $includePK
-	 * @param bool $includeFK
-	 * @return \StORM\Meta\Column[]
+	 * @param string[]|string[][] $docComment
+	 * @return \StORM\Meta\Table
 	 */
-	public function getColumns(bool $includePK = true, bool $includeFK = true): array
+	protected function loadTable(array $docComment): Table
 	{
-		if ($includePK && $includeFK) {
-			return $this->columns;
+		$class = $this->entityClass;
+		
+		$table = new Table($class);
+		
+		if (isset($docComment[Table::getAnnotationName()])) {
+			if (\is_array($docComment[Table::getAnnotationName()])) {
+				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class", Table::getAnnotationName());
+			}
+			
+			$json = $this->parseJson($docComment[Table::getAnnotationName()]);
+			
+			if ($json === null) {
+				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $docComment[Table::getAnnotationName()]);
+			}
+			
+			$table->loadFromArray($json);
 		}
 		
-		return \array_filter($this->columns, static function (Column $value) use ($includePK, $includeFK) {
-			return ($includePK && !$value->isPrimaryKey()) || ($includeFK && !$value->isForeignKey());
-		});
+		$table->setComment($docComment[0] ?? '');
+		
+		return $table;
 	}
 	
 	/**
-	 * @return \StORM\Meta\Relation[]
+	 * @return string[][]|string[]|int[][]|int[]
+	 * @throws \ReflectionException
 	 */
-	public function getRelations(): array
+	private function getClassDocComment(): array
 	{
-		return $this->relations;
+		return Helpers::parseDocComment((new \ReflectionClass($this->entityClass))->getDocComment());
+	}
+	
+	/**
+	 * @return string[][]|string[][][]|int[][]|int[][][]
+	 * @throws \ReflectionException
+	 */
+	private function getPropertiesDocComments(): array
+	{
+		$properties = [];
+		
+		foreach (\array_keys(\get_class_vars($this->entityClass)) as $name) {
+			$properties[$name] = Helpers::parseDocComment((new \ReflectionProperty($this->entityClass, $name))->getDocComment());
+		}
+		
+		return $properties;
 	}
 	
 	/**
@@ -425,23 +667,12 @@ class Structure
 			$this->hasMutations = true;
 		}
 		
-		$column->validate();
-		
 		return $column;
 	}
 	
-	protected function setPrefix(string $name): string
+	private function setPrefix(string $name): string
 	{
 		return $this->getTable()->getName() . self::NAME_SEPARATOR . $name;
-	}
-	
-	/**
-	 * Tells if has some mutation columns
-	 * @return bool
-	 */
-	public function hasMutations(): bool
-	{
-		return $this->hasMutations;
 	}
 	
 	/**
@@ -500,207 +731,16 @@ class Structure
 		}
 		
 		$relation->loadFromArray($json);
-		$relation->validate();
+		
+		if (\interface_exists($relation->getTarget())) {
+			$relation->setTarget(self::getEntityClassFromInterface($relation->getTarget()));
+		}
+		
+		if (\interface_exists($relation->getSource())) {
+			$relation->setSource(self::getEntityClassFromInterface($relation->getSource()));
+		}
 		
 		return $relation;
-	}
-	
-	public function hasColumn(string $name): bool
-	{
-		return isset($this->columns[$name]);
-	}
-	
-	public function getColumn(string $name): ?Column
-	{
-		return $this->columns[$name] ?? null;
-	}
-	
-	public function hasRelation(string $name): bool
-	{
-		return isset($this->relations[$name]);
-	}
-
-	public function getRelation(string $name): ?Relation
-	{
-		return $this->relations[$name] ?? null;
-	}
-	
-	/**
-	 * @return \StORM\Meta\Index[]
-	 * @throws \StORM\Exception\GeneralException
-	 * @throws \StORM\Exception\AnnotationException
-	 * @throws \ReflectionException
-	 */
-	public function getIndexes(): array
-	{
-		$columns = $this->getColumns();
-		$indexes = [];
-		$class = $this->entityClass;
-		
-		foreach ($columns as $column) {
-			if ($column->isUnique()) {
-				$index = new Index($class);
-				$index->setName($this->setPrefix($column->getPropertyName()));
-				$index->setUnique(true);
-				$index->setColumns([$column->getPropertyName()]);
-				$index->validate();
-				$indexes[$column->getPropertyName()] = $index;
-			}
-		}
-		
-		foreach ($this->getRelations() as $relation) {
-			if ($relation->isKeyHolder()) {
-				$index = new Index($class);
-				$index->setName($this->setPrefix($relation->getName()));
-				$index->setColumns([$relation->getSourceKey()]);
-				$index->validate();
-				$indexes[$relation->getPropertyName()] = $index;
-			}
-		}
-		
-		$docComment = $this->getClassDocComment();
-		
-		if (!isset($docComment[Index::getAnnotationName()])) {
-			return [];
-		}
-		
-		$indexDefinitions = $docComment[Index::getAnnotationName()];
-		
-		if (!\is_array($indexDefinitions)) {
-			$indexDefinitions = [$indexDefinitions];
-		}
-		
-		foreach ($indexDefinitions as $rawIndexDefinition) {
-			$json = $this->parseJson($rawIndexDefinition);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawIndexDefinition);
-			}
-			
-			$index = new Index($class);
-			$index->loadFromArray($json);
-			$index->validate();
-			$indexes[$index->getName()] = $index;
-		}
-		
-		return $indexes;
-	}
-	
-	/**
-	 * @return \StORM\Meta\Trigger[]
-	 * @throws \StORM\Exception\GeneralException
-	 * @throws \StORM\Exception\AnnotationException
-	 * @throws \ReflectionException
-	 */
-	public function getTriggers(): array
-	{
-		$triggers = [];
-		$class = $this->entityClass;
-		
-		$docComment = $this->getClassDocComment();
-		
-		if (!isset($docComment[Trigger::getAnnotationName()])) {
-			return [];
-		}
-		
-		$triggerDefinitions = $docComment[Trigger::getAnnotationName()];
-		
-		if (!\is_array($triggerDefinitions)) {
-			$triggerDefinitions = [$triggerDefinitions];
-		}
-		
-		foreach ($triggerDefinitions as $rawTriggerDefinition) {
-			$json = $this->parseJson($rawTriggerDefinition);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawTriggerDefinition);
-			}
-			
-			$trigger = new Trigger($class);
-			$trigger->loadFromArray($json);
-			$trigger->validate();
-			$triggers[$trigger->getName()] = $trigger;
-		}
-		
-		return $triggers;
-	}
-	
-	/**
-	 * @return \StORM\Meta\Constraint[]
-	 * @throws \ReflectionException
-	 */
-	public function getConstraints(): array
-	{
-		$constraints = [];
-		$class = $this->entityClass;
-		
-		$properties = $this->getPropertiesDocComments();
-		
-		foreach ($properties as $name => $docComment) {
-			if (!isset($docComment[Constraint::getAnnotationName()])) {
-				continue;
-			}
-			
-			if (\is_array($docComment[Constraint::getAnnotationName()])) {
-				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class::$name", Constraint::getAnnotationName());
-			}
-			
-			$json = $this->parseJson($docComment[Constraint::getAnnotationName()]);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, "$class:$name", $docComment[Constraint::getAnnotationName()]);
-			}
-			
-			$relation = $this->getRelation($name);
-			
-			if (!$relation) {
-				throw new AnnotationException(AnnotationException::STANDALONE_CONSTRAINT, "$class::$name");
-			}
-			
-			if (!$relation->isKeyHolder()) {
-				throw new AnnotationException(AnnotationException::NO_KEY_HOLDER_CONSTRAINT, "$class::$name");
-			}
-			
-			$object = new Constraint($class, $relation->getPropertyName());
-			$object->setDefaultsFromRelation($relation);
-			$object->setName($this->setPrefix($name));
-			
-			$object->loadFromArray($json);
-			$object->validate();
-			
-			$constraints[$name] = $object;
-		}
-		
-		return $constraints;
-	}
-	
-	/**
-	 * @param string[]|string[][] $docComment
-	 * @return \StORM\Meta\Table
-	 */
-	protected function loadTable(array $docComment): Table
-	{
-		$class = $this->entityClass;
-		
-		$table = new Table($class);
-		
-		if (isset($docComment[Table::getAnnotationName()])) {
-			if (\is_array($docComment[Table::getAnnotationName()])) {
-				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class", Table::getAnnotationName());
-			}
-			
-			$json = $this->parseJson($docComment[Table::getAnnotationName()]);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $docComment[Table::getAnnotationName()]);
-			}
-			
-			$table->loadFromArray($json);
-		}
-		
-		$table->setComment($docComment[0] ?? '');
-		
-		return $table;
 	}
 	
 	/**
@@ -710,43 +750,5 @@ class Structure
 	private function parseJson(string $string): ?array
 	{
 		return $string ? \json_decode($string, true) : [];
-	}
-	
-	/**
-	 * @return mixed[]
-	 * @throws \ReflectionException
-	 */
-	public function jsonSerialize(): array
-	{
-		$json = [
-			'table' => $this->getTable()->jsonSerialize(),
-			'columns' => [],
-			'relations' => [],
-			'constraints' => [],
-			'indexes' => [],
-			'triggers' => [],
-		];
-		
-		foreach ($this->getColumns() as $column) {
-			$json['columns'][] = $column->jsonSerialize();
-		}
-		
-		foreach ($this->getRelations() as $relation) {
-			$json['relations'][] = $relation->jsonSerialize();
-		}
-		
-		foreach ($this->getConstraints() as $constraint) {
-			$json['constraints'][] = $constraint->jsonSerialize();
-		}
-		
-		foreach ($this->getIndexes() as $index) {
-			$json['indexes'][] = $index->jsonSerialize();
-		}
-		
-		foreach ($this->getTriggers() as $trigger) {
-			$json['triggers'][] = $trigger->jsonSerialize();
-		}
-		
-		return $json;
 	}
 }

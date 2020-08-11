@@ -5,25 +5,29 @@ declare(strict_types=1);
 namespace StORM\Exception;
 
 use StORM\Helpers;
+use StORM\IDumper;
 
-class NotExistsException extends \RuntimeException
+class NotExistsException extends \RuntimeException implements IContextException
 {
 	public const MUTATION = 0;
 	public const RELATION = 1;
-	public const PROPERTY = 3;
-	public const CLASS_NAME = 2;
-	public const VALUE = 4;
-	public const FILTER = 5;
-	public const ALIAS = 6;
+	public const PROPERTY = 2;
+	public const VALUE = 3;
+	
+	/**
+	 * @var \StORM\ICollection|\StORM\Entity|null
+	 */
+	private $context;
 	
 	/**
 	 * NotExistsException constructor.
-	 * @param int $propertyCode
+	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @param int $errorCode
 	 * @param string $value
 	 * @param string|null $source
 	 * @param string[]|null $possibleValues
 	 */
-	public function __construct(int $propertyCode, string $value, ?string $source = null, ?array $possibleValues = null)
+	public function __construct($context, int $errorCode, string $value, ?string $source = null, ?array $possibleValues = null)
 	{
 		$suggestions = '';
 		$possibleList = '';
@@ -36,24 +40,25 @@ class NotExistsException extends \RuntimeException
 			$possibleList = ' Available: ' . \implode(', ', $possibleValues) . '.';
 		}
 		
-		if ($propertyCode === self::MUTATION) {
+		if ($errorCode === self::MUTATION) {
 			$message = "Unknown mutation '$value'.$possibleList";
-		} elseif ($propertyCode === self::RELATION) {
+		} elseif ($errorCode === self::RELATION) {
 			$message = "Unknown relation '$value'.$suggestions Define relation by @relation in $source";
-		} elseif ($propertyCode === self::ALIAS) {
-			$message = "Unknown alias '$value'.$suggestions Use 'this' for source table, otherwise call ->join() or define relation by @relation in $source.";
-		} elseif ($propertyCode === self::CLASS_NAME) {
-			$message = "Unknown class '$value'. Create class $value, fix PSR-4 autoload or typo.";
-		} elseif ($propertyCode === self::PROPERTY) {
-			$message = "Unknown property '$value' in '$source'.$suggestions Fix typo or bind property by @column in $source";
-		} elseif ($propertyCode === self::VALUE) {
+		} elseif ($errorCode === self::PROPERTY) {
+			$message = "Unknown property/column '$value' in '$source'.$suggestions Fix typo or bind property by @column in $source";
+		} elseif ($errorCode === self::VALUE) {
 			$message = "Cannot get '$value' of '$source'.$suggestions";
-		} elseif ($propertyCode === self::FILTER) {
-			$message = "Unknown filter '$value' in $source.$suggestions";
 		} else {
-			$message = "$propertyCode of $value is not set";
+			$message = "$errorCode of $value is not set";
 		}
 		
-		parent::__construct($message, $propertyCode);
+		$this->context = $context;
+		
+		parent::__construct($message, $errorCode);
+	}
+	
+	public function getContext(): ?IDumper
+	{
+		return $this->context;
 	}
 }

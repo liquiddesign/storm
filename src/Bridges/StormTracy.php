@@ -33,7 +33,7 @@ class StormTracy implements \Tracy\IBarPanel
 		return;
 	}
 	
-	protected function getTotalTime(): float
+	public function getTotalTime(): float
 	{
 		$totalTime = 0.0;
 		
@@ -44,7 +44,7 @@ class StormTracy implements \Tracy\IBarPanel
 		return $totalTime;
 	}
 	
-	protected function getTotalQueries(): int
+	public function getTotalQueries(): int
 	{
 		$totalAmount = 0;
 		

@@ -18,13 +18,14 @@
 	"require-dev": 
 	{
 		"nette/tester":"*",
-		"squizlabs/php_codesniffer": "3.*",
-		"slevomat/coding-standard": "~4.0",
+		"tracy/tracy":"*",
+		"composer/composer": "*",
+		"liquiddesign/codestyle": "*",
 		"phpstan/phpstan": "*"
 	},
 	"scripts": {
-		"phpstan": "phpstan analyse --level 5 src",
+		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
 		"phpcs": "phpcs --standard=ruleset.xml src",
-		"tester": "tester tests/*.phpt  -c tests/php.ini --setup tests/runner-setup.php"
+		"tester": "tester tests/*.phpt  -c tests/php.ini --setup tests/setup.php"
 	}
 }

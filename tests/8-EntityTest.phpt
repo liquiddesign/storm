@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use DB\Sector;
 use DB\SectorRepository;
 use DB\Stock;
 use DB\StockRepository;
@@ -27,7 +28,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testFetchingData(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
+		$stocks = $storm->getRepository(Stock::class);
 		/** @var \DB\Stock $apple */
 		$apple = $stocks->one('AAPL', true);
 		$appleWithAllColumns = $stocks->one('AAPL', true, ['*']);
@@ -78,7 +79,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testUpdateDelete(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
+		$stocks = $storm->getRepository(Stock::class);
 		$stocks->many()->setWhere('uuid', 'TSLA_aux')->delete();
 		
 		// 1. update single property
@@ -127,7 +128,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		// 1. create empty from array
 		$storm = $container->getByType(Connection::class);
-		$stocks = $storm->getRepository(StockRepository::class);
+		$stocks = $storm->getRepository(Stock::class);
 		$stocks->many()->setWhere('uuid', 'TSLA_aux')->delete();
 		$tesla = $stocks->one('TSLA');
 		
@@ -140,7 +141,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		// 2. populate from array
 		$source = $stocks->one('AAPL');
 		$tesla = $stocks->one('TSLA_aux');
-		$tesla->loadFromArray($source->toArray(), null, true);
+		$tesla->loadFromArray($source->toArray(), true, true);
 		Assert::equal($tesla->toArray(), $source->toArray());
 		
 		// 4. convert to array, include non colum public
@@ -157,10 +158,10 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	public function testLanguages(Container $container): void
 	{
 		$storm = $container->getByType(Connection::class);
-		$sectors = $storm->getRepository(SectorRepository::class);
+		$sectors = $storm->getRepository(Sector::class);
 		$sectors->many()->setWhere('uuid', 'utilities_aux')->delete();
-		$storm->setAvailableMutations(['cz', 'en']);
-		$separator = Connection::MUTATION_SEPARATOR;
+		$storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
+	
 		
 		// 1. Get language
 		$storm->setMutation('cz');
@@ -170,14 +171,14 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('Energy', $energy->getValue('name', 'en'));
 		$array = $energy->toArray([], false);
 		//Assert::false(\is_array($array['name']));
-		Assert::true(isset($array["name$separator" . 'cz']));
-		Assert::true(isset($array["name$separator" . 'en']));
+		Assert::true(isset($array["name" . '_cz']));
+		Assert::true(isset($array["name" . '_en']));
 		
 		$array = $energy->toArray([], true);
 		Assert::same('Energie', $array['name']['cz']);
 		Assert::same('Energy', $array['name']['en']);
-		Assert::false(isset($array["name$separator" . 'cz']));
-		Assert::false(isset($array["name$separator" . 'en']));
+		Assert::false(isset($array["name" . '_cz']));
+		Assert::false(isset($array["name" . '_en']));
 		
 		
 		// 2. Switch language
@@ -188,17 +189,17 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('Energy', $energy->getValue('name', 'en'));
 		$array = $energy->toArray([], false);
 		//Assert::false(\is_array($array['name']));
-		Assert::true(isset($array["name$separator" . 'cz']));
-		Assert::true(isset($array["name$separator" . 'en']));
+		Assert::true(isset($array["name" . '_cz']));
+		Assert::true(isset($array["name" . '_en']));
 		
 		$array = $energy->toArray([], true);
 		Assert::same('Energie', $array['name']['cz']);
 		Assert::same('Energy', $array['name']['en']);
-		Assert::false(isset($array["name$separator" . 'cz']));
-		Assert::false(isset($array["name$separator" . 'en']));
+		Assert::false(isset($array["name" . '_cz']));
+		Assert::false(isset($array["name" . '_en']));
 		
 		// 3. Limit languages
-		$storm->setAvailableMutations(['cz']);
+		$storm->setAvailableMutations(['cz' => '_cz']);
 		$storm->setMutation('cz');
 		$energy = $sectors->one('energy');
 		Assert::same('Energie', $energy->name);
@@ -209,28 +210,28 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$array = $energy->toArray([], false);
 		//Assert::false(\is_array($array['name']));
-		Assert::true(isset($array["name$separator" . 'cz']));
-		Assert::false(isset($array["name$separator" . 'en']));
+		Assert::true(isset($array["name" . '_cz']));
+		Assert::false(isset($array["name" . '_en']));
 		
 		$array = $energy->toArray([], true);
 		Assert::same('Energie', $array['name']['cz']);
-		Assert::false(isset($array["name$separator" . 'cz']));
+		Assert::false(isset($array["name" . '_cz']));
 		
 		// 4. Get null value in language
-		$storm->setAvailableMutations(['cz', 'en']);
+		$storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
 		$storm->setMutation('cz');
 		$energy = $sectors->one('finance');
 		Assert::null($energy->getValue('name', 'en'));
 		
 		// 5. Set languages
-		$storm->setAvailableMutations(['cz', 'en']);
+		$storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
 		$storm->setMutation('cz');
 		$energy = $sectors->one('materials');
 		$energy->name = 'Materialy';
 			Assert::same('Materialy', $energy->name);
 		Assert::same('Materialy', $energy->getValue('name', 'cz'));
 		//Assert::same('Materialy', $energy->toArray([], false)['name']);
-		Assert::same('Materialy', $energy->toArray([], false)["name$separator" . 'cz']);
+		Assert::same('Materialy', $energy->toArray([], false)["name" . '_cz']);
 		Assert::same('Materialy', $energy->toArray([], true)['name']['cz']);
 		
 		$energy = $sectors->one('materials');
@@ -238,7 +239,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('Materialy', $energy->name);
 		Assert::same('Materialy', $energy->getValue('name', 'cz'));
 		//Assert::same('Materialy', $energy->toArray([], false)['name']);
-		Assert::same('Materialy', $energy->toArray([], false)["name$separator" . 'cz']);
+		Assert::same('Materialy', $energy->toArray([], false)["name" . '_cz']);
 		Assert::same('Materialy', $energy->toArray([], true)['name']['cz']);
 		
 		$energy = $sectors->one('materials');
@@ -247,8 +248,8 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('Materialy', $energy->getValue('name', 'cz'));
 		Assert::same('Materials2', $energy->getValue('name', 'en'));
 		//Assert::same('Materials', $energy->toArray([], false)['name']);
-		Assert::same('Materialy', $energy->toArray([], false)["name$separator" . 'cz']);
-		Assert::same('Materials2', $energy->toArray([], false)["name$separator" . 'en']);
+		Assert::same('Materialy', $energy->toArray([], false)["name" . '_cz']);
+		Assert::same('Materials2', $energy->toArray([], false)["name" . '_en']);
 		Assert::same('Materialy', $energy->toArray([], true)['name']['cz']);
 		Assert::same('Materials2', $energy->toArray([], true)['name']['en']);
 	

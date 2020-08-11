@@ -73,7 +73,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		// charset
 		Assert::same('utf8', $connection->query("SHOW VARIABLES LIKE 'character_set_connection'")->fetchColumn(1));
 		// languages
-		Assert::same(['en'], $connection->getAvailableMutations());
+		Assert::same(['en' => '_en'], $connection->getAvailableMutations());
 		// primaryKeyGenerator
 		Assert::notNull($connection->generatePrimaryKey());
 	}
@@ -90,11 +90,11 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$neon = Neon::decode(\file_get_contents($container->parameters['appDir'] . '/configs/single_connection.neon'));
 		$name = 'default';
 		
-		$driver = $neon['storm'][$name]['driver'];
-		$dbName = $neon['storm'][$name]['dbname'];
-		$host = $neon['storm'][$name]['host'];
-		$user = $neon['storm'][$name]['user'];
-		$password = $neon['storm'][$name]['password'];
+		$driver = $neon['storm']['connections'][$name]['driver'];
+		$dbName = $neon['storm']['connections'][$name]['dbname'];
+		$host = $neon['storm']['connections'][$name]['host'];
+		$user = $neon['storm']['connections'][$name]['user'];
+		$password = $neon['storm']['connections'][$name]['password'];
 		
 		$connection = new Connection($container);
 		$connection->connect($name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
@@ -116,9 +116,9 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$neon = Neon::decode(\file_get_contents($container->parameters['appDir'] . '/configs/single_connection.neon'));
 		$name = 'default';
 		
-		$driver = $neon['storm'][$name]['driver'];
-		$dbName = $neon['storm'][$name]['dbname'];
-		$user = $neon['storm'][$name]['user'];
+		$driver = $neon['storm']['connections'][$name]['driver'];
+		$dbName = $neon['storm']['connections'][$name]['dbname'];
+		$user = $neon['storm']['connections'][$name]['user'];
 		
 		Assert::same($user, $connection->getUser());
 		Assert::same($dbName, $connection->getDatabaseName());

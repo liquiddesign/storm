@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace StORM\Meta;
 
-class Column extends PropertyAnnotation
+use Nette\Schema\Expect;
+use Nette\Schema\Schema;
+
+class Column extends AnnotationProperty
 {
 	public const FOREIGN_KEY_PREFIX = 'fk_';
 	public const ANNOTATION_PK = 'pk';
-	private const ANNOTATION = 'column';
 	
 	/**
 	 * Name of the column
-	 * @var string
+	 * @var string|null
 	 */
 	protected $propertyName;
 	
@@ -64,7 +66,7 @@ class Column extends PropertyAnnotation
 	protected $extra = '';
 	
 	/**
-	 * @var string
+	 * @var string|null
 	 */
 	protected $collate;
 	
@@ -74,12 +76,7 @@ class Column extends PropertyAnnotation
 	protected $comment = '';
 	
 	/**
-	 * @var string|null
-	 */
-	private $charset;
-	
-	/**
-	 * @var null|bool
+	 * @var bool|null
 	 */
 	protected $autoincrement;
 	
@@ -92,6 +89,11 @@ class Column extends PropertyAnnotation
 	 * @var bool
 	 */
 	protected $foreignKey = false;
+	
+	/**
+	 * @var string|null
+	 */
+	private $charset;
 	
 	public function isForeignKey(): bool
 	{
@@ -118,7 +120,7 @@ class Column extends PropertyAnnotation
 		return $this->autoincrement;
 	}
 
-	public function setAutoincrement(bool $autoincrement): void
+	public function setAutoincrement(?bool $autoincrement): void
 	{
 		$this->autoincrement = $autoincrement;
 	}
@@ -238,16 +240,28 @@ class Column extends PropertyAnnotation
 	{
 		return $this->propertyType;
 	}
-
-	public function validate(): void
+	
+	public function getSchema(): Schema
 	{
-		$this->checkRequired(['name']);
-		
-		return;
+		return Expect::structure([
+			'name' => Expect::string(null),
+			'type' => Expect::string(null),
+			'nullable' => Expect::bool(null),
+			'length' => Expect::type('string|int'),
+			'default' => Expect::scalar(),
+			'charset' => Expect::string(null),
+			'collate' => Expect::string(null),
+			'extra' => Expect::string(null),
+			'comment' => Expect::string(null),
+			'mutations' => Expect::bool(null),
+			'primaryKey' => Expect::bool(null),
+			'autoincrement' => Expect::bool(null),
+			'unique' => Expect::bool(null),
+		]);
 	}
 	
 	public static function getAnnotationName(): string
 	{
-		return self::ANNOTATION;
+		return 'column';
 	}
 }

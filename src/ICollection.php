@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace StORM;
 
+/**
+ * Interface ICollection
+ * @template T of object
+ */
 interface ICollection
 {
 	/**
@@ -21,12 +25,14 @@ interface ICollection
 	/**
 	 * Get fetch class
 	 * @param mixed[] $params
+	 * @phpstan-var class-string<T>
 	 * @return string
 	 */
 	public function getFetchClass(array &$params = []): string;
 	
 	/**
 	 * Fetch all collection and fill keys
+	 * @phpstan-return \StORM\ICollection<T>
 	 */
 	public function load(): ICollection;
 	
@@ -37,12 +43,12 @@ interface ICollection
 	public function isLoaded(): bool;
 	
 	/**
-	 * Take 1, fetch fetch the column and close cursor
-	 * @param string $property
+	 * Take 1, fetch column name or first column if null
+	 * @param string|null $property
 	 * @param bool $needed
 	 * @return null|string|bool
 	 */
-	public function firstValue(string $property, bool $needed = false);
+	public function firstValue(?string $property = null, bool $needed = false);
 	
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
@@ -53,10 +59,10 @@ interface ICollection
 	
 	/**
 	 * Fetch object and move cursor
-	 * @return mixed
+	 * @phpstan-return T|null
+	 * @return object|null
 	 */
-	public function fetch();
-	
+	public function fetch(): ?object;
 	
 	/**
 	 * Get PDO statement handle. Ff its not created, it will be
@@ -116,7 +122,8 @@ interface ICollection
 	 * Convert collection to array of object or strings
 	 * @param string|null $column
 	 * @param bool $toArrayValues
-	 * @return string[]|object[]
+	 * @phpstan-return T[]|mixed[]
+	 * @return mixed[]|object[]
 	 */
 	public function toArray(?string $column = null, bool $toArrayValues = false): array;
 	
@@ -141,6 +148,8 @@ interface ICollection
 	 * @return int
 	 */
 	public function count(): int;
+	
+	public function isEmpty(): bool;
 	
 	/**
 	 * Call COUNT($column)
@@ -341,6 +350,8 @@ interface ICollection
 	 */
 	public function getAffectedNumber(): ?int;
 	
+	public function setAffectedNumber(?int $affectedNumber): void;
+	
 	/**
 	 * Get possible values of column based by WHERE column IN ($possibleValues)
 	 * @param string $column
@@ -362,9 +373,4 @@ interface ICollection
 	 * @return string
 	 */
 	public function __toString(): string;
-	
-	/**
-	 * Dump modifiers, sql, binders and state of collection
-	 */
-	public function dump(): void;
 }

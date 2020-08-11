@@ -3,6 +3,7 @@
 namespace Tests;
 
 use DB\Test;
+use DB\Test2;
 use DB\Test2Repository;
 use DB\TestRepository;
 use Nette\DI\Container;
@@ -28,8 +29,8 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$connection = $container->getByType(Connection::class);
 		
-		$test = $connection->getRepository(TestRepository::class);
-		$test2 = $connection->getRepository(Test2Repository::class);
+		$test = $connection->getRepository(Test::class);
+		$test2 = $connection->getRepository(Test2::class);
 		
 		$meta = $test->getStructure();
 		$meta2 = $test2->getStructure();
@@ -77,37 +78,38 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 			Assert::contains($property, $names);
 		}
 		
+		
 		$constraints = $meta->getConstraints();
 		
-		Assert::equal(true, isset($constraints['testForce']));
-		$constraint = $constraints['testForce'];
+		Assert::equal(true, isset($constraints['test_testForce']));
+		$constraint = $constraints['test_testForce'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
 		Assert::equal('test_testForce', $constraint->getName());
-		Assert::equal(\DB\Test::class, $constraint->getSource());
-		Assert::equal('DB\Test3', $constraint->getTarget());
+		Assert::equal('test', $constraint->getSource());
+		Assert::equal('tests', $constraint->getTarget());
 		Assert::equal('fk_test', $constraint->getSourceKey());
 		Assert::equal('id', $constraint->getTargetKey());
 		Assert::equal(null, $constraint->getOnUpdate());
 		Assert::equal(null, $constraint->getOnDelete());
 		
-		Assert::equal(true, isset($constraints['accountMultiple']));
-		$constraint = $constraints['accountMultiple'];
-		Assert::equal(\DB\Test2::class, $constraint->getTarget());
+		Assert::equal(true, isset($constraints['test_accountMultiple']));
+		$constraint = $constraints['test_accountMultiple'];
+		Assert::equal('tests', $constraint->getTarget());
 		Assert::equal('fk_accountMultiple', $constraint->getSourceKey());
 		
 		
-		Assert::equal(true, isset($constraints['accountMultipleNullable']));
-		$constraint = $constraints['accountMultipleNullable'];
+		Assert::equal(true, isset($constraints['test_accountMultipleNullable']));
+		$constraint = $constraints['test_accountMultipleNullable'];
 		Assert::equal(null, $constraint->getOnDelete());
 		Assert::equal(null, $constraint->getOnUpdate());
 		
-		Assert::equal(true, isset($constraints['accountMultiple2']));
-		$constraint = $constraints['accountMultiple2'];
+		Assert::equal(true, isset($constraints['test_accountMultiple2']));
+		$constraint = $constraints['test_accountMultiple2'];
 		Assert::equal('SET NULL', $constraint->getOnDelete());
 		Assert::equal(null, $constraint->getOnUpdate());
 		
-		Assert::equal(true, isset($constraints['accountMultiple3']));
-		$constraint = $constraints['accountMultiple3'];
+		Assert::equal(true, isset($constraints['test_accountMultiple3']));
+		$constraint = $constraints['test_accountMultiple3'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
 		Assert::equal('test_accountMultiple3', $constraint->getName());
 		Assert::equal('tests', $constraint->getSource());
@@ -116,7 +118,6 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal('uuid', $constraint->getTargetKey());
 		Assert::equal('NO ACTION', $constraint->getOnUpdate());
 		Assert::equal('NO ACTION', $constraint->getOnDelete());
-		
 		
 		$indexes = $meta->getIndexes();
 		

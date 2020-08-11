@@ -12,6 +12,7 @@ $config = __DIR__ . '/configs/single_connection.neon';
 $tempDir = __DIR__ . '/temp';
 
 Tester\Helpers::purge($tempDir);
+\Tracy\Debugger::enable();
 
 $loader = new \Nette\DI\ContainerLoader($tempDir);
 $class = $loader->load(static function (\Nette\DI\Compiler $compiler) use ($config): void {
@@ -24,13 +25,19 @@ $container = new $class();
 
 /** @var \StORM\Connection $storm */
 $storm = $container->getService('storm.default');
-$storm->setAvailableMutations(['cz', 'en']);
+$storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
+
 /** @var \DB\SectorRepository $stocks */
-$sector = $storm->getRepository(\DB\SectorRepository::class);
+$sector = $storm->getRepository(\DB\Sector::class);
+$energy = $sector->one('energy', true);
+
 
 $hash = \Nette\Utils\ArrayHash::from(['general' => true, 'name' => ['cz' => 'cc']]);
 
-$sector->createOne($hash);
+//$sector->createOne($hash);
+
+
+die('ok');
 
 
 

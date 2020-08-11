@@ -12,13 +12,16 @@ services:
 	- Tracy\Debugger::getBar
 
 storm:
-	default:
-		host: 127.0.0.1
-		dbname: _test_storm
-		user: root
-		password: ""
-		debug: true
-		driver: mysql
-		charset: utf8
-		collate: utf8_czech_ci
-		primaryKeyGenerator: StORM\Connection::generateUuid
+	debug: true
+	connections:
+		default:
+			host: 127.0.0.1
+			dbname: _test_storm
+			user: root
+			password: ""
+			driver: mysql
+			charset: utf8
+			collate: utf8_czech_ci
+			primaryKeyGenerator: StORM\Connection::generateUuid
+			mutations:
+				en: '_en'

@@ -4,21 +4,41 @@ declare(strict_types=1);
 
 namespace StORM\Exception;
 
-class AlreadyExistsException extends \RuntimeException
+use StORM\IDumper;
+
+class AlreadyExistsException extends \RuntimeException implements IContextException
 {
 	public const BIND_VAR = 0;
 	public const ALIAS = 1;
 	
-	public function __construct(int $propertyCode, string $value)
+	/**
+	 * @var \StORM\ICollection|\StORM\Entity|null
+	 */
+	private $context;
+	
+	/**
+	 * AlreadyExistsException constructor.
+	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @param int $errorCode
+	 * @param string $value
+	 */
+	public function __construct($context, int $errorCode, string $value)
 	{
-		if ($propertyCode === self::BIND_VAR) {
+		if ($errorCode === self::BIND_VAR) {
 			$message = "Binded variable $value is already defined in collection.";
-		} elseif ($propertyCode === self::ALIAS) {
+		} elseif ($errorCode === self::ALIAS) {
 			$message = "Alias $value is already defined in collectio";
 		} else {
-			$message = "$propertyCode of $value is not set";
+			$message = "$errorCode of $value is not set";
 		}
 		
-		parent::__construct($message, $propertyCode);
+		$this->context = $context;
+		
+		parent::__construct($message, $errorCode);
+	}
+	
+	public function getContext(): ?IDumper
+	{
+		return $this->context;
 	}
 }
