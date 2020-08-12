@@ -23,6 +23,13 @@ interface ICollection
 	public function getModifiers(): array;
 	
 	/**
+	 * Set fetch class or class parameters
+	 * @param string|null $class
+	 * @param mixed[]|null $params
+	 */
+	public function setFetchClass(?string $class, ?array $params = []): void;
+	
+	/**
 	 * Get fetch class
 	 * @param mixed[] $params
 	 * @phpstan-var class-string<T>
@@ -53,9 +60,10 @@ interface ICollection
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
-	 * @return object|null|string|bool
+	 * @phpstan-return T|null
+	 * @return object|null
 	 */
-	public function first(bool $needed = false);
+	public function first(bool $needed = false): ?object;
 	
 	/**
 	 * Fetch object and move cursor
@@ -265,14 +273,14 @@ interface ICollection
 	 * @param int|null $number
 	 * @return self
 	 */
-	public function take(?int $number): ICollection;
+	public function setTake(?int $number): ICollection;
 	
 	/**
 	 * Add OFFSET clause
 	 * @param int|null $number
 	 * @return self
 	 */
-	public function skip(?int $number): ICollection;
+	public function setSkip(?int $number): ICollection;
 	
 	/**
 	 * Combine skip() and take() to slice page you want
@@ -280,7 +288,7 @@ interface ICollection
 	 * @param int $onPage
 	 * @return self
 	 */
-	public function page(int $page, int $onPage): ICollection;
+	public function setPage(int $page, int $onPage): ICollection;
 	
 	/**
 	 * Set ORDER clause and replace previous
@@ -306,15 +314,6 @@ interface ICollection
 	 * @return self
 	 */
 	public function setGroupBy(array $groups, ?string $having = null, array $values = []): ICollection;
-	
-	/**
-	 * Add GROUP BY and HAVING clause and merge with previous
-	 * @param string[] $groups
-	 * @param null|string $having
-	 * @param mixed[] $values
-	 * @return self
-	 */
-	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection;
 	
 	/**
 	 * Set GROUP BY for all columns excepts columns in parameter $exceptColumns and HAVING clause and replace previous

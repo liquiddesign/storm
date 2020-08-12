@@ -195,11 +195,21 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	}
 	
 	/**
-	 * @param mixed[] $classParameters
+	 * Set fetch class or class parameters
+	 * @param string|null $class
+	 * @param mixed[]|null $params
 	 */
-	public function setClassParameters(array $classParameters): void
+	public function setFetchClass(?string $class, ?array $params = []): void
 	{
-		$this->classParameters = $classParameters;
+		if ($class !== null) {
+			$this->class = $class;
+		}
+		
+		if ($params !== null) {
+			$this->classParameters = $params;
+		}
+		
+		return;
 	}
 	
 	/**
@@ -277,7 +287,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$this->take(1);
+		$this->setTake(1);
 		
 		isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->setSelect([$property]);
 		$sth = $this->getPDOStatement();
@@ -303,7 +313,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$this->take(1);
+		$this->setTake(1);
 		
 		$sth = $this->getPDOStatement();
 		$sth->setFetchMode(...$this->getFetchParameters());
@@ -316,7 +326,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
-		return $object ? null : $object;
+		return $object === false ? null : $object;
 	}
 	
 	/**
@@ -449,7 +459,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 		$varPrefix = self::UNIQUE_BINDER_PREFIX;
 		
 		foreach ($updates as $property => $rawValue) {
-			Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, '', $this->getConnection()->getAvailableMutations());
+			$this->getConnection()->bindVariables($property, $rawValue, $values, $binds, $varPrefix, '');
 		}
 		
 		$updates = $values;
@@ -820,7 +830,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	 * @param int|null $number
 	 * @return self
 	 */
-	public function take(?int $number): ICollection
+	public function setTake(?int $number): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -832,11 +842,21 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	}
 	
 	/**
+	 * @deprecated Use setTake instead
+	 * @param int|null $number
+	 * @return \StORM\ICollection
+	 */
+	public function take(?int $number): ICollection
+	{
+		return $this->setTake($number);
+	}
+	
+	/**
 	 * Add OFFSET clause
 	 * @param int|null $number
 	 * @return self
 	 */
-	public function skip(?int $number): ICollection
+	public function setSkip(?int $number): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -848,21 +868,42 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	}
 	
 	/**
+	 * @deprecated Use setSkip instead
+	 * @param int|null $number
+	 * @return self
+	 */
+	public function skip(?int $number): ICollection
+	{
+		return $this->setSkip($number);
+	}
+	
+	/**
 	 * Combine skip() and take() to slice page you want
 	 * @param int $page
 	 * @param int $onPage
 	 * @return self
 	 */
-	public function page(int $page, int $onPage): ICollection
+	public function setPage(int $page, int $onPage): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$this->skip(($page - 1) * $onPage);
-		$this->take($onPage);
+		$this->setSkip(($page - 1) * $onPage);
+		$this->setTake($onPage);
 		
 		return $this;
+	}
+	
+	/**
+	 * @deprecated Call setPage instead
+	 * @param int $page
+	 * @param int $onPage
+	 * @return \StORM\ICollection
+	 */
+	public function page(int $page, int $onPage): ICollection
+	{
+		return $this->setPage($page, $onPage);
 	}
 	
 	/**
@@ -933,7 +974,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	}
 	
 	/**
-	 * Add GROUP BY and HAVING clause and merge with previous
+	 * @deprecated Use setGroupBy
 	 * @param string[] $groups
 	 * @param null|string $having
 	 * @param mixed[] $values
@@ -941,16 +982,7 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 	 */
 	public function groupBy(array $groups, ?string $having = null, array $values = []): ICollection
 	{
-		if ($this->isLoaded()) {
-			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
-		}
-		
-		$this->modifiers[self::MODIFIER_GROUP_BY] = \array_merge($this->modifiers[self::MODIFIER_GROUP_BY], $groups);
-		$this->modifiers[self::MODIFIER_HAVING] = $having;
-		
-		foreach ($values as $k => $v) {
-			$this->bindVar($k, $v, self::MODIFIER_GROUP_BY_FLAG);
-		}
+		$this->setGroupBy($groups, $having, $values);
 		
 		return $this;
 	}
@@ -968,6 +1000,10 @@ class Collection implements ICollection, IDumper, \Iterator, \ArrayAccess, \Json
 		}
 		
 		$groups = $this->modifiers[self::MODIFIER_SELECT];
+		
+		if (\in_array('*', $groups)) {
+			throw new InvalidStateException($this, InvalidStateException::FULL_GROUP_BY_WITH_STAR);
+		}
 		
 		foreach ($exceptColumns as $column) {
 			unset($groups[$column]);

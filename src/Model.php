@@ -21,8 +21,10 @@ abstract class Model extends Entity
 	 */
 	public function getValue(string $property, ?string $mutation = null)
 	{
-		if ($this->getStructure()->hasRelation($property)) {
-			$property = self::FOREIGN_KEY_PREFIX . $property;
+		$prefixLength = \strlen(self::FOREIGN_KEY_PREFIX);
+		
+		if (\substr($property, 0, $prefixLength) === self::FOREIGN_KEY_PREFIX) {
+			$property = \substr($property, $prefixLength);
 		}
 		
 		return parent::getValue($property, $mutation);

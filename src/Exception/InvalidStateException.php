@@ -19,6 +19,7 @@ class InvalidStateException extends \RuntimeException implements IContextExcepti
 	public const ORDER_BY_NOT_ALLOWED = 8;
 	public const IGNORE = 9;
 	public const SYNCED = 10;
+	public const FULL_GROUP_BY_WITH_STAR = 11;
 	
 	/**
 	 * @var \StORM\ICollection|\StORM\Entity|null
@@ -53,6 +54,8 @@ class InvalidStateException extends \RuntimeException implements IContextExcepti
 			$message = 'ORDER BY clause is not allowed in delete, remove by ->orderBy([])';
 		} elseif ($errorCode === self::INDEX_AND_STAR_WITHOUT_PREFIX) {
 			$message = "Cannot use index '$extraMessage' with '*' without prefix'";
+		} elseif ($errorCode === self::FULL_GROUP_BY_WITH_STAR) {
+			$message = "Cannot use setFullGroupBy with '*' name each column in SELECT clause";
 		} elseif ($errorCode === self::IGNORE) {
 			$message = "Cannot get autoincrement primary keys with IGNORE = true and multiple inserts";
 		} elseif ($errorCode === self::SYNCED) {

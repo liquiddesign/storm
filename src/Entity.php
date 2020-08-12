@@ -220,7 +220,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		$vars = Helpers::getModelVars($this);
 		
-		if (isset($vars[$property]) && ($mutation === null || $mutation === $this->activeMutation)) {
+		if (\array_key_exists($property, $vars) && ($mutation === null || $mutation === $this->activeMutation)) {
 			return $vars[$property];
 		}
 		
@@ -373,7 +373,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			$data[\substr($property, $length)] = $value;
 		}
 		
-		$repository = $this->getParent()->getConnection()->getRepository($relatedClass);
+		$repository = $this->getConnection()->getRepository($relatedClass);
 		
 		return new $relatedClass($data, $repository);
 	}
@@ -402,10 +402,15 @@ abstract class Entity implements \JsonSerializable, IDumper
 				return $object;
 			}
 			
-			return $this->getParent()->getConnection()->getRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
+			return $this->getConnection()->getRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
 		}
 		
-		return new CollectionRelation($this->getParent()->getConnection()->getRepository(static::class), $relation, $this->getPK());
+		return new CollectionRelation($this->getConnection()->getRepository(static::class), $relation, $this->getPK());
+	}
+	
+	protected function getConnection(): DIConnection
+	{
+		return $this->getParent()->getRepository()->getConnection();
 	}
 	
 	protected function getStructure(): Structure
@@ -438,6 +443,15 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		return ($includeNonColumns ? $vars : \array_intersect_key($vars, \array_flip($columnNames))) + $this->properties + $this->foreignKeys;
+	}
+	
+	/**
+	 * @deprecated Use getParent()->getRepository() instead
+	 * @return \StORM\Repository
+	 */
+	protected function getRepository(): Repository
+	{
+		return $this->getParent()->getRepository();
 	}
 	
 	/**

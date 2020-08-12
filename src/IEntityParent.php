@@ -7,6 +7,4 @@ namespace StORM;
 interface IEntityParent
 {
 	public function getRepository(): Repository;
-	
-	public function getConnection(): Connection;
 }

@@ -86,7 +86,7 @@ class CollectionRelation extends CollectionEntity implements IRelation, ICollect
 		$targetKey = $this->relation->getTargetKey();
 		
 		/** @var \StORM\ICollection $collection */
-		$collection = $this->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
+		$collection = $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
 		if ($checkKeys) {
 			$resultArray = (clone $collection)->toArray('uuid');
@@ -124,7 +124,7 @@ class CollectionRelation extends CollectionEntity implements IRelation, ICollect
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
+		return $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
 	}
 	
 	/**
@@ -150,7 +150,7 @@ class CollectionRelation extends CollectionEntity implements IRelation, ICollect
 		$sourceKey = $this->relation->getSourceKey();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getConnection()->getRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+		return $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
 	}
 	
 	protected function init(): void

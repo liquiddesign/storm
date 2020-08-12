@@ -1,6 +1,6 @@
 <?php
 
-use StORM\Connection;
+use StORM\DIConnection;
 use StORM\SchemaManager;
 use Tester\Assert;
 
@@ -28,7 +28,7 @@ class SimplestTest extends Tester\TestCase // @codingStandardsIgnoreLine
 		/** @var \Nette\DI\Container $container */
 		$container = new $class();
 		
-		$connection = $container->getByType(Connection::class);
+		$connection = $container->getByType(DIConnection::class);
 		$schemaManager = $container->getByType(SchemaManager::class);
 		
 		Assert::same('default', $connection->getName());

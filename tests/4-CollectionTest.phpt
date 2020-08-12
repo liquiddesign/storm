@@ -704,7 +704,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2. LIMIT
-		$collection = $storm->rows($from)->take($limit);
+		$collection = $storm->rows($from)->setTake($limit);
 		Assert::same($limit, $collection->getModifiers()['LIMIT']);
 		Assert::contains(" LIMIT $limit", $collection->getSql());
 		Assert::contains(" LIMIT $limit", $collection->getSqlUpdate($toUpdate));
@@ -713,7 +713,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 3. OFFSET
-		$collection = $storm->rows($from)->skip($offset);
+		$collection = $storm->rows($from)->setSkip($offset);
 		Assert::same($offset, $collection->getModifiers()['OFFSET']);
 		Assert::contains(" LIMIT $upperLimit OFFSET $offset", $collection->getSql());
 		Assert::contains(" LIMIT $upperLimit OFFSET $offset", $collection->getSqlUpdate($toUpdate));
@@ -721,7 +721,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$collection->clear()->setWhere('1=0')->load();
 		
 		// 4. LIMIT AND OFFSET
-		$collection = $storm->rows($from)->take($limit)->skip($offset);
+		$collection = $storm->rows($from)->setTake($limit)->setSkip($offset);
 		Assert::same($limit, $collection->getModifiers()['LIMIT']);
 		Assert::same($offset, $collection->getModifiers()['OFFSET']);
 		Assert::contains(" LIMIT $limit OFFSET $offset", $collection->getSql());
@@ -730,7 +730,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$collection->clear()->setWhere('1=0')->load();
 		
 		// 5. PAGE
-		$collection = $storm->rows($from)->take($limit)->page(2, 10);
+		$collection = $storm->rows($from)->setTake($limit)->setPage(2, 10);
 		Assert::same($limit, $collection->getModifiers()['LIMIT']);
 		Assert::same($limit, $collection->getModifiers()['OFFSET']);
 		Assert::contains(" LIMIT $limit OFFSET $limit", $collection->getSql());

@@ -32,7 +32,7 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Default value of column
-	 * @var string|null
+	 * @var string|int|float|null
 	 */
 	protected $default;
 	
@@ -146,6 +146,15 @@ class Column extends AnnotationProperty
 	}
 	
 	/**
+	 * @deprecated Use setMutations instead
+	 * @param bool $mutations
+	 */
+	public function setLocale(bool $mutations): void
+	{
+		$this->mutations = $mutations;
+	}
+	
+	/**
 	 * @return string|int|null
 	 */
 	public function getLength()
@@ -180,13 +189,19 @@ class Column extends AnnotationProperty
 	{
 		$this->nullable = $nullable;
 	}
-
-	public function getDefault(): ?string
+	
+	/**
+	 * @return string|int|float|null
+	 */
+	public function getDefault()
 	{
 		return $this->default;
 	}
-
-	public function setDefault(?string $default): void
+	
+	/**
+	 * @param string|int|float|null $default
+	 */
+	public function setDefault($default): void
 	{
 		$this->default = $default;
 	}
@@ -254,6 +269,7 @@ class Column extends AnnotationProperty
 			'extra' => Expect::string(null),
 			'comment' => Expect::string(null),
 			'mutations' => Expect::bool(null),
+			'locale' => Expect::bool(null),
 			'primaryKey' => Expect::bool(null),
 			'autoincrement' => Expect::bool(null),
 			'unique' => Expect::bool(null),

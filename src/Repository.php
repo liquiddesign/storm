@@ -31,7 +31,7 @@ abstract class Repository implements IEntityParent
 	protected $sqlStructure;
 	
 	/**
-	 * @var \StORM\Connection|null
+	 * @var \StORM\DIConnection|null
 	 */
 	protected $connection;
 	
@@ -42,10 +42,10 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Repository constructor.
-	 * @param \StORM\Connection $connection
+	 * @param \StORM\DIConnection $connection
 	 * @param \StORM\SchemaManager $schemaManager
 	 */
-	public function __construct(Connection $connection, SchemaManager $schemaManager)
+	public function __construct(DIConnection $connection, SchemaManager $schemaManager)
 	{
 		$this->connection = $connection;
 		$this->schemaManager = $schemaManager;
@@ -63,18 +63,18 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get setted connection
-	 * @return \StORM\Connection
+	 * @return \StORM\DIConnection
 	 */
-	final public function getConnection(): Connection
+	final public function getConnection(): DIConnection
 	{
 		return $this->connection;
 	}
 	
 	/**
 	 * Set connection
-	 * @param \StORM\Connection $connection
+	 * @param \StORM\DIConnection $connection
 	 */
-	final public function setConnection(Connection $connection): void
+	final public function setConnection(DIConnection $connection): void
 	{
 		$this->connection = $connection;
 	}
@@ -118,7 +118,7 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|string|int $condition
 	 * @param bool $needed
 	 * @param string[]|null $select
-	 * @phpstam-return T|null
+	 * @phpstan-return T|null
 	 * @return \StORM\Entity|null
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
@@ -145,6 +145,7 @@ abstract class Repository implements IEntityParent
 		}
 		
 		/**
+		 * @phpstan-var T|null|false $object
 		 * @var \StORM\Entity|null|false $object
 		 */
 		$object = $collection->first();
@@ -180,7 +181,7 @@ abstract class Repository implements IEntityParent
 	 * Create entity row = insert row into table
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
-	 * @phpstam-return T
+	 * @phpstan-return T
 	 * @return \StORM\Entity
 	 */
 	final public function createOne($values, ?bool $filterByColumns = false): Entity
@@ -203,7 +204,7 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
-	 * @phpstam-return T
+	 * @phpstan-return T
 	 * @return \StORM\Entity
 	 */
 	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false): Entity

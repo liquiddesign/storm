@@ -33,7 +33,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 	/**
 	 * @var bool
 	 */
-	private $isOptimilization;
+	private $isOptimization;
 	
 	/**
 	 * Collection constructor.
@@ -43,7 +43,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 	public function __construct(Repository $repository, bool $isOptimization = true)
 	{
 		$this->repository = $repository;
-		$this->isOptimilization = $isOptimization;
+		$this->isOptimization = $isOptimization;
 		
 		$classParameters = $this->createClassParameters();
 		$index = $repository->getStructure()->getPK()->getName();
@@ -71,7 +71,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 	{
 		$this->repository = $repository;
 		$this->connection = $repository->getConnection();
-		$this->setClassParameters($this->createClassParameters());
+		$this->setFetchClass(null, $this->createClassParameters());
 	}
 	
 	public function getConnection(): Connection
@@ -81,7 +81,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 	
 	public function isOptimization()
 	{
-		return $this->isOptimilization;
+		return $this->isOptimization;
 	}
 	
 	public function setConnection(Connection $connection): void
@@ -104,7 +104,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 		
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
-			$targetRepository = $this->getConnection()->getRepository($relation->getTarget());
+			$targetRepository = $this->repository->getConnection()->getRepository($relation->getTarget());
 			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
 			
@@ -287,7 +287,7 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 	public function __sleep()
 	{
 		$this->clear();
-		$this->setClassParameters([]);
+		$this->setFetchClass(null, []);
 		
 		$vars = \get_object_vars($this);
 		unset($vars['connection'], $vars['sth'], $vars['repository']);

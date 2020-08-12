@@ -22,7 +22,7 @@ class SchemaManager
 	private $cache;
 	
 	/**
-	 * @var \StORM\Connection|null
+	 * @var \StORM\DIConnection|null
 	 */
 	private $connection;
 	
@@ -33,10 +33,10 @@ class SchemaManager
 	
 	/**
 	 * SchemaManager constructor.
-	 * @param \StORM\Connection $connection
+	 * @param \StORM\DIConnection $connection
 	 * @param \Nette\Caching\IStorage $storage
 	 */
-	public function __construct(Connection $connection, IStorage $storage)
+	public function __construct(DIConnection $connection, IStorage $storage)
 	{
 		$this->connection = $connection;
 		$this->cache = new Cache($storage);
@@ -111,9 +111,9 @@ class SchemaManager
 	
 	/**
 	 * Get current connection
-	 * @return \StORM\Connection
+	 * @return \StORM\DIConnection
 	 */
-	public function getConnection(): \StORM\Connection
+	public function getConnection(): DIConnection
 	{
 		if (!$this->connection) {
 			throw new GeneralException('Connection is not set. Call setConnection().');
@@ -122,7 +122,7 @@ class SchemaManager
 		return $this->connection;
 	}
 
-	public function setConnection(Connection $connection): void
+	public function setConnection(DIConnection $connection): void
 	{
 		$this->connection = $connection;
 	}

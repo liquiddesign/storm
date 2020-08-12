@@ -6,7 +6,7 @@ use DB\IStockRepository;
 use DB\Stock;
 use Nette\DI\Container;
 use Nette\Neon\Neon;
-use StORM\Connection;
+use StORM\DIConnection;
 use StORM\SchemaManager;
 use Tester\Assert;
 
@@ -26,10 +26,10 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	 */
 	public function testConnection(Container $container): void
 	{
-		$connection = $container->getByType(Connection::class);
+		$connection = $container->getByType(DIConnection::class);
 		
 		Assert::same('default', $connection->getName());
-		Assert::type(Connection::class, $connection);
+		Assert::type(DIConnection::class, $connection);
 	}
 	
 	/**
@@ -40,12 +40,12 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	 */
 	public function testMultipleConnection(Container $container): void
 	{
-		$connection = $container->getByType(Connection::class);
-		Assert::type(Connection::class, $connection);
+		$connection = $container->getByType(DIConnection::class);
+		Assert::type(DIConnection::class, $connection);
 		Assert::same('default', $connection->getName());
 		
 		$connection2 = $container->getService('storm.test');
-		Assert::type(Connection::class, $connection2);
+		Assert::type(DIConnection::class, $connection2);
 		Assert::same('test', $connection2->getName());
 		
 		$stocks = $container->getByType(IStockRepository::class);
@@ -65,8 +65,8 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	 */
 	public function testAdditionalSettings(Container $container): void
 	{
-		$connection = $container->getByType(Connection::class);
-		Assert::type(Connection::class, $connection);
+		$connection = $container->getByType(DIConnection::class);
+		Assert::type(DIConnection::class, $connection);
 		Assert::same('mysql', $connection->getDriver());
 		// collate
 		Assert::same('utf8_czech_ci', $connection->query("SHOW VARIABLES LIKE 'collation_connection'")->fetchColumn(1));
@@ -96,7 +96,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$user = $neon['storm']['connections'][$name]['user'];
 		$password = $neon['storm']['connections'][$name]['password'];
 		
-		$connection = new Connection($container);
+		$connection = new DIConnection($container);
 		$connection->connect($name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
 		
 		$schemaManager = new SchemaManager($connection, $cacheStorage);
@@ -111,7 +111,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	 */
 	public function testProperties(Container $container): void
 	{
-		$connection = $container->getByType(Connection::class);
+		$connection = $container->getByType(DIConnection::class);
 		
 		$neon = Neon::decode(\file_get_contents($container->parameters['appDir'] . '/configs/single_connection.neon'));
 		$name = 'default';
