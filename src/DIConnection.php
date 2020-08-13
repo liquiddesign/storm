@@ -32,12 +32,22 @@ class DIConnection extends \StORM\Connection
 	}
 	
 	/**
+	 * @deprecated Use find repository instead
+	 * @param string $entityClass
+	 * @return \StORM\Repository
+	 */
+	public function getRepository(string $entityClass): Repository
+	{
+		return $this->findRepository($entityClass);
+	}
+	
+	/**
 	 * Return repository by entity class
 	 * @param string $entityClass
 	 * @return \StORM\Repository
 	 * @throws \Nette\DI\MissingServiceException
 	 */
-	public function getRepository(string $entityClass): Repository
+	public function findRepository(string $entityClass): Repository
 	{
 		if (!\class_exists($entityClass)) {
 			throw new \InvalidArgumentException("$entityClass class not exists");
@@ -60,7 +70,7 @@ class DIConnection extends \StORM\Connection
 	 * Get all defined repositories names in container
 	 * @return string[]
 	 */
-	public function getAllRepositories(): array
+	public function findAllRepositories(): array
 	{
 		return $this->container->findByType(Repository::class);
 	}

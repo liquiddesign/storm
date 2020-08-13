@@ -1,5 +1,13 @@
 
-tester a phpstan a codestyle
+generic repositorz ?
+getRepository -> findRepository, plete se to getRepositorz deprecated
+filter -> prohodit parametry a kdyztak udela many -> getFilteredCollection()
+findAll() =: pouvazovat -> filterProvidet bad
+
+filter -> Expected parameter of type '\mixed[][]', 'int[]|null[]' provided
+find pouvazavoat o vyhozeni
+
+dedit z runtime excpeions ? ma to nette? 
 
 
 DOKUMENTACE

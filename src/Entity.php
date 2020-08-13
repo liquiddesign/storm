@@ -418,6 +418,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->getParent()->getRepository()->getStructure();
 	}
 	
+	protected function getRepository(): Repository
+	{
+		return $this->getParent()->getRepository();
+	}
+	
 	protected function getMutationSuffix(?string $mutation = null): string
 	{
 		return $this->availableMutations[$mutation ?: $this->activeMutation] ?? '';
@@ -443,15 +448,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		return ($includeNonColumns ? $vars : \array_intersect_key($vars, \array_flip($columnNames))) + $this->properties + $this->foreignKeys;
-	}
-	
-	/**
-	 * @deprecated Use getParent()->getRepository() instead
-	 * @return \StORM\Repository
-	 */
-	protected function getRepository(): Repository
-	{
-		return $this->getParent()->getRepository();
 	}
 	
 	/**
