@@ -74,7 +74,17 @@ class CollectionEntity extends Collection implements ICollection, IEntityParent,
 		$this->setFetchClass(null, $this->createClassParameters());
 	}
 	
-	public function getConnection(): Connection
+	public function first(bool $needed = false): ?Entity
+	{
+		return parent::first($needed);
+	}
+	
+	public function fetch(): ?Entity
+	{
+		return parent::fetch();
+	}
+	
+	public function getConnection(): DIConnection
 	{
 		return $this->getRepository()->getConnection();
 	}

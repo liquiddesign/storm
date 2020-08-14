@@ -106,9 +106,9 @@ abstract class Repository implements IEntityParent
 	 * Create new collection
 	 * @param bool $optimization
 	 * @phpstan-return \StORM\CollectionEntity<T>
-	 * @return \StORM\ICollection
+	 * @return \StORM\CollectionEntity
 	 */
-	final public function many(bool $optimization = true): ICollection
+	final public function many(bool $optimization = true): CollectionEntity
 	{
 		return new CollectionEntity($this, $optimization);
 	}

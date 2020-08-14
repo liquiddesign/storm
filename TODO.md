@@ -1,4 +1,6 @@
 
+7.4 =============> first(): fetch(): Entity
+
 generic repositorz ?
 getRepository -> findRepository, plete se to getRepositorz deprecated
 filter -> prohodit parametry a kdyztak udela many -> getFilteredCollection()
