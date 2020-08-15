@@ -8,7 +8,7 @@ use DB\Sector;
 use DB\Stock;
 use DB\StockRepository;
 use Nette\DI\Container;
-use StORM\CollectionRelation;
+use StORM\RelationCollection;
 use StORM\Connection;
 use StORM\Exception\NotFoundException;
 use Tester\Assert;
@@ -54,7 +54,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		}, NotFoundException::class);
 		
 		$stock = $stocks->one('AAPL');
-		Assert::type(CollectionRelation::class, $stock->tags);
+		Assert::type(RelationCollection::class, $stock->tags);
 		
 		//Assert::contains('electronic-technology', $stock->tags->toArray('uuid'));
 		Assert::contains('telecommunications-equipment', $stock->tags->toArray('uuid'));
@@ -66,7 +66,7 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		
 		// nx1
-		Assert::type(CollectionRelation::class, $stock->alerts);
+		Assert::type(RelationCollection::class, $stock->alerts);
 		Assert::contains('test', $stock->alerts->toArray('uuid'));
 		Assert::contains('test2', $stock->alerts->toArray('uuid'));
 		

@@ -9,7 +9,7 @@ use DB\StockRepository;
 use DB\Type;
 use DB\TypeRepository;
 use Nette\DI\Container;
-use StORM\CollectionEntity;
+use StORM\Collection;
 use StORM\Connection;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
@@ -87,9 +87,9 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 			$stocks->one(['uuid' => 'NOT_EXISTS'], true);
 		}, NotFoundException::class);
 		
-		/** @var \StORM\CollectionEntity $collection */
+		/** @var \StORM\Collection $collection */
 		$collection = $types->many();
-		Assert::type(CollectionEntity::class, $collection);
+		Assert::type(Collection::class, $collection);
 		Assert::same($types, $collection->getRepository());
 		Assert::same($types->getDefaultFrom(), $collection->getModifiers()['FROM']);
 		Assert::same($types->getDefaultSelect(), $collection->getModifiers()['SELECT']);

@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace StORM\Exception;
 
-class GeneralException extends \RuntimeException
+class GeneralException extends \Exception
 {
 }

@@ -7,7 +7,7 @@ namespace StORM\Exception;
 use StORM\Helpers;
 use StORM\IDumper;
 
-class NotExistsException extends \RuntimeException implements IContextException
+class NotExistsException extends \Exception implements IContextException
 {
 	public const MUTATION = 0;
 	public const RELATION = 1;

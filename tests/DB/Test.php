@@ -96,27 +96,27 @@ class Test extends \StORM\Entity // @codingStandardsIgnoreLine
 	
 	/**
 	 * @relation
-	 * @var \DB\Test2[]|\StORM\CollectionEntity
+	 * @var \DB\Test2[]|\StORM\Collection
 	 */
 	public $tests;
 	
 	/**
 	 * @relation{"targetKey":"fk_test"}
-	 * @var \DB\Test2[]|\StORM\CollectionEntity
+	 * @var \DB\Test2[]|\StORM\Collection
 	 */
 	public $tests2;
 	
 	/**
 	 * Definition of N:1 or 1:1 relation
 	 * @relationNxN
-	 * @var \DB\Test2[]|\StORM\CollectionEntity
+	 * @var \DB\Test2[]|\StORM\Collection
 	 */
 	public $tests3;
 	
 	/**
 	 * Definition of N:1 or 1:1 relation
 	 * @relationNxN{"sourceViaKey":"fk_test","targetViaKey":"fk_test2","via":"nxn_test_test"}
-	 * @var \DB\Test2[]|\StORM\CollectionEntity
+	 * @var \DB\Test2[]|\StORM\Collection
 	 */
 	public $tests4;
 	

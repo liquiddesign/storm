@@ -33,6 +33,7 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * @deprecated Use find repository instead
+	 * @phpstan-param class-string $entityClass
 	 * @param string $entityClass
 	 * @return \StORM\Repository
 	 */
@@ -43,6 +44,7 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * Return repository by entity class
+	 * @phpstan-param class-string $entityClass
 	 * @param string $entityClass
 	 * @return \StORM\Repository
 	 * @throws \Nette\DI\MissingServiceException

@@ -6,7 +6,7 @@ namespace StORM\Exception;
 
 use StORM\IDumper;
 
-class AlreadyExistsException extends \RuntimeException implements IContextException
+class AlreadyExistsException extends \Exception implements IContextException
 {
 	public const BIND_VAR = 0;
 	public const ALIAS = 1;

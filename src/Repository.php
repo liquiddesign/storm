@@ -105,12 +105,12 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Create new collection
 	 * @param bool $optimization
-	 * @phpstan-return \StORM\CollectionEntity<T>
-	 * @return \StORM\CollectionEntity
+	 * @phpstan-return \StORM\Collection<T>
+	 * @return \StORM\Collection
 	 */
-	final public function many(bool $optimization = true): CollectionEntity
+	final public function many(bool $optimization = true): Collection
 	{
-		return new CollectionEntity($this, $optimization);
+		return new Collection($this, $optimization);
 	}
 	
 	/**
@@ -129,7 +129,7 @@ abstract class Repository implements IEntityParent
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
 		}
 		
-		/** @var \StORM\CollectionEntity $collection */
+		/** @var \StORM\Collection $collection */
 		$collection = $this->many(false);
 		
 		if ($select !== null) {
@@ -159,17 +159,6 @@ abstract class Repository implements IEntityParent
 		}
 		
 		return $object;
-	}
-	
-	/**
-	 * Create new collection with condition by entities PK
-	 * @param \StORM\Entity $entity
-	 * @phpstan-return \StORM\CollectionEntity<T>
-	 * @return \StORM\ICollection
-	 */
-	final public function find(Entity $entity): ICollection
-	{
-		return $this->many()->setWhere($entity->getParent()->getRepository()->getStructure()->getPK()->getName(), $entity->getPK());
 	}
 	
 	final public function getRepository(): Repository
@@ -264,10 +253,13 @@ abstract class Repository implements IEntityParent
 		
 		$hasMutations = $this->getStructure()->hasMutations();
 		
+		
+		/** @var \StORM\Entity $object */
+		/** @phpstan-var T $object */
 		$object = new $class($values, $this, $hasMutations ? $this->connection->getAvailableMutations() : [], $hasMutations ? $this->connection->getMutation() : null);
 		
 		if ($rowCount === InsertResult::UPDATE_AFFECTED_COUNT) {
-			$object->setParent($this->find($object));
+			$object->setParent($this->many()->where($this->getStructure()->getPK()->getName(), $object->getPk()));
 		}
 		
 		// update all subject
@@ -365,7 +357,7 @@ abstract class Repository implements IEntityParent
 						throw new \InvalidArgumentException("Primary key not found for joining relations.");
 					}
 					
-					$collectionRelation = new CollectionRelation($this, $this->getStructure()->getRelation($name), $primaryKey);
+					$collectionRelation = new RelationCollection($this, $this->getStructure()->getRelation($name), $primaryKey);
 					$collectionRelation->relate($keys);
 				}
 				

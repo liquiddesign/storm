@@ -122,18 +122,25 @@ interface ICollection
 	/**
 	 * Clear all data in collection, can clear modifiers also
 	 * @param bool $clearModifiers
-	 * @return \StORM\ICollection
+	 * @return static
 	 */
-	public function clear(bool $clearModifiers = false): ICollection;
+	public function clear(bool $clearModifiers = false): self;
 	
 	/**
-	 * Convert collection to array of object or strings
-	 * @param string|null $column
-	 * @param bool $toArrayValues
-	 * @phpstan-return T[]|mixed[]
-	 * @return mixed[]|object[]
+	 * Convert collection to array of object
+	 * @phpstan-return T[]
+	 * @return object[]
 	 */
-	public function toArray(?string $column = null, bool $toArrayValues = false): array;
+	public function getItems(): array;
+	
+	/**
+	 * Convert collection to array of trings
+	 * @param string $column
+	 * @param bool $toArrayValues
+	 * @phpstan-return mixed[]
+	 * @return mixed[]
+	 */
+	public function toArray(string $column, bool $toArrayValues = false): array;
 	
 	/**
 	 * Convert collection to array of sprintf formated strings
@@ -142,7 +149,7 @@ interface ICollection
 	 * @param string[] $callbacks or $columns
 	 * @return string[]
 	 */
-	public function format(string $format, array $callbacks = []): array;
+	public function format(string $format, array $callbacks = [], bool $toArrayValues = false): array;
 	
 	/**
 	 * Set collection index of internal array
@@ -207,7 +214,7 @@ interface ICollection
 	 * Set WHERE condition and replace previous
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values
-	 * @return self
+	 * @return static
 	 */
 	public function setWhere(?string $expression, $values = null): self;
 	
@@ -215,113 +222,113 @@ interface ICollection
 	 * Add WHERE condition with "AND" glue
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values
-	 * @return self
+	 * @return static
 	 */
-	public function where(string $expression, $values = null): ICollection;
+	public function where(string $expression, $values = null): self;
 	
 	/**
 	 * Set WHERE negated condition and replace previous
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values
-	 * @return self
+	 * @return static
 	 */
-	public function setWhereNot(string $expression, $values = null): ICollection;
+	public function setWhereNot(string $expression, $values = null): self;
 	
 	/**
 	 * Add WHERE negated condition with "AND" glue
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values
-	 * @return self
+	 * @return static
 	 */
-	public function whereNot(string $expression, $values = null): ICollection;
+	public function whereNot(string $expression, $values = null): self;
 	
 	/**
 	 * Set FROM clause and remove previous
 	 * @param string[] $from
 	 * @param mixed[] $values
-	 * @return self
+	 * @return static
 	 */
-	public function setFrom(array $from, array $values = []): ICollection;
+	public function setFrom(array $from, array $values = []): self;
 	
 	/**
 	 * Add FROM clause and merge with previous
 	 * @param string[] $from
 	 * @param mixed[] $values
-	 * @return self
+	 * @return static
 	 */
-	public function from(array $from, array $values = []): ICollection;
+	public function from(array $from, array $values = []): self;
 	
 	/**
 	 * Set SELECT clause and replace previous
 	 * @param string[] $select
 	 * @param mixed[] $values
 	 * @param bool $keepIndex
-	 * @return self
+	 * @return static
 	 */
-	public function setSelect(array $select, array $values = [], bool $keepIndex = false): ICollection;
+	public function setSelect(array $select, array $values = [], bool $keepIndex = false): self;
 	
 	/**
 	 * Add SELECT clause and merge with previous
 	 * @param string[] $select
 	 * @param mixed[] $values
-	 * @return $this
+	 * @return static
 	 */
-	public function select(array $select, array $values = []): ICollection;
+	public function select(array $select, array $values = []): self;
 	
 	/**
 	 * Add LIMIT clause
 	 * @param int|null $number
-	 * @return self
+	 * @return static
 	 */
-	public function setTake(?int $number): ICollection;
+	public function setTake(?int $number): self;
 	
 	/**
 	 * Add OFFSET clause
 	 * @param int|null $number
-	 * @return self
+	 * @return static
 	 */
-	public function setSkip(?int $number): ICollection;
+	public function setSkip(?int $number): self;
 	
 	/**
 	 * Combine skip() and take() to slice page you want
 	 * @param int $page
 	 * @param int $onPage
-	 * @return self
+	 * @return static
 	 */
-	public function setPage(int $page, int $onPage): ICollection;
+	public function setPage(int $page, int $onPage): self;
 	
 	/**
 	 * Set ORDER clause and replace previous
 	 * @param string[] $order
 	 * @param mixed[] $values
-	 * @return self
+	 * @return static
 	 */
-	public function setOrderBy(array $order, array $values = []): ICollection;
+	public function setOrderBy(array $order, array $values = []): self;
 	
 	/**
 	 * Add ORDER clause and merge with previous
 	 * @param string[] $order
 	 * @param mixed[] $values
-	 * @return self
+	 * @return static
 	 */
-	public function orderBy(array $order, array $values = []): ICollection;
+	public function orderBy(array $order, array $values = []): self;
 	
 	/**
 	 * Set GROUP BY and HAVING clause and replace previous
 	 * @param string[] $groups
 	 * @param null|string $having
 	 * @param mixed[] $values
-	 * @return self
+	 * @return static
 	 */
-	public function setGroupBy(array $groups, ?string $having = null, array $values = []): ICollection;
+	public function setGroupBy(array $groups, ?string $having = null, array $values = []): self;
 	
 	/**
 	 * Set GROUP BY for all columns excepts columns in parameter $exceptColumns and HAVING clause and replace previous
 	 * @param string[] $exceptColumns
 	 * @param null|string $having
-	 * @return self
+	 * @return static
 	 */
-	public function setFullGroupBy(array $exceptColumns, ?string $having = null): ICollection;
+	public function setFullGroupBy(array $exceptColumns, ?string $having = null): self;
 	
 	/**
 	 * Set JOIN clause and replace previous
@@ -329,9 +336,9 @@ interface ICollection
 	 * @param string $condition
 	 * @param mixed[] $values
 	 * @param string|null $type
-	 * @return self
+	 * @return static
 	 */
-	public function setJoin(array $from, ?string $condition = null, array $values = [], ?string $type = null): ICollection;
+	public function setJoin(array $from, ?string $condition = null, array $values = [], ?string $type = null): self;
 	
 	/**
 	 * Add JOIN clause and merge with previous
@@ -339,9 +346,9 @@ interface ICollection
 	 * @param string $condition
 	 * @param mixed[] $values
 	 * @param string|null $type
-	 * @return self
+	 * @return static
 	 */
-	public function join(array $from, string $condition, array $values = [], ?string $type = null): ICollection;
+	public function join(array $from, string $condition, array $values = [], ?string $type = null): self;
 	
 	/**
 	 * Get last affected number

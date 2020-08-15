@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace StORM\Exception;
 
-class AnnotationException extends \RuntimeException
+class AnnotationException extends \Exception
 {
 	public const JSON_PARSE = 1;
 	public const STANDALONE_CONSTRAINT = 2;

@@ -11,6 +11,9 @@ use StORM\Exception\NotFoundException;
 use StORM\Meta\Relation;
 use StORM\Meta\Structure;
 
+/**
+ * Class Entity
+ */
 abstract class Entity implements \JsonSerializable, IDumper
 {
 	/**
@@ -24,7 +27,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected $foreignKeys = [];
 	
 	/**
-	 * @var \StORM\Entity[]|\StORM\CollectionRelation[]|null[]
+	 * @var \StORM\Entity[]|\StORM\RelationCollection[]|null[]
 	 */
 	protected $relations = [];
 	
@@ -252,7 +255,18 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		$values = $this->getParent()->getRepository()->propertiesToColumns($values);
 		
-		return $this->getParent()->getRepository()->find($this)->update($values, false);
+		return $this->findMe()->update($values, false);
+	}
+	
+	/**
+	 * Create new collection with condition by entities PK
+	 * @return \StORM\Collection
+	 */
+	protected function findMe(): Collection
+	{
+		$pkName = $this->getParent()->getRepository()->getStructure()->getPK()->getName();
+		
+		return $this->getParent()->getRepository()->many()->setWhere($pkName, $this->getPK());
 	}
 	
 	/**
@@ -270,7 +284,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		$vars = $this->getParent()->getRepository()->propertiesToColumns($vars);
 		
-		return $this->getParent()->getRepository()->find($this)->update($vars, false);
+		return $this->findMe()->update($vars, false);
 	}
 	
 	/**
@@ -279,7 +293,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function delete(): int
 	{
-		return $this->getParent()->getRepository()->find($this)->delete();
+		return $this->findMe()->delete();
 	}
 	
 	/**
@@ -308,7 +322,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		foreach ($relations as $relationName) {
 			$value = $this->getRelation($this->getStructure()->getRelation($relationName));
-			$array[$relationName] = $value instanceof CollectionRelation ? \array_keys($value->toArray()) : (string)$value;
+			$array[$relationName] = $value instanceof RelationCollection ? \array_keys($value->getItems()) : (string)$value;
 		}
 		
 		return $array;
@@ -381,7 +395,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Get relation from relation
 	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\CollectionRelation|\StORM\Entity|null
+	 * @return \StORM\RelationCollection|\StORM\Entity|null
 	 */
 	protected function getRelation(Relation $relation)
 	{
@@ -392,7 +406,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 				return null;
 			}
 			
-			if ($this->parent && $this->parent instanceof CollectionEntity && $this->parent->isLoaded() && $this->parent->isOptimization()) {
+			if ($this->parent && $this->parent instanceof Collection && $this->parent->isLoaded() && $this->parent->isOptimization()) {
 				$object = $this->parent->getRelatedObject($relation, $this->foreignKeys[$name]);
 				
 				if ($object === null) {
@@ -405,7 +419,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			return $this->getConnection()->getRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
 		}
 		
-		return new CollectionRelation($this->getConnection()->getRepository(static::class), $relation, $this->getPK());
+		return new RelationCollection($this->getConnection()->getRepository(static::class), $relation, $this->getPK());
 	}
 	
 	protected function getConnection(): DIConnection

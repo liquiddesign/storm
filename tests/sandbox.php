@@ -23,13 +23,14 @@ $class = $loader->load(static function (\Nette\DI\Compiler $compiler) use ($conf
 /** @var \Nette\DI\Container $container */
 $container = new $class();
 
-/** @var \StORM\Connection $storm */
+/** @var \StORM\DIConnection $storm */
 $storm = $container->getService('storm.default');
 $storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
 
 /** @var \DB\SectorRepository $stocks */
-$sector = $storm->getRepository(\DB\Sector::class);
+$sector = $storm->findRepository(\DB\Sector::class);
 $energy = $sector->one('energy', true);
+
 
 
 $hash = \Nette\Utils\ArrayHash::from(['general' => true, 'name' => ['cz' => 'cc']]);

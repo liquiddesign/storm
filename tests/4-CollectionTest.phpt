@@ -28,13 +28,13 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$table = self::STOCK_TABLE;
 		$from = [$table];
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArray();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->getItems();
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));
 		Assert::type(\stdClass::class, \end($objects));
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->toArray();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->getItems();
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));

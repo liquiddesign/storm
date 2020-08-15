@@ -225,7 +225,7 @@ class Connection
 	 */
 	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): ICollection
 	{
-		return new Collection($this, $from, $select, $class, $classParameters, $index);
+		return new GenericCollection($this, $from, $select, $class, $classParameters, $index);
 	}
 	
 	/**

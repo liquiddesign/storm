@@ -7,7 +7,7 @@ namespace StORM\Exception;
 use StORM\IDumper;
 use Throwable;
 
-class NotFoundException extends \RuntimeException implements IContextException
+class NotFoundException extends \Exception implements IContextException
 {
 	/**
 	 * @var \StORM\ICollection|\StORM\Entity|null

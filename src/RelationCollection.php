@@ -13,7 +13,7 @@ use StORM\Meta\RelationNxN;
  * Class CollectionRelation
  * @template T of \StORM\Entity
  */
-class CollectionRelation extends CollectionEntity implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+class RelationCollection extends Collection implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
 	 * @var \StORM\Meta\Relation

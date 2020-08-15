@@ -6,7 +6,7 @@ namespace StORM\Exception;
 
 use StORM\IDumper;
 
-class InvalidStateException extends \RuntimeException implements IContextException
+class InvalidStateException extends \Exception implements IContextException
 {
 	public const CONNECTION_NOT_SET = 0;
 	public const COLLECTION_ALREADY_LOADED = 1;
