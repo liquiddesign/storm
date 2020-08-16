@@ -27,11 +27,9 @@ $container = new $class();
 $storm = $container->getService('storm.default');
 $storm->setAvailableMutations(['cz' => '_cz', 'en' => '_en']);
 
-/** @var \DB\SectorRepository $stocks */
-$sector = $storm->findRepository(\DB\Sector::class);
-$energy = $sector->one('energy', true);
-
-
+/** @var \DB\StockRepository $stocks */
+$sector = $storm->findRepository(\DB\Stock::class);
+$energy = $sector->one('AAPL', true);
 
 $hash = \Nette\Utils\ArrayHash::from(['general' => true, 'name' => ['cz' => 'cc']]);
 

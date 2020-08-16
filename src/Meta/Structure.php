@@ -196,7 +196,7 @@ class Structure
 				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $this->schemaManager->getConnection()->getMutationSuffix();
 				$locales[] = $column;
 			} else {
-				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName();
+				$select[$aliasPrefix . $column->isForeignKey() ? $column->getName() : $column->getPropertyName()] = $expressionPrefix . $column->getName();
 			}
 		}
 		
@@ -624,7 +624,14 @@ class Structure
 		$properties = [];
 		
 		foreach (\array_keys(\get_class_vars($this->entityClass)) as $name) {
-			$properties[$name] = Helpers::parseDocComment((new \ReflectionProperty($this->entityClass, $name))->getDocComment());
+			$reflection = new \ReflectionProperty($this->entityClass, $name);
+			$properties[$name] = Helpers::parseDocComment($reflection->getDocComment());
+			
+			if (!$reflection->getType()) {
+				continue;
+			}
+			
+			$properties[$name][self::ANNOTATION_VAR] = (string) $reflection->getType();
 		}
 		
 		return $properties;
@@ -701,6 +708,8 @@ class Structure
 		}
 		
 		$jsonType = $parsedDocComment[self::ANNOTATION_VAR] ?? null;
+		
+		
 		$relation = $relationNxN ? new RelationNxN($class, $name) : new Relation($class, $name);
 		$relation->setName($name);
 		$relation->setSource($class);

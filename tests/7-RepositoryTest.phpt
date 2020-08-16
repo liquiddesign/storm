@@ -62,7 +62,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same([
 			'id' => "$alias.id",
 			'myName' => "$alias.name",
-			'sector' => "$alias.fk_sector",
+			'fk_sector' => "$alias.fk_sector",
 			], $types->getDefaultSelect());
 	}
 	
@@ -128,6 +128,7 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$object2 = $types->one($id);
 		$object1->removeParent();
 		$object2->removeParent();
+		
 		Assert::equal($object1, $object2);
 		
 		

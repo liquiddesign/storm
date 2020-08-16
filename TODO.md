@@ -1,4 +1,4 @@
-
+Typove vse:)
 --------------------------------------
 3. Moznosti filtrace
 filter bude obsahovat seznam filtru, moznost stranek a zakladni abstrakni funkci ktera se vola
@@ -6,33 +6,20 @@ filter -> prohodit parametry a kdyztak udela many -> getFilteredCollection()
 findAll() =: pouvazovat -> filterProvidet bad
 Opravit
 filter -> Expected parameter of type '\mixed[][]', 'int[]|null[]' provided
+-> co tak zpet pridat do RElation Collection
+---------------------------------------
+4. projit chby uvnitr a dat throwy ?
 ---------------------------------------
 
 ---------------------------------------
 
----------------------------------------
-projit chby uvnitr a dat throwy
 ----------------------------------------
 -----------------------------------------
 
 ------------------------------------------
 
 ------------------------------------------
-10. Vsechno typove typovane relace jsou problem protoze do nich PDO sype cizi klice;
-- typove ziskani z annotation vars throws exception if not found var nebo neni get target
-- Vsechno typove typovane relace jsou problem protoze do nich PDO sype cizi klice;
 
-
- 
-$jsonType = $parsedDocComment[self::ANNOTATION_VAR] ?? null;
-if (!$jsonType) {
-    $property = new \ReflectionProperty($class, $name);
-    // TODO has type
-    $jsonType = $property->getType()->getName();
-}
- 
-$container->getByType(\Nette\Http\Request::class)->getRemoteAddress();
-proc tohle napovida ????
  
 
 DOKUMENTACE

@@ -133,6 +133,7 @@ class EntityTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$tesla = $stocks->one('TSLA');
 		
 		$stock = new Stock($tesla->toArray(), $stocks);
+		
 		Assert::equal($stock->toArray(), $tesla->toArray());
 		$stock->uuid = 'TSLA_aux';
 		$stocks->createOne($stock->toArray());

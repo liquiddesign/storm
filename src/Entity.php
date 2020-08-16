@@ -22,7 +22,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected $properties = [];
 	
 	/**
-	 * @var string[]
+	 * @var string[]|null[]
 	 */
 	protected $foreignKeys = [];
 	
@@ -55,12 +55,13 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function __construct(array $vars, ?IEntityParent $parent = null, array $mutations = [], ?string $mutation = null)
 	{
-		foreach ($vars as $name => $value) {
-			$this->$name = $value;
-		}
-	
+		// set parent data tady
 		if ($parent) {
 			$this->setParent($parent);
+		}
+		
+		foreach ($vars as $name => $value) {
+			$this->$name = $value;
 		}
 		
 		$this->activeMutation = $mutation;
@@ -92,8 +93,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 		$this->parent = $parent;
 		
 		foreach ($parent->getRepository()->getStructure()->getRelations() as $name => $relation) {
+			$fkName = $relation->getSourceKey();
+			
 			if ($relation->isKeyHolder() && !\array_key_exists($name, $this->foreignKeys)) {
-				$this->foreignKeys[$name] = $this->$name ?? null;
+				$this->foreignKeys[$name] = $this->properties[$fkName] ?? null;
+				unset($this->properties[$fkName]);
 			}
 			
 			unset($this->$name);
@@ -259,17 +263,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
-	 * Create new collection with condition by entities PK
-	 * @return \StORM\Collection
-	 */
-	protected function findMe(): Collection
-	{
-		$pkName = $this->getParent()->getRepository()->getStructure()->getPK()->getName();
-		
-		return $this->getParent()->getRepository()->many()->setWhere($pkName, $this->getPK());
-	}
-	
-	/**
 	 * Update all properties and if $propertiesToUpdate is not null update certains columns
 	 * @param string[]|null $propertiesToUpdate
 	 * @return int
@@ -368,31 +361,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
-	 * Get relation from properities
-	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\Entity
-	 */
-	protected function getRelationFromProperties(Relation $relation): Entity
-	{
-		$relatedClass = $relation->getTarget();
-		$name = $relation->getName();
-		$length = \strlen($name) + \strlen(Repository::RELATION_SEPARATOR);
-		$data = [];
-		
-		foreach ($this->properties as $property => $value) {
-			if (\strpos($property, $name . Repository::RELATION_SEPARATOR) === false) {
-				continue;
-			}
-			
-			$data[\substr($property, $length)] = $value;
-		}
-		
-		$repository = $this->getConnection()->getRepository($relatedClass);
-		
-		return new $relatedClass($data, $repository);
-	}
-	
-	/**
 	 * Get relation from relation
 	 * @param \StORM\Meta\Relation $relation
 	 * @return \StORM\RelationCollection|\StORM\Entity|null
@@ -437,6 +405,17 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->getParent()->getRepository();
 	}
 	
+	/**
+	 * Create new collection with condition by entities PK
+	 * @return \StORM\Collection
+	 */
+	protected function findMe(): Collection
+	{
+		$pkName = $this->getParent()->getRepository()->getStructure()->getPK()->getName();
+		
+		return $this->getParent()->getRepository()->many()->setWhere($pkName, $this->getPK());
+	}
+	
 	protected function getMutationSuffix(?string $mutation = null): string
 	{
 		return $this->availableMutations[$mutation ?: $this->activeMutation] ?? '';
@@ -446,7 +425,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param bool $includeNonColumns
 	 * @return mixed[]
 	 */
-	protected function getVars(bool $includeNonColumns = false): array
+	private function getVars(bool $includeNonColumns = false): array
 	{
 		$columns = $this->getStructure()->getColumns(true, false);
 		$columnNames = \array_keys($columns);
@@ -462,6 +441,31 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		return ($includeNonColumns ? $vars : \array_intersect_key($vars, \array_flip($columnNames))) + $this->properties + $this->foreignKeys;
+	}
+	
+	/**
+	 * Get relation from properities
+	 * @param \StORM\Meta\Relation $relation
+	 * @return \StORM\Entity
+	 */
+	private function getRelationFromProperties(Relation $relation): Entity
+	{
+		$relatedClass = $relation->getTarget();
+		$name = $relation->getName();
+		$length = \strlen($name) + \strlen(Repository::RELATION_SEPARATOR);
+		$data = [];
+		
+		foreach ($this->properties as $property => $value) {
+			if (\strpos($property, $name . Repository::RELATION_SEPARATOR) === false) {
+				continue;
+			}
+			
+			$data[\substr($property, $length)] = $value;
+		}
+		
+		$repository = $this->getConnection()->getRepository($relatedClass);
+		
+		return new $relatedClass($data, $repository);
 	}
 	
 	/**
