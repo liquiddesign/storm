@@ -627,11 +627,13 @@ class Structure
 			$reflection = new \ReflectionProperty($this->entityClass, $name);
 			$properties[$name] = Helpers::parseDocComment($reflection->getDocComment());
 			
-			if (!$reflection->getType()) {
+			/** @phpstan-ignore-next-line */
+			if (!$reflection->hasType() || \class_exists($reflection->getType()->isBuiltin())) {
 				continue;
 			}
 			
-			$properties[$name][self::ANNOTATION_VAR] = (string) $reflection->getType();
+			/** @phpstan-ignore-next-line */
+			$properties[$name][self::ANNOTATION_VAR] = $reflection->getType()->getName();
 		}
 		
 		return $properties;
