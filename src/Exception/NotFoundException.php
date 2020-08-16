@@ -9,19 +9,16 @@ use Throwable;
 
 class NotFoundException extends \Exception implements IContextException
 {
-	/**
-	 * @var \StORM\ICollection|\StORM\Entity|null
-	 */
-	private $context;
+	private ?IDumper $context;
 	
 	/**
 	 * NotFoundException constructor.
-	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @param \StORM\IDumper|null $context
 	 * @param string[] $conditions
 	 * @param string|string[] $source
 	 * @param \Throwable|null $previous
 	 */
-	public function __construct($context, array $conditions = [], $source = null, ?Throwable $previous = null)
+	public function __construct(?IDumper $context, array $conditions = [], $source = null, ?Throwable $previous = null)
 	{
 		$printedConditions = \print_r($conditions, true);
 		$printedSource = \is_array($source) ? \implode(', ', $source) : $source;

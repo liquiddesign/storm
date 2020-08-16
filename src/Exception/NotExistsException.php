@@ -14,20 +14,17 @@ class NotExistsException extends \Exception implements IContextException
 	public const PROPERTY = 2;
 	public const VALUE = 3;
 	
-	/**
-	 * @var \StORM\ICollection|\StORM\Entity|null
-	 */
-	private $context;
+	private ?IDumper $context;
 	
 	/**
 	 * NotExistsException constructor.
-	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @param \StORM\IDumper|null $context
 	 * @param int $errorCode
 	 * @param string $value
 	 * @param string|null $source
 	 * @param string[]|null $possibleValues
 	 */
-	public function __construct($context, int $errorCode, string $value, ?string $source = null, ?array $possibleValues = null)
+	public function __construct(?IDumper $context, int $errorCode, string $value, ?string $source = null, ?array $possibleValues = null)
 	{
 		$suggestions = '';
 		$possibleList = '';

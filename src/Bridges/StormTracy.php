@@ -10,15 +10,13 @@ class StormTracy implements \Tracy\IBarPanel
 	
 	/**
 	 * Stm service
-	 * @var \StORM\Connection
 	 */
-	protected $db;
+	protected \StORM\Connection $db;
 	
 	/**
 	 * Name of connection
-	 * @var string
 	 */
-	protected $name;
+	protected string $name;
 	
 	/**
 	 * Construct new panel
@@ -57,7 +55,6 @@ class StormTracy implements \Tracy\IBarPanel
 	
 	/**
 	 * Renders HTML code for storm panel
-	 * @return string
 	 * @throws \Throwable
 	 */
 	public function getTab(): string
@@ -71,7 +68,6 @@ class StormTracy implements \Tracy\IBarPanel
 	
 	/**
 	 * Get Storm panel
-	 * @return string
 	 * @throws \Throwable
 	 */
 	public function getPanel(): string
@@ -86,7 +82,6 @@ class StormTracy implements \Tracy\IBarPanel
 	/**
 	 * Captures PHP output into a string.
 	 * @param callable $func
-	 * @return string
 	 * @throws \Throwable
 	 */
 	public static function capture(callable $func): string

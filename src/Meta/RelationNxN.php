@@ -13,29 +13,16 @@ class RelationNxN extends Relation
 	
 	/**
 	 * Table which is used to join
-	 * @var string
 	 */
-	protected $via;
+	protected string $via;
 	
-	/**
-	 * @var string
-	 */
-	protected $sourceViaKey;
+	protected string $sourceViaKey;
 	
-	/**
-	 * @var string|null
-	 */
-	protected $sourceKeyType;
+	protected ?string $sourceKeyType;
 	
-	/**
-	 * @var string
-	 */
-	protected $targetViaKey;
+	protected string $targetViaKey;
 	
-	/**
-	 * @var string|null
-	 */
-	protected $targetKeyType;
+	protected ?string $targetKeyType;
 
 	public function getVia(): string
 	{
@@ -89,7 +76,6 @@ class RelationNxN extends Relation
 	
 	/**
 	 * @param mixed[] $json
-	 * @return void
 	 */
 	public function loadFromArray(array $json): void
 	{

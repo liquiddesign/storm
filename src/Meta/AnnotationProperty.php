@@ -6,16 +6,12 @@ namespace StORM\Meta;
 
 abstract class AnnotationProperty extends Annotation
 {
-	/**
-	 * @var string|null
-	 */
-	protected $name;
+	protected ?string $name;
 	
 	/**
 	 * Name of the column
-	 * @var string|null
 	 */
-	protected $propertyName;
+	protected ?string $propertyName;
 	
 	public function __construct(string $class, ?string $propertyName)
 	{

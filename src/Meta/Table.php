@@ -11,20 +11,11 @@ class Table extends AnnotationClass
 {
 	private const DEFAULT_ENTITY_NAMESPACE = 'DB';
 	
-	/**
-	 * @var string|null
-	 */
-	protected $collate;
+	protected ?string $collate = null;
 	
-	/**
-	 * @var string|null
-	 */
-	protected $engine;
+	protected ?string $engine = null;
 	
-	/**
-	 * @var string
-	 */
-	protected $comment = '';
+	protected string $comment = '';
 	
 	public function __construct(?string $class)
 	{

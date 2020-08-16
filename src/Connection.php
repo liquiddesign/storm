@@ -18,46 +18,30 @@ class Connection
 	 */
 	private const QUOTE_CHAR_OTHER = '"';
 	
-	/**
-	 * @var \PDO
-	 */
-	private $link;
+	private ?\PDO $link;
 
-	/**
-	* @var string
-	*/
-	private $name;
+	private string $name;
 	
 	/**
 	 * @var int[]
 	 */
-	private $attributes;
+	private array $attributes;
 	
-	/**
-	 * @var string
-	 */
-	private $user;
+	private string $user;
 	
-	/**
-	 * @var string
-	 */
-	private $driver;
+	private string $driver;
 	
-	/**
-	 * @var bool
-	 */
-	private $debug;
+	private bool $debug;
 	
 	/**
 	 * Restrict char
-	 * @var string
 	 **/
-	private $quoteChar;
+	private string $quoteChar;
 	
 	/**
 	 * @var \StORM\LogItem[]
 	 */
-	private $log = [];
+	private array $log = [];
 	
 	/**
 	 * @var callable|null
@@ -92,7 +76,6 @@ class Connection
 	
 	/**
 	 * Get internal name of connection
-	 * @return string
 	 */
 	public function getName(): string
 	{
@@ -101,7 +84,6 @@ class Connection
 	
 	/**
 	 * Return PDO object
-	 * @return \PDO
 	 */
 	public function getLink(): \PDO
 	{
@@ -114,7 +96,6 @@ class Connection
 	
 	/**
 	 * Get user of current connection
-	 * @return null|string
 	 */
 	public function getUser(): ?string
 	{
@@ -123,7 +104,6 @@ class Connection
 	
 	/**
 	 * Get database name of current connection
-	 * @return null|string
 	 */
 	public function getDatabaseName(): ?string
 	{
@@ -141,7 +121,6 @@ class Connection
 	
 	/**
 	 * Get quote chararcter for quoting identifiers
-	 * @return string
 	 */
 	public function getQuoteIdentifierChar(): string
 	{
@@ -151,7 +130,6 @@ class Connection
 	/**
 	 * Quote identifier
 	 * @param string $string restrict
-	 * @return string
 	 */
 	public function quoteIdentifier(string $string): string
 	{
@@ -161,7 +139,6 @@ class Connection
 	/**
 	 * Quote volue, wraps PDO quote
 	 * @param string $string restrict
-	 * @return string
 	 */
 	public function quote(string $string): string
 	{
@@ -175,7 +152,6 @@ class Connection
 	 * @param string[] $vars
 	 * @param string[] $identifiers
 	 * @param bool|null $debug
-	 * @return \PDOStatement
 	 */
 	public function query(string $sql, array $vars = [], array $identifiers = [], ?bool $debug = null): \PDOStatement
 	{
@@ -221,7 +197,6 @@ class Connection
 	 * @param string $class
 	 * @param mixed[] $classParameters
 	 * @param string|null $index
-	 * @return \StORM\ICollection
 	 */
 	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): ICollection
 	{
@@ -234,7 +209,6 @@ class Connection
 	 * @param mixed[]|object $values
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
-	 * @return \StORM\InsertResult
 	 */
 	public function createRow(string $table, $values, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
@@ -268,7 +242,6 @@ class Connection
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
-	 * @return \StORM\InsertResult
 	 */
 	public function createRows(string $table, array $manyValues, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
 	{
@@ -297,7 +270,6 @@ class Connection
 	 * @param string[]|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
-	 * @return \StORM\InsertResult
 	 */
 	public function syncRow(string $table, $values, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null): InsertResult
 	{
@@ -321,7 +293,6 @@ class Connection
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
-	 * @return \StORM\InsertResult
 	 */
 	public function syncRows(string $table, array $manyValues, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
 	{
@@ -347,7 +318,6 @@ class Connection
 	 * @param mixed[] $vars
 	 * @param string[]|null $onDuplicateUpdate
 	 * @param bool $ignore
-	 * @return string
 	 */
 	public function getSqlInsert(string $table, array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
 	{
@@ -410,7 +380,6 @@ class Connection
 	
 	/**
 	 * Get PDO driver
-	 * @return string
 	 */
 	public function getDriver(): string
 	{
@@ -422,7 +391,6 @@ class Connection
 	 * @param string $sql
 	 * @param string[] $identifiers
 	 * @param bool|null $debug
-	 * @return int
 	 */
 	public function exec(string $sql, array $identifiers = [], ?bool $debug = null): int
 	{
@@ -469,7 +437,6 @@ class Connection
 	 * Get real sql. Variables are binded.
 	 * @param string $sql
 	 * @param mixed[] $vars
-	 * @return string
 	 */
 	public function getRealSql(string $sql, array $vars): string
 	{
@@ -478,7 +445,6 @@ class Connection
 	
 	/**
 	 * Get last logged item
-	 * @return \StORM\LogItem|null
 	 */
 	public function getLastLogItem(): ?LogItem
 	{
@@ -487,7 +453,6 @@ class Connection
 	
 	/**
 	 * Tells if debug mode is on
-	 * @return bool
 	 */
 	public function isDebug(): bool
 	{
@@ -508,7 +473,6 @@ class Connection
 	
 	/**
 	 * Generate primary key
-	 * @return null|string
 	 */
 	public function generatePrimaryKey(): ?string
 	{
@@ -535,13 +499,18 @@ class Connection
 	
 	/**
 	 * Generate 24 chars long uuid
-	 * @return string
 	 */
 	public static function generateUuid(): string
 	{
 		return \str_replace('.', '', \uniqid('', true) . \rand(10, 99));
 	}
 	
+	/**
+	 * @param mixed[]|object $values
+	 * @param string[] $primaryKeys
+	 * @param string|null $nonAutoincrementPK
+	 * @return mixed[]
+	 */
 	private function prepareInputArray($values, array &$primaryKeys, ?string $nonAutoincrementPK): array
 	{
 		if (\is_object($values)) {
@@ -570,7 +539,6 @@ class Connection
 	/**
 	 * @param string $sql
 	 * @param mixed[] $vars
-	 * @return \StORM\LogItem
 	 */
 	private function log(string $sql, array $vars): LogItem
 	{

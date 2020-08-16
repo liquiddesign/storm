@@ -34,7 +34,6 @@ class Helpers
 	/**
 	 * Tells if is associative array
 	 * @param mixed[] $array
-	 * @return bool
 	 */
 	public static function isAssociative(array $array): bool
 	{
@@ -77,7 +76,6 @@ class Helpers
 	/**
 	 * @param string $value
 	 * @param string[] $possibilities
-	 * @return string|null
 	 */
 	public static function getBestSimilarString(string $value, array $possibilities): ?string
 	{
@@ -110,7 +108,6 @@ class Helpers
 	/**
 	 * Return if is valid SQL identifier
 	 * @param string $name
-	 * @return bool
 	 */
 	public static function isValidIdentifier(string $name): bool
 	{
@@ -125,7 +122,6 @@ class Helpers
 	 * @param string $assocGlue
 	 * @param bool $brackets
 	 * @param bool $reverse
-	 * @return string
 	 */
 	public static function createSqlClauseString(string $prefix, ?array $fragments, string $glue, string $assocGlue = '', bool $brackets = false, bool $reverse = false): string
 	{

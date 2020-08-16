@@ -6,10 +6,7 @@ namespace StORM;
 
 class Literal
 {
-	/**
-	 * @var string
-	 */
-	private $value;
+	private string $value;
 	
 	/**
 	 * Literal constructor.
@@ -22,7 +19,6 @@ class Literal
 	
 	/**
 	 * Convert to string
-	 * @return string
 	 */
 	public function __toString(): string
 	{

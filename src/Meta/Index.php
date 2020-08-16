@@ -13,13 +13,12 @@ class Index extends AnnotationClass
 	 * Column names in array which index is on
 	 * @var string[]
 	 */
-	protected $columns;
+	protected array $columns;
 	
 	/**
 	 * Is a unique index?
-	 * @var bool
 	 */
-	protected $unique = false;
+	protected bool $unique = false;
 	
 	public function __construct(string $class)
 	{

@@ -13,45 +13,24 @@ class InsertResult
 	 */
 	public const UPDATE_AFFECTED_COUNT = 2;
 	
-	/**
-	 * @var \StORM\Connection
-	 */
-	private $connection;
+	private ?\StORM\Connection $connection;
 	
-	/**
-	 * @var int
-	 */
-	private $rowCount;
+	private int $rowCount;
 	
-	/**
-	 * @var int
-	 */
-	private $idBefore;
+	private int $idBefore;
 	
-	/**
-	 * @var int
-	 */
-	private $idAfter;
+	private int $idAfter;
 	
 	/**
 	 * @var string[]
 	 */
-	private $primaryKeys;
+	private array $primaryKeys;
 	
-	/**
-	 * @var string
-	 */
-	private $tableName;
+	private string $tableName;
 	
-	/**
-	 * @var bool
-	 */
-	private $multiple;
+	private bool $multiple;
 	
-	/**
-	 * @var bool
-	 */
-	private $ignore;
+	private bool $ignore;
 	
 	/**
 	 * Literal constructor.
@@ -101,7 +80,7 @@ class InsertResult
 	public function getPrimaryKeys(): array
 	{
 		if (!$this->primaryKeys) {
-			if ($this->ignore === null && $this->multiple) {
+			if ($this->ignore && $this->multiple) {
 				throw new InvalidStateException(null, InvalidStateException::IGNORE);
 			}
 			

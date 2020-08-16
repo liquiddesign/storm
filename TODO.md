@@ -9,6 +9,8 @@ filter -> Expected parameter of type '\mixed[][]', 'int[]|null[]' provided
 -> co tak zpet pridat do RElation Collection
 ---------------------------------------
 4. projit chby uvnitr a dat throwy ?
+musi byt neco null v repository pri inicializaci ? -> tam uz by to mohlo haze chybu
+null v Schema manageru
 ---------------------------------------
 
 ---------------------------------------

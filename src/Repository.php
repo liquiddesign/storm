@@ -25,23 +25,14 @@ abstract class Repository implements IEntityParent
 	 */
 	public const RELATION_SEPARATOR = '_';
 	
-	/**
-	 * @var \StORM\Meta\Structure|null
-	 */
-	protected $sqlStructure;
+	protected ?\StORM\Meta\Structure $sqlStructure = null;
+	
+	protected \StORM\DIConnection $connection;
+	
+	protected \StORM\SchemaManager $schemaManager;
 	
 	/**
-	 * @var \StORM\DIConnection|null
-	 */
-	protected $connection;
-	
-	/**
-	 * @var \StORM\SchemaManager
-	 */
-	protected $schemaManager;
-	
-	/**
-	 * Repository constructor.
+	 * Repository constructor
 	 * @param \StORM\DIConnection $connection
 	 * @param \StORM\SchemaManager $schemaManager
 	 */
@@ -54,7 +45,6 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Get entity class
 	 * @phpstan-return class-string<T>
-	 * @return string
 	 */
 	final public function getEntityClass(): string
 	{
@@ -63,7 +53,6 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get setted connection
-	 * @return \StORM\DIConnection
 	 */
 	final public function getConnection(): DIConnection
 	{
@@ -81,7 +70,6 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get schema manager
-	 * @return \StORM\SchemaManager
 	 */
 	final public function getSchemaManager(): SchemaManager
 	{
@@ -90,7 +78,6 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get SQL structure object
-	 * @return \StORM\Meta\Structure
 	 */
 	final public function getStructure(): Structure
 	{
@@ -106,7 +93,6 @@ abstract class Repository implements IEntityParent
 	 * Create new collection
 	 * @param bool $optimization
 	 * @phpstan-return \StORM\Collection<T>
-	 * @return \StORM\Collection
 	 */
 	final public function many(bool $optimization = true): Collection
 	{
@@ -119,7 +105,6 @@ abstract class Repository implements IEntityParent
 	 * @param bool $needed
 	 * @param string[]|null $select
 	 * @phpstan-return T|null
-	 * @return \StORM\Entity|null
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
 	{
@@ -171,7 +156,6 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @phpstan-return T
-	 * @return \StORM\Entity
 	 */
 	final public function createOne($values, ?bool $filterByColumns = false): Entity
 	{
@@ -194,7 +178,6 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @phpstan-return T
-	 * @return \StORM\Entity
 	 */
 	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false): Entity
 	{
@@ -281,7 +264,6 @@ abstract class Repository implements IEntityParent
 	 * @param bool $ignore
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
-	 * @return \StORM\Collection
 	 */
 	final public function createMany(array $manyValues, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
@@ -296,7 +278,6 @@ abstract class Repository implements IEntityParent
 	 * @param bool $ignore
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
-	 * @return \StORM\Collection
 	 */
 	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
@@ -392,7 +373,6 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[] $vars
 	 * @param string[]|null $onDuplicateUpdate
 	 * @param bool $ignore
-	 * @return string
 	 */
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
 	{
@@ -441,7 +421,6 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[][] $filters
 	 * @param bool $silent
 	 * @phpstan-return \StORM\Collection<T>
-	 * @return \StORM\Collection
 	 */
 	public function filter(Collection $collection, array $filters, bool $silent = false): Collection
 	{

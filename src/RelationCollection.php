@@ -15,15 +15,9 @@ use StORM\Meta\RelationNxN;
  */
 class RelationCollection extends Collection implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
-	/**
-	 * @var \StORM\Meta\Relation
-	 */
-	protected $relation;
+	protected \StORM\Meta\Relation $relation;
 	
-	/**
-	 * @var string
-	 */
-	protected $keyValue;
+	protected string $keyValue;
 	
 	/**
 	 * CollectionRelation constructor.
@@ -49,7 +43,6 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	 * @param string[]|int[]|string[][]|int[][] $primaryKeys
 	 * @param bool $checkKeys
 	 * @param string|null $primaryKeyName You can specify column name and method will generate primary keys for that columns
-	 * @return int
 	 */
 	public function relate(array $primaryKeys, bool $checkKeys = true, ?string $primaryKeyName = null): int
 	{
@@ -104,7 +97,6 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	 * Unrelate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
 	 * @param string[]|int[] $primaryKeys
-	 * @return int
 	 */
 	public function unrelate(array $primaryKeys): int
 	{
@@ -130,7 +122,6 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	/**
 	 * Unrelate all records
 	 * Collection will be cleared before relate
-	 * @return int
 	 */
 	public function unrelateAll(): int
 	{

@@ -14,22 +14,16 @@ class SchemaManager
 	/**
 	 * @var string[]
 	 */
-	private $customAnnotations = [];
+	private array $customAnnotations = [];
 	
-	/**
-	 * @var \Nette\Caching\Cache
-	 */
-	private $cache;
+	private \Nette\Caching\Cache $cache;
 	
-	/**
-	 * @var \StORM\DIConnection|null
-	 */
-	private $connection;
+	private ?\StORM\DIConnection $connection;
 	
 	/**
 	 * @var \StORM\Meta\Structure[]
 	 */
-	private $dataModels = [];
+	private array $dataModels = [];
 	
 	/**
 	 * SchemaManager constructor.
@@ -45,7 +39,6 @@ class SchemaManager
 	/**
 	 * Get description of Entity in structure structure called DataModel containing properties ect.
 	 * @param string $class
-	 * @return \StORM\Meta\Structure
 	 */
 	public function getStructure(string $class): Structure
 	{
@@ -67,7 +60,6 @@ class SchemaManager
 	/**
 	 * Get primary key name
 	 * @param string $tableName
-	 * @return string
 	 */
 	public function getPrimaryKeyName(string $tableName): string
 	{
@@ -93,7 +85,6 @@ class SchemaManager
 	 * Detect if table has autincrement on specific column
 	 * @param string $tableName
 	 * @param string $columnName
-	 * @return bool
 	 */
 	public function isAutoincrement(string $tableName, string $columnName): bool
 	{
@@ -111,7 +102,6 @@ class SchemaManager
 	
 	/**
 	 * Get current connection
-	 * @return \StORM\DIConnection
 	 */
 	public function getConnection(): DIConnection
 	{
@@ -152,5 +142,10 @@ class SchemaManager
 		unset($vars['connection']);
 		
 		return \array_keys($vars);
+	}
+	
+	public function __wakeup(): void
+	{
+		$this->connection = null;
 	}
 }

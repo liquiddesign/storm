@@ -9,10 +9,7 @@ use Nette\Schema\Schema;
 
 abstract class Annotation implements \JsonSerializable
 {
-	/**
-	 * @var string|null
-	 */
-	protected $class;
+	protected ?string $class;
 	
 	abstract public static function getAnnotationName(): string;
 	

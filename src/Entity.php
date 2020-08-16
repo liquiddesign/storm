@@ -19,32 +19,26 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * @var mixed[]
 	 */
-	protected $properties = [];
+	protected array $properties = [];
 	
 	/**
 	 * @var string[]|null[]
 	 */
-	protected $foreignKeys = [];
+	protected array $foreignKeys = [];
 	
 	/**
 	 * @var \StORM\Entity[]|\StORM\RelationCollection[]|null[]
 	 */
-	protected $relations = [];
+	protected array $relations = [];
 	
-	/**
-	 * @var \StORM\IEntityParent|null
-	 */
-	protected $parent;
+	protected ?\StORM\IEntityParent $parent;
 	
-	/**
-	 * @var string
-	 */
-	protected $activeMutation;
+	protected ?string $activeMutation;
 	
 	/**
 	 * @var string[]
 	 */
-	protected $availableMutations;
+	protected array $availableMutations;
 	
 	/**
 	 * Entity constructor.
@@ -251,7 +245,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param mixed[]|mixed[][]|object $values
 	 * @param bool $silentFilter
 	 * @param bool $includePrimaryKey
-	 * @return int
 	 */
 	public function update($values, bool $silentFilter = true, bool $includePrimaryKey = true): int
 	{
@@ -265,7 +258,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Update all properties and if $propertiesToUpdate is not null update certains columns
 	 * @param string[]|null $propertiesToUpdate
-	 * @return int
 	 */
 	public function updateAll(?array $propertiesToUpdate = null): int
 	{
@@ -282,7 +274,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Delete coresponding row from database and return number affected affected rows
-	 * @return int
 	 */
 	public function delete(): int
 	{
@@ -333,7 +324,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Dump entity info
 	 * @param bool $return
-	 * @return string|null
 	 */
 	public function dump(bool $return = false): ?string
 	{
@@ -407,7 +397,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Create new collection with condition by entities PK
-	 * @return \StORM\Collection
 	 */
 	protected function findMe(): Collection
 	{
@@ -446,7 +435,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Get relation from properities
 	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\Entity
 	 */
 	private function getRelationFromProperties(Relation $relation): Entity
 	{
@@ -519,7 +507,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * Set property
 	 * @param string $name
 	 * @param mixed $value
-	 * @return void
 	 */
 	public function __set(string $name, $value): void
 	{
@@ -534,7 +521,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Convert to string = return primary key value in string
-	 * @return string
 	 */
 	public function __toString(): string
 	{
@@ -554,5 +540,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 		unset($vars['parent'], $vars['relations']);
 		
 		return \array_keys($vars);
+	}
+	
+	public function __wakeup(): void
+	{
+		$this->parent = null;
+		$this->relations = [];
 	}
 }

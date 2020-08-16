@@ -11,21 +11,18 @@ class Trigger extends AnnotationClass
 {
 	/**
 	 * Action to trigger
-	 * @var string
 	 */
-	protected $manipulation;
+	protected string $manipulation;
 	
 	/**
 	 * When to trigger action
-	 * @var string
 	 */
-	protected $timing;
+	protected string $timing;
 	
 	/**
 	 * Definition of the trigger
-	 * @var string
 	 */
-	protected $statement;
+	protected string $statement;
 	
 	public function getManipulation(): string
 	{

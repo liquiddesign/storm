@@ -33,7 +33,6 @@ interface ICollection
 	 * Get fetch class
 	 * @param mixed[] $params
 	 * @phpstan-var class-string<T>
-	 * @return string
 	 */
 	public function getFetchClass(array &$params = []): string;
 	
@@ -45,7 +44,6 @@ interface ICollection
 	
 	/**
 	 * Tells if collection is fetched
-	 * @return bool
 	 */
 	public function isLoaded(): bool;
 	
@@ -61,26 +59,22 @@ interface ICollection
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
 	 * @phpstan-return T|null
-	 * @return object|null
 	 */
 	public function first(bool $needed = false): ?object;
 	
 	/**
 	 * Fetch object and move cursor
 	 * @phpstan-return T|null
-	 * @return object|null
 	 */
 	public function fetch(): ?object;
 	
 	/**
 	 * Get PDO statement handle. Ff its not created, it will be
-	 * @return \PDOStatement
 	 */
 	public function getPDOStatement(): \PDOStatement;
 	
 	/**
 	 * Delete all record equals condition and return number of affected rows
-	 * @return int
 	 */
 	public function delete(): int;
 	
@@ -88,13 +82,11 @@ interface ICollection
 	 * Update all record equals condition and return number of affected rows
 	 * @param string[]|null[] $values
 	 * @param bool $ignore
-	 * @return int
 	 */
 	public function update(array $values, bool $ignore = false): int;
 	
 	/**
 	 * Get sql SELECT string
-	 * @return string
 	 */
 	public function getSql(): string;
 	
@@ -107,7 +99,6 @@ interface ICollection
 	
 	/**
 	 * Get sql DELETE string
-	 * @return string
 	 */
 	public function getSqlDelete(): string;
 	
@@ -115,7 +106,6 @@ interface ICollection
 	 * Get sql string for sql UPDATE records and bind variables in updates
 	 * @param mixed[] $updates
 	 * @param bool $ignore
-	 * @return string
 	 */
 	public function getSqlUpdate(array &$updates, bool $ignore = false): string;
 	
@@ -154,13 +144,11 @@ interface ICollection
 	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
-	 * @return \StORM\ICollection
 	 */
 	public function setIndex(?string $index): ICollection;
 	
 	/**
 	 * Count internal array if loaded, otherwise call enum()
-	 * @return int
 	 */
 	public function count(): int;
 	
@@ -170,35 +158,30 @@ interface ICollection
 	 * Call COUNT($column)
 	 * @param string|null $column
 	 * @param bool $unique
-	 * @return int
 	 */
 	public function enum(?string $column = null, bool $unique = true): int;
 	
 	/**
 	 * Call SUM($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function sum(string $column): float;
 	
 	/**
 	 * Call AVG($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function avg(string $column): float;
 	
 	/**
 	 * Call MIN($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function min(string $column): float;
 	
 	/**
 	 * Call MAX($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function max(string $column): float;
 	
@@ -206,7 +189,6 @@ interface ICollection
 	 * Call sql function on args and return raw value
 	 * @param string $function
 	 * @param string[] $args
-	 * @return string
 	 */
 	public function func(string $function, array $args): string;
 	
@@ -352,7 +334,6 @@ interface ICollection
 	
 	/**
 	 * Get last affected number
-	 * @return int|null
 	 */
 	public function getAffectedNumber(): ?int;
 	
@@ -376,7 +357,6 @@ interface ICollection
 	
 	/**
 	 * Get real SQL string
-	 * @return string
 	 */
 	public function __toString(): string;
 }

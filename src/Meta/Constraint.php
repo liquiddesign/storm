@@ -14,35 +14,17 @@ class Constraint extends AnnotationProperty
 	public const ACTION_SET_NULL = 'SET NULL';
 	public const ACTION_CASCADE = 'CASCADE';
 	
-	/**
-	 * @var string
-	 */
-	protected $source;
+	protected string $source;
 	
-	/**
-	 * @var string
-	 */
-	protected $target;
+	protected string $target;
 	
-	/**
-	 * @var string
-	 */
-	protected $sourceKey;
+	protected string $sourceKey;
 	
-	/**
-	 * @var string
-	 */
-	protected $targetKey;
+	protected string $targetKey;
 	
-	/**
-	 * @var string
-	 */
-	protected $onDelete;
+	protected ?string $onDelete = null;
 	
-	/**
-	 * @var string
-	 */
-	protected $onUpdate;
+	protected ?string $onUpdate = null;
 	
 	public function getSource(): string
 	{

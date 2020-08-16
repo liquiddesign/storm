@@ -19,27 +19,18 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @phpstan-var T[]|null
 	 * @var \StORM\Entity[]|null
 	 */
-	protected $items;
+	protected ?array $items = null;
 	
-	/**
-	 * @var \StORM\Repository|null
-	 */
-	private $repository;
+	private ?\StORM\Repository $repository;
 	
 	/**
 	 * @var \StORM\Collection[]
 	 */
-	private $cache;
+	private array $cache;
 	
-	/**
-	 * @var int
-	 */
-	private $skipSelectLength;
+	private int $skipSelectLength;
 	
-	/**
-	 * @var bool
-	 */
-	private $isOptimization;
+	private bool $isOptimization;
 	
 	/**
 	 * Collection constructor.
@@ -62,7 +53,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * Get collection repository
-	 * @return \StORM\Repository
 	 */
 	public function getRepository(): Repository
 	{
@@ -109,7 +99,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this->getRepository()->getConnection();
 	}
 	
-	public function isOptimization()
+	public function isOptimization(): bool
 	{
 		return $this->isOptimization;
 	}
@@ -126,7 +116,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @internal
 	 * @param \StORM\Meta\Relation $relation
 	 * @param string $pk
-	 * @return \StORM\Entity|null
 	 */
 	public function getRelatedObject(Relation $relation, string $pk): ?Entity
 	{
@@ -151,7 +140,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	/**
 	 * Get sql SELECT string
 	 * @override adding autojoin feature
-	 * @return string
 	 */
 	public function getSql(): string
 	{
@@ -165,7 +153,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @param mixed[] $updates
 	 * @param bool $ignore
 	 * @override adding autojoin feature
-	 * @return string
 	 */
 	public function getSqlUpdate(array &$updates, bool $ignore = false): string
 	{
@@ -177,7 +164,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	/**
 	 * Get sql DELETE string
 	 * @override adding autojoin feature
-	 * @return string
 	 */
 	public function getSqlDelete(): string
 	{
@@ -314,7 +300,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	/**
 	 * @return string[]
 	 */
-	public function __sleep()
+	public function __sleep(): array
 	{
 		$this->clear();
 		$this->setFetchClass(null, []);
@@ -323,5 +309,12 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		unset($vars['connection'], $vars['sth'], $vars['repository']);
 		
 		return \array_keys($vars);
+	}
+	
+	public function __wakeup(): void
+	{
+		$this->connection = null;
+		$this->sth = null;
+		$this->repository = null;
 	}
 }

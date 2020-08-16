@@ -63,88 +63,72 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @phpstan-var T[]|null
 	 * @var object[]|null
 	 */
-	protected $items;
+	protected ?array $items = null;
 	
 	/**
 	 * @var string[]
 	 */
-	protected $keys;
+	protected array $keys;
 	
 	/**
 	 * @phpstan-var class-string<T>
-	 * @var string
 	 */
-	protected $class;
+	protected string $class;
 	
 	/**
 	 * @var mixed[]
 	 */
-	protected $classParameters = [];
+	protected array $classParameters = [];
 	
-	/**
-	 * @var \PDOStatement|null
-	 */
-	protected $sth;
+	protected ?\PDOStatement $sth = null;
 	
-	/**
-	 * @var int
-	 */
-	protected $binderCounter = 0;
+	protected int $binderCounter = 0;
 	
 	/**
 	 * @var string[]
 	 */
-	protected $aliases = [];
+	protected array $aliases = [];
 	
 	/**
 	 * @var string[]
 	 */
-	protected $tableAliases = [];
+	protected array $tableAliases = [];
 	
 	/**
 	 * @var mixed[]
 	 */
-	protected $modifiers = [];
+	protected array $modifiers = [];
 	
 	/**
 	 * @var string[]
 	 */
-	protected $baseFrom;
+	protected ?array $baseFrom;
 	
 	/**
 	 * @var string[]
 	 */
-	protected $baseSelect;
+	protected array $baseSelect;
 	
-	/**
-	 * @var string|null
-	 */
-	protected $index;
+	protected ?string $index;
 	
 	/**
 	 * @var mixed[]
 	 */
-	protected $vars = [];
+	protected array $vars = [];
 	
 	/**
 	 * @var int[]
 	 */
-	protected $varsFlags = [];
+	protected array $varsFlags = [];
 	
-	/**
-	 * @var \StORM\Connection|null
-	 */
-	protected $connection;
+	protected ?\StORM\Connection $connection;
 	
-	/**
-	 * @var int|null
-	 */
-	protected $affectedNumber;
+	protected ?int $affectedNumber = null;
 	
 	/**
 	 * @var string[][]
 	 */
-	protected $possibleValues = [];
+	protected array $possibleValues = [];
 	
 	/**
 	 * Rows constructor.
@@ -216,7 +200,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Get fetch class
 	 * @param mixed[] $params
 	 * @phpstan-return class-string<T>
-	 * @return string
 	 */
 	public function getFetchClass(array &$params = []): string
 	{
@@ -237,7 +220,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get last affected number
-	 * @return int|null
 	 */
 	public function getAffectedNumber(): ?int
 	{
@@ -268,7 +250,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Tells if collection is fetched
-	 * @return bool
 	 */
 	public function isLoaded(): bool
 	{
@@ -305,7 +286,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
 	 * @phpstan-return T|null
-	 * @return object|null
 	 */
 	public function first(bool $needed = false): ?object
 	{
@@ -332,7 +312,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Fetch object and move cursor
 	 * @phpstan-return T|null
-	 * @return object|null
 	 */
 	public function fetch(): ?object
 	{
@@ -349,7 +328,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Delete all record equals condition and return number of affected rows
-	 * @return int
 	 */
 	public function delete(): int
 	{
@@ -365,7 +343,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Update all record equals condition and return number of affected rows
 	 * @param mixed[]|object $values
 	 * @param bool $ignore
-	 * @return int
 	 */
 	public function update($values, bool $ignore = false): int
 	{
@@ -395,7 +372,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get sql SELECT string
-	 * @return string
 	 */
 	public function getSql(): string
 	{
@@ -420,7 +396,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get sql DELETE string
-	 * @return string
 	 */
 	public function getSqlDelete(): string
 	{
@@ -447,7 +422,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Get sql string for sql UPDATE records and bind variables in updates
 	 * @param mixed[] $updates
 	 * @param bool $ignore
-	 * @return string
 	 */
 	public function getSqlUpdate(array &$updates, bool $ignore = false): string
 	{
@@ -569,7 +543,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
-	 * @return \StORM\ICollection
 	 */
 	public function setIndex(?string $index): ICollection
 	{
@@ -584,7 +557,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Count internal array if loaded, otherwise call enum()
-	 * @return int
 	 */
 	public function count(): int
 	{
@@ -595,7 +567,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Call COUNT($column)
 	 * @param string|null $column
 	 * @param bool $unique
-	 * @return int
 	 */
 	public function enum(?string $column = null, bool $unique = true): int
 	{
@@ -612,7 +583,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call SUM($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function sum(string $column): float
 	{
@@ -622,7 +592,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call AVG($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function avg(string $column): float
 	{
@@ -632,7 +601,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call MIN($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function min(string $column): float
 	{
@@ -642,7 +610,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call MAX($column)
 	 * @param string $column
-	 * @return float
 	 */
 	public function max(string $column): float
 	{
@@ -653,7 +620,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Call sql function on args and return raw value
 	 * @param string $function
 	 * @param string[] $args
-	 * @return string
 	 */
 	public function func(string $function, array $args): string
 	{
@@ -1109,7 +1075,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Dump modifiers, sql, binders and state of collection
 	 * @param bool $return
-	 * @return string|null
 	 */
 	public function dump(bool $return = false): ?string
 	{
@@ -1160,7 +1125,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get PDO statement handle. Ff its not created, it will be
-	 * @return \PDOStatement
 	 */
 	public function getPDOStatement(): \PDOStatement
 	{
@@ -1186,7 +1150,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Move forward to next element
-	 * @return void
 	 */
 	public function next(): void
 	{
@@ -1212,7 +1175,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Checks if current position is valid
-	 * @return bool
 	 */
 	public function valid(): bool
 	{
@@ -1225,7 +1187,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Rewind the Iterator to the first element
-	 * @return void
 	 */
 	public function rewind(): void
 	{
@@ -1240,7 +1201,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Whether a offset exists
 	 * @param mixed $offset
-	 * @return bool
 	 */
 	public function offsetExists($offset): bool
 	{
@@ -1275,7 +1235,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Offset to set
 	 * @param mixed $offset
 	 * @param mixed $value
-	 * @return void
 	 */
 	public function offsetSet($offset, $value): void
 	{
@@ -1290,7 +1249,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Offset to unset
 	 * @param mixed $offset
-	 * @return void
 	 */
 	public function offsetUnset($offset): void
 	{
@@ -1332,7 +1290,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * @param string $sql
 	 * @param mixed[] $vars
-	 * @return string
 	 */
 	protected function replaceLiterals(string $sql, array $vars): string
 	{
@@ -1433,7 +1390,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param mixed[]|null|mixed $values
 	 * @param bool $not
 	 * @param bool $replace
-	 * @return void
 	 */
 	private function processWhere(string $expression, $values, bool $not, bool $replace): void
 	{
@@ -1632,7 +1588,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * @return string[]
 	 */
-	public function __sleep()
+	public function __sleep(): array
 	{
 		$this->clear();
 		
@@ -1642,9 +1598,14 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		return \array_keys($vars);
 	}
 	
+	public function __wakeup(): void
+	{
+		$this->connection = null;
+		$this->sth = null;
+	}
+	
 	/**
 	 * Get real SQL string
-	 * @return string
 	 */
 	public function __toString(): string
 	{

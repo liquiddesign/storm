@@ -6,10 +6,7 @@ namespace StORM\Meta;
 
 abstract class AnnotationClass extends Annotation
 {
-	/**
-	 * @var string|null
-	 */
-	protected $name;
+	protected ?string $name;
 	
 	public function setName(string $name): void
 	{

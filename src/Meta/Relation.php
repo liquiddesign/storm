@@ -9,35 +9,17 @@ use Nette\Schema\Schema;
 
 class Relation extends AnnotationProperty
 {
-	/**
-	 * @var string
-	 */
-	protected $source;
+	protected string $source;
 	
-	/**
-	 * @var string
-	 */
-	protected $target;
+	protected string $target;
 	
-	/**
-	 * @var string
-	 */
-	protected $sourceKey;
+	protected string $sourceKey;
 	
-	/**
-	 * @var string
-	 */
-	protected $targetKey;
+	protected string $targetKey;
 	
-	/**
-	 * @var string|null
-	 */
-	protected $keyType;
+	protected ?string $keyType;
 	
-	/**
-	 * @var bool
-	 */
-	protected $isKeyHolder;
+	protected bool $isKeyHolder;
 	
 	public function getSource(): string
 	{

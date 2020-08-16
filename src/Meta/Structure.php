@@ -23,50 +23,35 @@ class Structure
 	
 	private const ANNOTATION_TYPE_PROPERTY = 'property';
 	
-	/**
-	 * @var string
-	 */
-	private $entityClass;
+	private string $entityClass;
 	
-	/**
-	 * @var \StORM\Meta\Column
-	 */
-	private $pk;
+	private \StORM\Meta\Column $pk;
 	
-	/**
-	 * @var \StORM\Meta\Table
-	 */
-	private $table;
+	private \StORM\Meta\Table $table;
 	
 	/**
 	 * @var \StORM\Meta\Column[]
 	 */
-	private $columns = [];
+	private array $columns = [];
 	
 	/**
 	 * @var \StORM\Meta\Relation[]
 	 */
-	private $relations = [];
+	private array $relations = [];
 	
 	/**
 	 * @var mixed[][]
 	 */
-	private $customClassAnnotations = [];
+	private array $customClassAnnotations = [];
 	
 	/**
 	 * @var mixed[][][]
 	 */
-	private $customPropertyAnnotations = [];
+	private array $customPropertyAnnotations = [];
 	
-	/**
-	 * @var \StORM\SchemaManager
-	 */
-	private $schemaManager;
+	private \StORM\SchemaManager $schemaManager;
 	
-	/**
-	 * @var bool
-	 */
-	private $hasMutations = false;
+	private bool $hasMutations = false;
 	
 	/**
 	 * Table constructor.
@@ -237,7 +222,6 @@ class Structure
 	
 	/**
 	 * Tells if has some mutation columns
-	 * @return bool
 	 */
 	public function hasMutations(): bool
 	{
@@ -579,7 +563,6 @@ class Structure
 	
 	/**
 	 * @param string[]|string[][] $docComment
-	 * @return \StORM\Meta\Table
 	 */
 	protected function loadTable(array $docComment): Table
 	{
@@ -642,7 +625,6 @@ class Structure
 	/**
 	 * @param string $name
 	 * @param string[] $parsedDocComment
-	 * @return \StORM\Meta\Column
 	 */
 	private function loadColumn(string $name, array $parsedDocComment): Column
 	{
@@ -689,7 +671,6 @@ class Structure
 	 * @param string[] $parsedDocComment
 	 * @param string $sourceTable
 	 * @param \StORM\Meta\Column $sourcePk
-	 * @return \StORM\Meta\Relation
 	 */
 	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, Column $sourcePk): Relation
 	{

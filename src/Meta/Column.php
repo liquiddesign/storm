@@ -14,21 +14,18 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Name of the column
-	 * @var string|null
 	 */
-	protected $propertyName;
+	protected ?string $propertyName = null;
 	
 	/**
 	 * Type of the column
-	 * @var string|null
 	 */
-	protected $propertyType;
+	protected ?string $propertyType = null;
 	
 	/**
 	 * Sql type of column
-	 * @var string|null
 	 */
-	protected $type;
+	protected ?string $type = null;
 	
 	/**
 	 * Default value of column
@@ -38,15 +35,13 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Nullable true | false
-	 * @var bool
 	 */
-	protected $nullable = false;
+	protected bool $nullable = false;
 	
 	/**
 	 * Unique column true | false
-	 * @var bool
 	 */
-	protected $unique = false;
+	protected bool $unique = false;
 	
 	/**
 	 * Mysql length of column
@@ -56,44 +51,22 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Mutations true | false
-	 * @var bool
 	 */
-	protected $mutations = false;
+	protected bool $mutations = false;
 
-	/**
-	 * @var string
-	 */
-	protected $extra = '';
+	protected string $extra = '';
 	
-	/**
-	 * @var string|null
-	 */
-	protected $collate;
+	protected ?string $collate = null;
 	
-	/**
-	 * @var string
-	 */
-	protected $comment = '';
+	protected string $comment = '';
 	
-	/**
-	 * @var bool|null
-	 */
-	protected $autoincrement;
+	protected ?bool $autoincrement = null;
 	
-	/**
-	 * @var bool
-	 */
-	protected $primaryKey = false;
+	protected bool $primaryKey = false;
 	
-	/**
-	 * @var bool
-	 */
-	protected $foreignKey = false;
+	protected bool $foreignKey = false;
 	
-	/**
-	 * @var string|null
-	 */
-	private $charset;
+	private ?string $charset;
 	
 	public function isForeignKey(): bool
 	{

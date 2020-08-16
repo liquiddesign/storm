@@ -21,18 +21,9 @@ class InvalidStateException extends \Exception implements IContextException
 	public const SYNCED = 10;
 	public const FULL_GROUP_BY_WITH_STAR = 11;
 	
-	/**
-	 * @var \StORM\ICollection|\StORM\Entity|null
-	 */
-	private $context;
+	private ?IDumper $context;
 	
-	/**
-	 * InvalidStateException constructor.
-	 * @param \StORM\ICollection|\StORM\Entity|null $context
-	 * @param int $errorCode
-	 * @param string|null $extraMessage
-	 */
-	public function __construct($context, int $errorCode, ?string $extraMessage = null)
+	public function __construct(?IDumper $context, int $errorCode, ?string $extraMessage = null)
 	{
 		$message = null;
 		

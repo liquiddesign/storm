@@ -6,30 +6,18 @@ namespace StORM;
 
 class LogItem
 {
-	/**
-	 * @var int
-	 */
-	private $amount = 1;
+	private int $amount = 1;
 	
 	/**
 	 * @var mixed[]
 	 */
-	private $vars;
+	private array $vars;
 	
-	/**
-	 * @var string
-	 */
-	private $sql;
+	private string $sql;
 	
-	/**
-	 * @var float
-	 */
-	private $totalTime = 0.0;
+	private float $totalTime = 0.0;
 	
-	/**
-	 * @var bool
-	 */
-	private $error = false;
+	private bool $error = false;
 	
 	/**
 	 * LogItem constructor.
@@ -44,7 +32,6 @@ class LogItem
 	
 	/**
 	 * Get amount of SQL items
-	 * @return int
 	 */
 	public function getAmount(): int
 	{
@@ -62,7 +49,6 @@ class LogItem
 	
 	/**
 	 * Get SQL expression
-	 * @return string
 	 */
 	public function getSql(): string
 	{
@@ -71,7 +57,6 @@ class LogItem
 	
 	/**
 	 * Get total execution time
-	 * @return float
 	 */
 	public function getTotalTime(): float
 	{
@@ -89,7 +74,6 @@ class LogItem
 	
 	/**
 	 * Tells if SQL query ends with error
-	 * @return bool
 	 */
 	public function hasError(): bool
 	{

@@ -7,20 +7,14 @@ use StORM\Meta\Structure;
 
 class DIConnection extends \StORM\Connection
 {
-	/**
-	 * @var \Nette\DI\Container
-	 */
-	private $container;
+	private \Nette\DI\Container $container;
 	
-	/**
-	 * @var string
-	 */
-	private $mutation;
+	private string $mutation;
 	
 	/**
 	 * @var string[]
 	 */
-	private $availableMutations = [];
+	private array $availableMutations = [];
 	
 	/**
 	 * Connection constructor.
@@ -35,7 +29,6 @@ class DIConnection extends \StORM\Connection
 	 * @deprecated Use find repository instead
 	 * @phpstan-param class-string $entityClass
 	 * @param string $entityClass
-	 * @return \StORM\Repository
 	 */
 	public function getRepository(string $entityClass): Repository
 	{
@@ -46,7 +39,6 @@ class DIConnection extends \StORM\Connection
 	 * Return repository by entity class
 	 * @phpstan-param class-string $entityClass
 	 * @param string $entityClass
-	 * @return \StORM\Repository
 	 * @throws \Nette\DI\MissingServiceException
 	 */
 	public function findRepository(string $entityClass): Repository
@@ -100,7 +92,6 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * @deprecated Use getMutationSuffix instead
-	 * @return string
 	 */
 	public function getLangSuffix(): string
 	{
