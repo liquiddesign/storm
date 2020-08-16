@@ -280,10 +280,10 @@ abstract class Repository implements IEntityParent
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
-	 * @phpstan-return \StORM\ICollection<T>
-	 * @return \StORM\ICollection
+	 * @phpstan-return \StORM\Collection<T>
+	 * @return \StORM\Collection
 	 */
-	final public function createMany(array $manyValues, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): ICollection
+	final public function createMany(array $manyValues, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
 		return $this->syncMany($manyValues, [], $filterByColumns, $ignore, $chunkSize);
 	}
@@ -295,10 +295,10 @@ abstract class Repository implements IEntityParent
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
-	 * @phpstan-return \StORM\ICollection<T>
-	 * @return \StORM\ICollection
+	 * @phpstan-return \StORM\Collection<T>
+	 * @return \StORM\Collection
 	 */
-	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): ICollection
+	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
 		$affected = 0;
 		
@@ -380,7 +380,7 @@ abstract class Repository implements IEntityParent
 			continue;
 		}
 		
-		/** @var \StORM\ICollection $collection */
+		/** @var \StORM\Collection $collection */
 		$collection = $primaryKeys ? $this->many()->setWhere(self::DEFAULT_ALIAS . '.' . $pk->getName(), $primaryKeys) : $this->many()->setWhere('1=0');
 		$collection->setAffectedNumber($affected);
 		
@@ -437,13 +437,13 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Call user filters on collection
-	 * @param \StORM\ICollection $collection
+	 * @param \StORM\Collection $collection
 	 * @param mixed[][] $filters
 	 * @param bool $silent
-	 * @phpstan-return \StORM\ICollection<T>
-	 * @return \StORM\ICollection
+	 * @phpstan-return \StORM\Collection<T>
+	 * @return \StORM\Collection
 	 */
-	public function filter(ICollection $collection, array $filters, bool $silent = false): ICollection
+	public function filter(Collection $collection, array $filters, bool $silent = false): Collection
 	{
 		foreach ($filters as $name => $value) {
 			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
