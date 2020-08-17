@@ -21,7 +21,7 @@ Interface na repozitare -> by taky mohli dedit z interface repository a extends 
 ----------------------------------------
 -----------------------------------------
 toArray()
-toArrayProps() --> filter
+toArrayOF() --> filter
 ------------------------------------------
 Vyhodit vyjimku
 PDOException #HY000
