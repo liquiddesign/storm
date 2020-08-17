@@ -23,12 +23,12 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	 * CollectionRelation constructor.
 	 * @param \StORM\Repository $repository
 	 * @param \StORM\Meta\Relation $relation
-	 * @param string $keyValue
+	 * @param string|int $keyValue
 	 */
-	public function __construct(Repository $repository, Relation $relation, string $keyValue)
+	public function __construct(Repository $repository, Relation $relation, $keyValue)
 	{
 		$this->relation = $relation;
-		$this->keyValue = $keyValue;
+		$this->keyValue = (string) $keyValue;
 		
 		if ($relation->isKeyHolder()) {
 			throw new InvalidStateException($this, InvalidStateException::KEY_HOLDER_NOT_ALLOWED);

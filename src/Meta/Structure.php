@@ -615,8 +615,9 @@ class Structure
 				continue;
 			}
 			
+			$varAnnotation = $properties[$name][self::ANNOTATION_VAR] ?? '';
 			/** @phpstan-ignore-next-line */
-			$properties[$name][self::ANNOTATION_VAR] = $reflection->getType()->getName();
+			$properties[$name][self::ANNOTATION_VAR] = $reflection->getType()->getName() . $varAnnotation ? "|$varAnnotation" : '';
 		}
 		
 		return $properties;

@@ -23,6 +23,12 @@ Interface na repozitare -> by taky mohli dedit z interface repository a extends 
 toArray()
 toArrayProps() --> filter
 ------------------------------------------
+Vyhodit vyjimku
+PDOException #HY000
+
+SQLSTATE[HY000]: General error: could not call class constructor search►
+Caused by TypeError
+...\storm\src\GenericCollection.php:301   PDOStatement->fetch()
 
 ------------------------------------------
 
