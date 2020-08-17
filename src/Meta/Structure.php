@@ -611,7 +611,7 @@ class Structure
 			$properties[$name] = Helpers::parseDocComment($reflection->getDocComment());
 			
 			/** @phpstan-ignore-next-line */
-			if (!$reflection->hasType() || \class_exists($reflection->getType()->isBuiltin())) {
+			if (!$reflection->hasType() || $reflection->getType()->isBuiltin()) {
 				continue;
 			}
 			

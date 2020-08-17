@@ -11,13 +11,17 @@ filter -> Expected parameter of type '\mixed[][]', 'int[]|null[]' provided
 4. projit chby uvnitr a dat throwy ?
 musi byt neco null v repository pri inicializaci ? -> tam uz by to mohlo haze chybu
 null v Schema manageru
+getPK nebude hazet proste chyby
+--------------------------------------
+NotLoadedException -> uplne samostatne a nechat ji vynechat ve stupu
 ---------------------------------------
-
+default val s defaultni hodnoty promene
 ---------------------------------------
-
+Interface na repozitare -> by taky mohli dedit z interface repository a extends template
 ----------------------------------------
 -----------------------------------------
-
+toArray()
+toArrayProps() --> filter
 ------------------------------------------
 
 ------------------------------------------
