@@ -188,7 +188,7 @@ class Connection
 	 * @param mixed[] $classParameters
 	 * @param string|null $index
 	 */
-	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): ICollection
+	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): GenericCollection
 	{
 		return new GenericCollection($this, $from, $select, $class, $classParameters, $index);
 	}
