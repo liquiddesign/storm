@@ -121,25 +121,17 @@ interface ICollection
 	 * @phpstan-return T[]
 	 * @return object[]
 	 */
-	public function getItems(): array;
+	public function toArray(): array;
 	
 	/**
 	 * Convert collection to array of trings
-	 * @param string $column
+	 * @param string $columnOrExpression
+	 * @param string[] $callbacks or $columns
 	 * @param bool $toArrayValues
 	 * @phpstan-return mixed[]
 	 * @return mixed[]
 	 */
-	public function toArray(string $column, bool $toArrayValues = false): array;
-	
-	/**
-	 * Convert collection to array of sprintf formated strings
-	 * Return sprintf formated array
-	 * @param string $format
-	 * @param string[] $callbacks or $columns
-	 * @return string[]
-	 */
-	public function format(string $format, array $callbacks = [], bool $toArrayValues = false): array;
+	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array;
 	
 	/**
 	 * Set collection index of internal array

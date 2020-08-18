@@ -261,6 +261,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string|null $property
 	 * @param bool $needed
 	 * @return null|string|bool
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function firstValue(?string $property = null, bool $needed = false)
 	{
@@ -286,6 +287,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
 	 * @phpstan-return T|null
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function first(bool $needed = false): ?object
 	{
@@ -472,7 +474,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @phpstan-return T[]
 	 * @return object[]
 	 */
-	public function getItems(): array
+	public function toArray(): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
@@ -483,58 +485,26 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Convert collection to array of strings
-	 * @param string $column
+	 * @param string $columnOrExpression
+	 * @param string[] $callbacks or $columns
 	 * @param bool $toArrayValues
 	 * @phpstan-return mixed[]
 	 * @return mixed[]
 	 */
-	public function toArray(string $column, bool $toArrayValues = false): array
+	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
 		}
 		
-		$return = [];
-		
-		foreach ($this->items as $index => $value) {
-			$return[$index] = $value->$column;
-		}
-		
-		return $toArrayValues ? \array_values($return) : $return;
-	}
-	
-	/**
-	 * Convert collection to array of sprintf formated strings
-	 * Return sprintf formated array
-	 * @param string $format
-	 * @param string[] $callbacks or $columns
-	 * @param bool $toArrayValues
-	 * @return string[]
-	 */
-	public function format(string $format, array $callbacks = [], bool $toArrayValues = false): array
-	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-		
-		$return = [];
-		$i = 1;
-		
-		foreach ($this->items as $index => $value) {
-			$args = [];
+		if (\strpos($columnOrExpression, '%') !== false) {
+			$return = $this->format($columnOrExpression, $callbacks);
+		} else {
+			$return = [];
 			
-			foreach ($callbacks as $cb) {
-				if (\is_callable($cb)) {
-					$args[] = \call_user_func_array($cb, [$value]);
-				} elseif ($cb === self::ITERATOR_WILDCARD) {
-					$args[] = $i;
-				} else {
-					$args[] = $value->$cb;
-				}
+			foreach ($this->items as $index => $value) {
+				$return[$index] = $value->$columnOrExpression;
 			}
-			
-			$i++;
-			$return[$index] = \vsprintf($format, $args);
 		}
 		
 		return $toArrayValues ? \array_values($return) : $return;
@@ -1063,7 +1033,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function jsonSerialize()
 	{
-		$array = $this->getItems();
+		$array = $this->toArray();
 		
 		foreach ($array as $key => $value) {
 			$array[$key] = $value instanceof \JsonSerializable ? $value->jsonSerialize() : (array) $value;
@@ -1215,6 +1185,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Offset to retrieve
 	 * @param mixed $offset
 	 * @return \StORM\Entity
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function offsetGet($offset): object
 	{
@@ -1583,6 +1554,38 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		return $alias ? "$alias$dot" : '';
+	}
+	
+	/**
+	 * Convert collection to array of sprintf formated strings
+	 * Return sprintf formated array
+	 * @param string $format
+	 * @param string[] $callbacks or $columns
+	 * @return string[]
+	 */
+	private function format(string $format, array $callbacks = []): array
+	{
+		$return = [];
+		$i = 1;
+		
+		foreach ($this->items as $index => $value) {
+			$args = [];
+			
+			foreach ($callbacks as $cb) {
+				if (\is_callable($cb)) {
+					$args[] = \call_user_func_array($cb, [$value]);
+				} elseif ($cb === self::ITERATOR_WILDCARD) {
+					$args[] = $i;
+				} else {
+					$args[] = $value->$cb;
+				}
+			}
+			
+			$i++;
+			$return[$index] = \vsprintf($format, $args);
+		}
+		
+		return $return;
 	}
 	
 	/**

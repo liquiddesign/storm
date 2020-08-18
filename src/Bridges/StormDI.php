@@ -99,8 +99,8 @@ class StormDI extends \Nette\DI\CompilerExtension
 		
 		/** @var \Nette\DI\ContainerBuilder $builder */
 		$builder = $this->getContainerBuilder();
-		$connection = $builder->addDefinition($this->prefix($name))->setType(DIConnection::class)->setAutowired($config['autowired'])
-			->addSetup('connect', [$name, $dsn, $config['user'], $config['password'], $attributes])
+		$attributes = ['@container', $name, $dsn, $config['user'], $config['password'], $attributes];
+		$connection = $builder->addDefinition($this->prefix($name))->setFactory(DIConnection::class, $attributes)->setAutowired($config['autowired'])
 			->addSetup('setDebug', [$debug]);
 		
 		if ($debug) {

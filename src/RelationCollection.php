@@ -34,7 +34,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 			throw new InvalidStateException($this, InvalidStateException::KEY_HOLDER_NOT_ALLOWED);
 		}
 		
-		parent::__construct($repository->getConnection()->getRepository($relation->getTarget()));
+		parent::__construct($repository->getConnection()->findRepository($relation->getTarget()));
 	}
 	
 	/**
@@ -43,6 +43,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	 * @param string[]|int[]|string[][]|int[][] $primaryKeys
 	 * @param bool $checkKeys
 	 * @param string|null $primaryKeyName You can specify column name and method will generate primary keys for that columns
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function relate(array $primaryKeys, bool $checkKeys = true, ?string $primaryKeyName = null): int
 	{
@@ -79,10 +80,10 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		$targetKey = $this->relation->getTargetKey();
 		
 		/** @var \StORM\ICollection $collection */
-		$collection = $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
+		$collection = $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
 		if ($checkKeys) {
-			$resultArray = (clone $collection)->toArray('uuid');
+			$resultArray = (clone $collection)->toArrayOf('uuid');
 			$desiredArray = \array_combine(\array_values($primaryKeys), \array_values($primaryKeys));
 			
 			if ($diff = \array_diff_key($desiredArray, $resultArray)) {
@@ -116,7 +117,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
+		return $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
 	}
 	
 	/**
@@ -141,7 +142,33 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		$sourceKey = $this->relation->getSourceKey();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getRepository()->getConnection()->getRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+		return $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
+	}
+	
+	/**
+	 * @override reset skip select length
+	 * @param string[] $select
+	 * @param mixed[] $values
+	 * @param bool $keepIndex
+	 * @return static
+	 */
+	public function setSelect(array $select, array $values = [], bool $keepIndex = false): self
+	{
+		return parent::setSelect($select, $values, $keepIndex);
+	}
+	
+	/**
+	 * @param bool $needed
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	public function first(bool $needed = false): ?Entity
+	{
+		return parent::first($needed);
+	}
+	
+	public function fetch(): ?Entity
+	{
+		return parent::fetch();
 	}
 	
 	protected function init(): void

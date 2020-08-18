@@ -18,7 +18,7 @@ class Connection
 	 */
 	private const QUOTE_CHAR_OTHER = '"';
 	
-	private ?\PDO $link;
+	private \PDO $link;
 
 	private string $name;
 	
@@ -31,7 +31,7 @@ class Connection
 	
 	private string $driver;
 	
-	private bool $debug;
+	private bool $debug = false;
 	
 	/**
 	 * Restrict char
@@ -49,29 +49,23 @@ class Connection
 	private $primaryKeyGenerator;
 	
 	/**
-	 * Create PDO connection
+	 * Connection constructor.
 	 * @param string $name
 	 * @param string $dsn
-	 * @param null|string $user
-	 * @param null|string $password
+	 * @param string $user
+	 * @param string $password
 	 * @param int[] $attributes
 	 */
-	public function connect(string $name, string $dsn, ?string $user = null, ?string $password = null, array $attributes = []): void
+	public function __construct(string $name, string $dsn, string $user, string $password, array $attributes = [])
 	{
 		$this->name = $name;
 		$parsedDsn = \explode(':', $dsn, 2);
 		$this->driver = $parsedDsn[0];
 		\parse_str(\str_replace(';', '&', $parsedDsn[1]), $matches);
-		
-		if ($user !== null) {
-			$this->user = $user;
-		}
-		
+		$this->user = $user;
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
 		$this->link = new \PDO($dsn, $user, $password, $attributes);
-		
-		return;
 	}
 	
 	/**
@@ -87,10 +81,6 @@ class Connection
 	 */
 	public function getLink(): \PDO
 	{
-		if ($this->link === null) {
-			throw new GeneralException('Connection is not created');
-		}
-		
 		return $this->link;
 	}
 	
@@ -558,6 +548,7 @@ class Connection
 	
 	/**
 	 * Sleep
+	 * @throws \StORM\Exception\GeneralException
 	 * @return string[]
 	 */
 	public function __sleep(): array

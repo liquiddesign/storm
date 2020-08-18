@@ -96,9 +96,7 @@ class ConnectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$user = $neon['storm']['connections'][$name]['user'];
 		$password = $neon['storm']['connections'][$name]['password'];
 		
-		$connection = new DIConnection($container);
-		$connection->connect($name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-		
+		$connection = new DIConnection($container, $name, "$driver:dbname=$dbName;host=$host", $user, $password, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
 		$schemaManager = new SchemaManager($connection, $cacheStorage);
 		$schemaManager->getStructure(Stock::class);
 	}

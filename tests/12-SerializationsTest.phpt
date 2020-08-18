@@ -8,6 +8,7 @@ use Nette\DI\Container;
 use StORM\Connection;
 use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
+use StORM\Exception\NotExistsException;
 use StORM\SchemaManager;
 use Tester\Assert;
 
@@ -49,7 +50,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($managerDeserialized): void {
 			$managerDeserialized->getConnection();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::notEqual($managerDeserialized, $manager);
 		$managerDeserialized->setConnection($connection);
@@ -130,11 +131,11 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getConnection();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getRepository();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::notEqual($rowsDeserialized, $rows);
 		$rowsDeserialized->setRepository($stocks);
@@ -147,11 +148,11 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getConnection();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::exception(static function () use ($rowsDeserialized): void {
 			$rowsDeserialized->getRepository();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::notEqual($rowsDeserialized, $rows);
 		$rowsDeserialized->setRepository($stocks);
@@ -179,7 +180,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		Assert::exception(static function () use ($stockDeserialized): void {
 			$stockDeserialized->getParent();
-		}, GeneralException::class);
+		}, NotExistsException::class);
 		
 		Assert::notEqual($stockDeserialized, $stock);
 		

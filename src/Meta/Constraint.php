@@ -105,7 +105,7 @@ class Constraint extends AnnotationProperty
 		$this->name = $relation->getVia() . \StORM\Meta\Structure::NAME_SEPARATOR . $type;
 		$this->source = $relation->getVia();
 		$this->sourceKey = \call_user_func([$relation, 'get' . $glue . 'ViaKey']);
-		$this->target = $schemaManager->getStructure(\call_user_func([$relation, 'get' . $glue]))->getTable()->getName();
+		$this->target = $schemaManager->getStructure((string) \call_user_func([$relation, 'get' . $glue]))->getTable()->getName();
 		$this->targetKey =\call_user_func([$relation, 'get' . $glue . 'Key']);
 	}
 	

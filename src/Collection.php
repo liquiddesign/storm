@@ -57,7 +57,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	public function getRepository(): Repository
 	{
 		if (!$this->repository) {
-			throw new GeneralException('Repository is not set. Call setRepository().');
+			throw new NotExistsException($this, NotExistsException::SERIALIZE, '->setRepository()');
 		}
 		
 		return $this->repository;
@@ -70,13 +70,19 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->setFetchClass(null, $this->createClassParameters());
 	}
 	
+	/**
+	 * @param bool $needed
+	 * @throws \StORM\Exception\NotFoundException
+	 */
 	public function first(bool $needed = false): ?Entity
 	{
+		/** @noinspection PhpIncompatibleReturnTypeInspection */
 		return parent::first($needed);
 	}
 	
 	public function fetch(): ?Entity
 	{
+		/** @noinspection PhpIncompatibleReturnTypeInspection */
 		return parent::fetch();
 	}
 	
@@ -85,7 +91,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @phpstan-return T[]
 	 * @return \StORM\Entity[]
 	 */
-	public function getItems(): array
+	public function toArray(): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
@@ -104,6 +110,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this->isOptimization;
 	}
 	
+	/**
+	 * @param \StORM\Connection $connection
+	 * @throws \StORM\Exception\GeneralException
+	 */
 	public function setConnection(Connection $connection): void
 	{
 		unset($connection);
@@ -123,7 +133,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
-			$targetRepository = $this->repository->getConnection()->getRepository($relation->getTarget());
+			$targetRepository = $this->repository->getConnection()->findRepository($relation->getTarget());
 			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
 			
@@ -195,6 +205,40 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	public function getPossibleValues(string $column): array
 	{
 		return $this->possibleValues[$column] ?? $this->possibleValues[Repository::DEFAULT_ALIAS . '.' . $column] ?? [];
+	}
+	
+	/**
+	 * @param mixed[] $filters
+	 * @param bool $silent
+	 * @return static
+	 */
+	public function filter(array $filters, bool $silent = false): self
+	{
+		foreach ($filters as $name => $value) {
+			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
+			
+			if (\method_exists($this->getRepository(), $realName)) {
+				\call_user_func_array([$this->getRepository(), $realName], [$value, $this]);
+				
+				continue;
+			}
+			
+			if ($silent) {
+				continue;
+			}
+			
+			// throw exception
+			$suggestions = '';
+			$class = \get_class($this->getRepository());
+			
+			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->getRepository())))) {
+				$suggestions = " Do you mean '$match'?";
+			}
+			
+			throw new \InvalidArgumentException("Filter in Repository $class not found.$suggestions");
+		}
+		
+		return $this;
 	}
 	
 	private function autojoin(): void

@@ -6,7 +6,8 @@ namespace StORM;
 
 use Nette\Caching\Cache;
 use Nette\Caching\IStorage;
-use StORM\Exception\GeneralException;
+use StORM\Exception\NotExistsException;
+use StORM\Exception\SqlSchemaException;
 use StORM\Meta\Structure;
 
 class SchemaManager
@@ -75,7 +76,7 @@ class SchemaManager
 		$pkName = (string) $this->connection->query($sql, $vars)->fetchColumn(0);
 		
 		if (!$pkName) {
-			throw new GeneralException("Table '$tableName' or primary key doeasnt exists in '$schemaName'");
+			throw new SqlSchemaException("Primary key or table '$tableName' in schema '$schemaName'");
 		}
 		
 		return $pkName;
@@ -106,7 +107,7 @@ class SchemaManager
 	public function getConnection(): DIConnection
 	{
 		if (!$this->connection) {
-			throw new GeneralException('Connection is not set. Call setConnection().');
+			throw new NotExistsException(null, NotExistsException::SERIALIZE, 'setConnection()');
 		}
 		
 		return $this->connection;

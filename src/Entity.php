@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace StORM;
 
-use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
@@ -76,7 +75,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	public function getParent(): IEntityParent
 	{
 		if (!$this->parent) {
-			throw new GeneralException('Parent is not set. Call setParent().');
+			throw new NotExistsException($this, NotExistsException::SERIALIZE, 'setParent()');
 		}
 		
 		return $this->parent;
@@ -305,8 +304,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		foreach ($relations as $relationName) {
-			$value = $this->getRelation($this->getStructure()->getRelation($relationName));
-			$array[$relationName] = $value instanceof RelationCollection ? \array_keys($value->getItems()) : (string)$value;
+			try {
+				$value = $this->getRelation($this->getStructure()->getRelation($relationName));
+				$array[$relationName] = $value instanceof RelationCollection ? \array_keys($value->toArray()) : (string)$value;
+			} catch (NotFoundException $x) {
+			}
 		}
 		
 		return $array;
@@ -354,6 +356,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * Get relation from relation
 	 * @param \StORM\Meta\Relation $relation
 	 * @return \StORM\RelationCollection|\StORM\Entity|null
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	protected function getRelation(Relation $relation)
 	{
@@ -374,10 +377,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 				return $object;
 			}
 			
-			return $this->getConnection()->getRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
+			return $this->getConnection()->findRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
 		}
 		
-		return new RelationCollection($this->getConnection()->getRepository(static::class), $relation, $this->getPK());
+		return new RelationCollection($this->getConnection()->findRepository(static::class), $relation, $this->getPK());
 	}
 	
 	protected function getConnection(): DIConnection
@@ -451,7 +454,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			$data[\substr($property, $length)] = $value;
 		}
 		
-		$repository = $this->getConnection()->getRepository($relatedClass);
+		$repository = $this->getConnection()->findRepository($relatedClass);
 		
 		return new $relatedClass($data, $repository);
 	}
@@ -468,6 +471,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * Get property
 	 * @param string $name
 	 * @return mixed
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function __get(string $name)
 	{

@@ -19,10 +19,17 @@ class DIConnection extends \StORM\Connection
 	/**
 	 * Connection constructor.
 	 * @param \Nette\DI\Container $container
+	 * @param string $name
+	 * @param string $dsn
+	 * @param string $user
+	 * @param string $password
+	 * @param int[] $attributes
 	 */
-	public function __construct(Container $container)
+	public function __construct(Container $container, string $name, string $dsn, string $user, string $password, array $attributes = [])
 	{
 		$this->container = $container;
+		
+		parent::__construct($name, $dsn, $user, $password, $attributes);
 	}
 	
 	/**
@@ -114,7 +121,7 @@ class DIConnection extends \StORM\Connection
 	public function setAvailableMutations(array $mutations): void
 	{
 		$this->availableMutations = $mutations;
-		$this->mutation = \key($mutations);
+		$this->mutation = (string) \key($mutations);
 	}
 	
 	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix): void

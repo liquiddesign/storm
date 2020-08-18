@@ -97,7 +97,6 @@ class Relation extends AnnotationProperty
 			
 			if (Structure::isEntityClass($target)) {
 				$this->target = \substr($target, 0, 1) === "\\" ? \substr($target, 1) : $target;
-				$this->source = $this->getEntityClass();
 				$this->isKeyHolder = $offset === false;
 				
 				return true;

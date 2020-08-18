@@ -28,19 +28,19 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$table = self::STOCK_TABLE;
 		$from = [$table];
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->getItems();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArray();
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));
 		Assert::type(\stdClass::class, \end($objects));
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->getItems();
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->toArray();
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_keys($objects));
 		Assert::type(\stdClass::class, \reset($objects));
 		Assert::type(\stdClass::class, \end($objects));
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArray('uuid');
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArrayOf('uuid');
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_values($objects));
 		Assert::same('AAPL', \reset($objects));
@@ -63,12 +63,12 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$table = self::STOCK_TABLE;
 		$from = [$table];
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->format('__%s__%s', ['uuid', 'name']);
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->toArrayOf('__%s__%s', ['uuid', 'name']);
 		Assert::count(2, $objects);
 		Assert::same([0,1], \array_keys($objects));
 		Assert::same('__AAPL__Apple Inc.', \reset($objects));
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->format('__%s__', [ static function ($row) {
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->toArrayOf('__%s__', [ static function ($row) {
 			return \strtolower($row->uuid);
 		}]);
 		Assert::count(2, $objects);
@@ -76,7 +76,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('__aapl__', \reset($objects));
 		Assert::same('__ibm__', \end($objects));
 		
-		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->format('__%s.%s__', ['__iterator', 'uuid']);
+		$objects = $storm->rows($from)->setWhere('uuid', ['AAPL', 'IBM'])->setIndex('uuid')->toArrayOf('__%s.%s__', ['__iterator', 'uuid']);
 		Assert::count(2, $objects);
 		Assert::same(['AAPL', 'IBM'], \array_keys($objects));
 		Assert::same('__1.AAPL__', \reset($objects));

@@ -6,7 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Caching\Cache;
 use StORM\Exception\AnnotationException;
-use StORM\Exception\GeneralException;
+use StORM\Exception\NotExistsException;
 use StORM\Helpers;
 use StORM\Repository;
 use StORM\SchemaManager;
@@ -59,7 +59,6 @@ class Structure
 	 * @param string $class
 	 * @param \StORM\SchemaManager $schemaManager
 	 * @param \Nette\Caching\Cache $cache
-	 * @throws \StORM\Exception\GeneralException
 	 */
 	public function __construct(string $class, SchemaManager $schemaManager, Cache $cache)
 	{
@@ -109,7 +108,7 @@ class Structure
 				return [$table, $columns, $pk, $relations, $dataModel->hasMutations];
 			});
 		} catch (\ReflectionException $x) {
-			throw new GeneralException("Cannot get $class reflection");
+			throw new NotExistsException(null, NotExistsException::SCHEMA, $class);
 		}
 	}
 	
@@ -250,7 +249,6 @@ class Structure
 	
 	/**
 	 * @return \StORM\Meta\Index[]
-	 * @throws \StORM\Exception\GeneralException
 	 * @throws \StORM\Exception\AnnotationException
 	 * @throws \ReflectionException
 	 */
@@ -309,7 +307,6 @@ class Structure
 	
 	/**
 	 * @return \StORM\Meta\Trigger[]
-	 * @throws \StORM\Exception\GeneralException
 	 * @throws \StORM\Exception\AnnotationException
 	 * @throws \ReflectionException
 	 */
@@ -536,6 +533,7 @@ class Structure
 	 * @param string $table
 	 * @param \StORM\Meta\Column $pk
 	 * @return \StORM\Meta\Relation[]
+	 * @throws \ReflectionException
 	 */
 	protected function loadRelations(array $docComments, string $table, Column $pk): array
 	{
@@ -606,16 +604,21 @@ class Structure
 	{
 		$properties = [];
 		
-		foreach (\array_keys(\get_class_vars($this->entityClass)) as $name) {
+		foreach (\get_class_vars($this->entityClass) as $name => $defaultValue) {
 			$reflection = new \ReflectionProperty($this->entityClass, $name);
 			$properties[$name] = Helpers::parseDocComment($reflection->getDocComment());
 			
-			/** @phpstan-ignore-next-line */
+			if (!isset($properties[$name]['default']) && $defaultValue !== null) {
+				$properties[$name]['default'] = $defaultValue;
+			}
+			
 			if (!$reflection->hasType() || $reflection->getType()->isBuiltin()) {
 				continue;
 			}
 			
 			$varAnnotation = $properties[$name][self::ANNOTATION_VAR] ?? '';
+			
+			/** @noinspection PhpPossiblePolymorphicInvocationInspection */
 			/** @phpstan-ignore-next-line */
 			$properties[$name][self::ANNOTATION_VAR] = $reflection->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '');
 		}
@@ -672,6 +675,7 @@ class Structure
 	 * @param string[] $parsedDocComment
 	 * @param string $sourceTable
 	 * @param \StORM\Meta\Column $sourcePk
+	 * @throws \ReflectionException
 	 */
 	private function loadRelation(string $name, array $parsedDocComment, string $sourceTable, Column $sourcePk): Relation
 	{

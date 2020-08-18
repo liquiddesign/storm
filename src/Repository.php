@@ -7,6 +7,7 @@ namespace StORM;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
+use StORM\Exception\SqlSchemaException;
 use StORM\Meta\Structure;
 
 /**
@@ -105,6 +106,7 @@ abstract class Repository implements IEntityParent
 	 * @param bool $needed
 	 * @param string[]|null $select
 	 * @phpstan-return T|null
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
 	{
@@ -156,6 +158,7 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @phpstan-return T
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	final public function createOne($values, ?bool $filterByColumns = false): Entity
 	{
@@ -178,6 +181,7 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @phpstan-return T
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false): Entity
 	{
@@ -264,6 +268,7 @@ abstract class Repository implements IEntityParent
 	 * @param bool $ignore
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	final public function createMany(array $manyValues, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
@@ -278,6 +283,7 @@ abstract class Repository implements IEntityParent
 	 * @param bool $ignore
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	final public function syncMany(array $manyValues, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = false, int $chunkSize = 100): Collection
 	{
@@ -477,7 +483,7 @@ abstract class Repository implements IEntityParent
 	private function getPrimaryKeyNextValue(bool $check = true): int
 	{
 		if ($check && (int) $this->connection->getLink()->lastInsertId() === 0) {
-			throw new GeneralException('Cannot get last inserted ID in autoincrement PK');
+			throw new SqlSchemaException('Cannot get last inserted ID in autoincrement PK');
 		}
 		
 		return (int) $this->connection->getLink()->lastInsertId();
@@ -487,6 +493,7 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[] $values
 	 * @param bool $sync
 	 * @return int[][]|string[][]
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	private function createRelations(array &$values, bool $sync): array
 	{
@@ -500,7 +507,7 @@ abstract class Repository implements IEntityParent
 			}
 			
 			if ($relation->isKeyHolder()) {
-				$values[$name] = $this->getConnection()->getRepository($relation->getTarget())->syncOne($values[$name], $sync ? null : []);
+				$values[$name] = $this->getConnection()->findRepository($relation->getTarget())->syncOne($values[$name], $sync ? null : []);
 			} else {
 				$joinRelations[$name] = \array_values($values[$name]);
 				unset($values[$name]);
@@ -513,6 +520,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Sleep
 	 * @return string[]
+	 * @throws \StORM\Exception\GeneralException
 	 */
 	public function __sleep(): array
 	{

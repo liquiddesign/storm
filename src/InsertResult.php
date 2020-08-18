@@ -19,7 +19,7 @@ class InsertResult
 	
 	private int $idBefore;
 	
-	private int $idAfter;
+	private ?int $idAfter;
 	
 	/**
 	 * @var string[]
@@ -40,7 +40,7 @@ class InsertResult
 	 * @param bool $ignore
 	 * @param int $rowCount
 	 * @param int $idBefore
-	 * @param int $idAfter
+	 * @param int|null $idAfter
 	 * @param string[] $primaryKeys
 	 */
 	public function __construct(Connection $connection, string $tableName, bool $multiple, bool $ignore, int $rowCount, int $idBefore, ?int $idAfter, array $primaryKeys)
