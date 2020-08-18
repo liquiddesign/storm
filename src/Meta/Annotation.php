@@ -35,7 +35,7 @@ abstract class Annotation implements \JsonSerializable
 	
 		foreach ($completed as $attribute => $value) {
 			if ($value === null) {
-				return;
+				continue;
 			}
 			
 			\call_user_func_array([$this, 'set'. \ucfirst($attribute)], [$value]);

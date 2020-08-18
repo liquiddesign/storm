@@ -3,6 +3,7 @@
 namespace StORM;
 
 use Nette\DI\Container;
+use Nette\DI\MissingServiceException;
 use StORM\Meta\Structure;
 
 class DIConnection extends \StORM\Connection
@@ -74,6 +75,17 @@ class DIConnection extends \StORM\Connection
 	public function findAllRepositories(): array
 	{
 		return $this->container->findByType(Repository::class);
+	}
+	
+	public function findRepositoryByName(string $name): Repository
+	{
+		$repository = $this->container->getByName($name);
+		
+		if ($repository instanceof Repository === false) {
+			throw new MissingServiceException("Missing repository '$name'");
+		}
+		
+		return $repository;
 	}
 	
 	public function setMutation(string $mutation): void

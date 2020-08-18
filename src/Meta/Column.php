@@ -66,7 +66,7 @@ class Column extends AnnotationProperty
 	
 	protected bool $foreignKey = false;
 	
-	private ?string $charset;
+	private ?string $charset = null;
 	
 	public function isForeignKey(): bool
 	{
@@ -235,10 +235,10 @@ class Column extends AnnotationProperty
 			'name' => Expect::string(null),
 			'type' => Expect::string(null),
 			'nullable' => Expect::bool(null),
-			'length' => Expect::type('string|int'),
-			'default' => Expect::scalar(),
-			'charset' => Expect::string(null),
-			'collate' => Expect::string(null),
+			'length' => Expect::type('string|int|null'),
+			'default' => Expect::type('string|int|float|null'),
+			'charset' => Expect::type('string|null'),
+			'collate' => Expect::type('string|null'),
 			'extra' => Expect::string(null),
 			'comment' => Expect::string(null),
 			'mutations' => Expect::bool(null),
