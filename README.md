@@ -9,3 +9,5 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 
 ## TODO
 - suffixy mutací vytvářet pomocí callbacku, aby mohlo vstupovat sekvenční pole mutací
+- odstranit Model classu
+- eventy na delete, update, insert - priklad pro logger
