@@ -321,7 +321,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 				
 				if ($value instanceof RelationCollection) {
 					$array[$relationName] = \array_keys($value->toArray());
-				} else if ($value instanceof Entity) {
+				} elseif ($value instanceof Entity) {
 					$array[$relationName] = $value->toArray();
 				}
 			} catch (NotFoundException $x) {
