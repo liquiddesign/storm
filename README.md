@@ -11,3 +11,12 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 - suffixy mutací vytvářet pomocí callbacku, aby mohlo vstupovat sekvenční pole mutací
 - odstranit Model classu
 - eventy na delete, update, insert - priklad pro logger
+- generator entit 
+- validace entit vzhledem k databazi
+- tracydebug -> link na soubor z kteryho se to vola + proklik, explain
+---------------------------
+PHPSTAN error pri Ramissio DB user 
+/** @var \App\Eshop\DB\PositionsRepository $positionsRepository */
+$positionsRepository = $this->getConnection()->findRepository(Positions::class);
+$positionsRepository->many($positionId)->first()->acronym; // error
+$positionsRepository->one($positionId)->acronym;

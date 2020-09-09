@@ -123,6 +123,14 @@ abstract class Entity implements \JsonSerializable, IDumper
 		$values = Helpers::filterInputArray($values, \array_keys($this->getStructure()->getColumns($includePrimaryKey)), $silentFilter);
 		
 		foreach ($values as $name => $value) {
+			if (\is_array($value) && $this->getStructure()->getColumn($name)->hasMutations()) {
+				foreach ($value as $mutation => $mutationValue) {
+					$this->setValue($mutation, $mutationValue);
+				}
+				
+				continue;
+			}
+			
 			$this->$name = $value;
 		}
 		
@@ -247,6 +255,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function update($values, bool $silentFilter = true, bool $includePrimaryKey = true): int
 	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
 		$this->loadFromArray($values, $silentFilter, $includePrimaryKey);
 		
 		$values = $this->getParent()->getRepository()->propertiesToColumns($values);
