@@ -55,7 +55,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	protected const MODIFIER_GROUP_BY_FLAG = 32;
 	
-	protected const REGEXP_AUTOJOIN = '/(?:[A-Za-z0-9]+\.)+/';
+	protected const REGEXP_AUTOJOIN = '/(?:[A-Za-z0-9_]+\.)+/';
 	
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
