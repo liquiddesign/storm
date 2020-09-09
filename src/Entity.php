@@ -318,7 +318,12 @@ abstract class Entity implements \JsonSerializable, IDumper
 		foreach ($relations as $relationName) {
 			try {
 				$value = $this->getRelation($this->getStructure()->getRelation($relationName));
-				$array[$relationName] = $value instanceof RelationCollection ? \array_keys($value->toArray()) : (string)$value;
+				
+				if ($value instanceof RelationCollection) {
+					$array[$relationName] = \array_keys($value->toArray());
+				} else if ($value instanceof Entity) {
+					$array[$relationName] = $value->toArray();
+				}
 			} catch (NotFoundException $x) {
 			}
 		}
