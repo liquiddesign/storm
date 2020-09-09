@@ -14,6 +14,7 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 - generator entit 
 - validace entit vzhledem k databazi
 - tracydebug -> link na soubor z kteryho se to vola + proklik, explain
+- kdyz nema Entita zadnou anotaci spadne to, dedicnost ?
 ---------------------------
 PHPSTAN error pri Ramissio DB user 
 /** @var \App\Eshop\DB\PositionsRepository $positionsRepository */
