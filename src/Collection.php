@@ -138,7 +138,13 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$keys = [];
 			
 			foreach ($this->items as $item) {
-				$keys[] = $item->getValue($relation->getName());
+				$fkValue = $item->getValue($relation->getName());
+				
+				if ($fkValue === null) {
+					continue;
+				}
+				
+				$keys[] = $fkValue;
 			}
 			
 			$this->cache[$cacheId] = $targetRepository->many()->setWhere("$prefix.$pkName", $keys);
