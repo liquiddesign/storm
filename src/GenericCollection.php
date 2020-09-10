@@ -547,7 +547,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	public function isEmpty(): bool
 	{
-		return (bool) $this->count();
+		return !$this->count();
 	}
 	
 	/**
