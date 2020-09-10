@@ -48,17 +48,22 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function __construct(array $vars, ?IEntityParent $parent = null, array $mutations = [], ?string $mutation = null)
 	{
-		// set parent data tady
 		if ($parent) {
 			$this->setParent($parent);
 		}
 		
-		foreach ($vars as $name => $value) {
-			$this->$name = $value;
-		}
-		
 		$this->activeMutation = $mutation;
 		$this->availableMutations = $mutations;
+		
+		foreach ($vars as $name => $value) {
+			if (\is_array($value)) {
+				foreach ($value as $mutation => $auxValue) {
+					$this->setValue($name, $auxValue, $mutation);
+				}
+			} else {
+				$this->$name = $value;
+			}
+		}
 	}
 	
 	/**
