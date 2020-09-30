@@ -648,6 +648,7 @@ class Structure
 			$json = [];
 		}
 		
+		/** @var \ReflectionNamedType|null $realType */
 		$realType = (new \ReflectionProperty($class, $name))->getType();
 		
 		$column = new Column($class, $name);
