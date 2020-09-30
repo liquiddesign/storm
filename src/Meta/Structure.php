@@ -55,12 +55,13 @@ class Structure
 	
 	/**
 	 * Table constructor.
-	 * @internal
 	 * @param string $class
 	 * @param \StORM\SchemaManager $schemaManager
 	 * @param \Nette\Caching\Cache $cache
+	 * @param \StORM\Meta\Column|null $defaultPK
+	 * @internal
 	 */
-	public function __construct(string $class, SchemaManager $schemaManager, Cache $cache)
+	public function __construct(string $class, SchemaManager $schemaManager, Cache $cache, ?Column $defaultPK = null)
 	{
 		$this->entityClass = $class;
 		$this->schemaManager = $schemaManager;
@@ -72,7 +73,7 @@ class Structure
 			
 			$dataModel = $this;
 			
-			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $annotations) {
+			$auxData = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $annotations, $defaultPK) {
 				$dependencies = [
 					Cache::FILES => $fileName,
 				];
@@ -86,6 +87,8 @@ class Structure
 				
 				if ($firstColumn && $firstColumn->isPrimaryKey()) {
 					$pk = $firstColumn;
+				} elseif ($defaultPK) {
+					$pk = $defaultPK;
 				} else {
 					$pk = $dataModel->loadPK($table->getName());
 					$columns = [$pk->getName() => $pk] + $columns;
@@ -107,6 +110,7 @@ class Structure
 				
 				return [$table, $columns, $pk, $relations, $dataModel->hasMutations];
 			});
+			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $auxData;
 		} catch (\ReflectionException $x) {
 			throw new NotExistsException(null, NotExistsException::SCHEMA, $class);
 		}
@@ -644,9 +648,16 @@ class Structure
 			$json = [];
 		}
 		
+		$realType = (new \ReflectionProperty($class, $name))->getType();
+		
 		$column = new Column($class, $name);
 		$column->setName($name);
-		$column->setPropertyType($parsedDocComment[self::ANNOTATION_VAR] ?? null);
+		
+		if ($realType) {
+			$column->setNullable($realType->allowsNull());
+		}
+		
+		$column->setPropertyType($parsedDocComment[self::ANNOTATION_VAR] ?? $realType ? $realType->getName() : null);
 		$column->loadFromArray($json);
 		$column->setComment($parsedDocComment[0] ?? '');
 		

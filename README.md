@@ -8,11 +8,16 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 ☞ [Dropbox paper](https://paper.dropbox.com/doc/StORM--A576bYGiU0wgYv3aYVPU5U4nAg-62jqUghrsrzhpC7WWHwRL)
 
 ## TODO
+- $product->tags->relate($values['tags'], true); // dat primo do update apodobne
+- kdyz je relationNxN jinyho typu hodit error
+- $product->tags->relate($values['tags'], true); -> moznost vlozit ['defaltni value']
+- sql error neukaze kolekci neni to vyjimka kolekce
+- relate na prazdny seznam klicu musi hodit error
+- lip Unknown property/column 'translated' in 'array'. Fix typo or bind property by @column in array
+- geenrovani uuid z property
 - suffixy mutací vytvářet pomocí callbacku, aby mohlo vstupovat sekvenční pole mutací
-- odstranit Model classu
 - eventy na delete, update, insert - priklad pro logger
 - generator entit 
-- validace entit vzhledem k databazi
 - tracydebug -> link na soubor z kteryho se to vola + proklik, explain
 - kdyz nema Entita zadnou anotaci spadne to, dedicnost ?
 ---------------------------
