@@ -53,6 +53,10 @@ class Structure
 	
 	private bool $hasMutations = false;
 	
+	private Cache $cache;
+	
+	private ?Column $defaultPK;
+	
 	/**
 	 * Table constructor.
 	 * @param string $class
@@ -65,6 +69,8 @@ class Structure
 	{
 		$this->entityClass = $class;
 		$this->schemaManager = $schemaManager;
+		$this->cache = $cache;
+		$this->defaultPK = $defaultPK;
 		
 		try {
 			$annotations = $schemaManager->getCustomAnnotations();
@@ -87,10 +93,8 @@ class Structure
 				
 				if ($firstColumn && $firstColumn->isPrimaryKey()) {
 					$pk = $firstColumn;
-				} elseif ($defaultPK) {
-					$pk = $defaultPK;
 				} else {
-					$pk = $dataModel->loadPK($table->getName());
+					$pk = $defaultPK ?: $dataModel->loadPK($table->getName());
 					$columns = [$pk->getName() => $pk] + $columns;
 				}
 				
@@ -245,7 +249,7 @@ class Structure
 	{
 		return isset($this->relations[$name]);
 	}
-
+	
 	public function getRelation(string $name): ?Relation
 	{
 		return $this->relations[$name] ?? null;
@@ -384,8 +388,8 @@ class Structure
 			
 			$object = new Constraint($class, $relation->getPropertyName());
 			$object->setDefaultsFromRelation($relation);
-			$object->setSource($this->schemaManager->getStructure($object->getSource())->getTable()->getName());
-			$object->setTarget($this->schemaManager->getStructure($object->getTarget())->getTable()->getName());
+			$object->setSource($this->schemaManager->getStructure($object->getSource(), $this->cache, $this->defaultPK)->getTable()->getName());
+			$object->setTarget($this->schemaManager->getStructure($object->getTarget(), $this->cache, $this->defaultPK)->getTable()->getName());
 			$object->setName($this->setPrefix($name));
 			$object->loadFromArray($json);
 			
@@ -721,16 +725,16 @@ class Structure
 			if ($loaded) {
 				if ($relation instanceof RelationNxN) {
 					$relation->setSourceKey($sourcePk->getName());
-					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target)->getPK()->getName());
-					$relation->setVia($sourceTable . RelationNxN::TABLE_NAME_GLUE . $this->schemaManager->getStructure($target)->getTable()->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
+					$relation->setVia($sourceTable . RelationNxN::TABLE_NAME_GLUE . $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getTable()->getName());
 					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
 					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($target))->getShortName()));
 					$relation->setSourceKeyType($sourcePk->getPropertyType());
-					$relation->setTargetKeyType($this->schemaManager->getStructure($target)->getPK()->getPropertyType());
+					$relation->setTargetKeyType($this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
 				} elseif ($relation->isKeyHolder()) {
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
-					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target)->getPK()->getName());
-					$relation->setKeyType($target === $class ? $sourcePk->getPropertyType() : $this->schemaManager->getStructure($target)->getPK()->getPropertyType());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
+					$relation->setKeyType($target === $class ? $sourcePk->getPropertyType() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
 				} else {
 					$relation->setSourceKey($sourcePk->getName());
 					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));

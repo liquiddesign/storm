@@ -6,7 +6,6 @@ namespace StORM;
 
 use Nette\Caching\Cache;
 use Nette\Caching\IStorage;
-use Nette\Caching\Storages\DevNullStorage;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\SqlSchemaException;
 use StORM\Meta\Column;
@@ -42,10 +41,10 @@ class SchemaManager
 	/**
 	 * Get description of Entity in structure structure called DataModel containing properties ect.
 	 * @param string $class
-	 * @param bool $useCache
-	 * @param \StORM\Meta\Column $defaultPK
+	 * @param \Nette\Caching\Cache|null $cache
+	 * @param \StORM\Meta\Column|null $defaultPK
 	 */
-	public function getStructure(string $class, bool $useCache = true, ?Column $defaultPK = null): Structure
+	public function getStructure(string $class, ?Cache $cache = null, ?Column $defaultPK = null): Structure
 	{
 		if (!isset($this->dataModels[$class])) {
 			if (!\class_exists($class)) {
@@ -56,7 +55,7 @@ class SchemaManager
 				throw new \InvalidArgumentException("$class should be child of Entity class");
 			}
 			
-			$this->dataModels[$class] = new \StORM\Meta\Structure($class, $this, $useCache ? $this->cache : new Cache(new DevNullStorage()), $defaultPK);
+			$this->dataModels[$class] = new \StORM\Meta\Structure($class, $this, $cache ?: $this->cache, $defaultPK);
 		}
 		
 		return $this->dataModels[$class];
@@ -116,7 +115,7 @@ class SchemaManager
 		
 		return $this->connection;
 	}
-
+	
 	public function setConnection(DIConnection $connection): void
 	{
 		$this->connection = $connection;
