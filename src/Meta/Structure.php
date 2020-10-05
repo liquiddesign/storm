@@ -662,7 +662,7 @@ class Structure
 			$column->setNullable($realType->allowsNull());
 		}
 		
-		$column->setPropertyType($parsedDocComment[self::ANNOTATION_VAR] ?? $realType ? $realType->getName() : null);
+		$column->setPropertyType($parsedDocComment[self::ANNOTATION_VAR] ?? ($realType ? $realType->getName() : null));
 		$column->loadFromArray($json);
 		$column->setComment($parsedDocComment[0] ?? '');
 		
