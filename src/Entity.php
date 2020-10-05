@@ -110,11 +110,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Load from array and filter mess in array by column names by default
 	 * @param mixed[]|object $values
-	 * @param bool $silentFilter
+	 * @param bool|null $filterByColumns
 	 * @param bool $includePrimaryKey
 	 * @return mixed[]
 	 */
-	public function loadFromArray($values, bool $silentFilter = true, bool $includePrimaryKey = true): array
+	public function loadFromArray($values, ?bool $filterByColumns = true, bool $includePrimaryKey = true): array
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -126,7 +126,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
 		}
 		
-		$values = Helpers::filterInputArray($values, \array_keys($this->getStructure()->getColumns($includePrimaryKey)), $silentFilter);
+		if ($filterByColumns !== null) {
+			$values = Helpers::filterInputArray($values, \array_keys($this->getStructure()->getColumns($includePrimaryKey)), $filterByColumns);
+		}
 		
 		foreach ($values as $name => $value) {
 			if (\is_array($value) && $this->getStructure()->getColumn($name)->hasMutations()) {
@@ -256,16 +258,16 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Update entity object
 	 * @param mixed[]|mixed[][]|object $values
-	 * @param bool $silentFilter
+	 * @param bool|null $filterByColumns
 	 * @param bool $includePrimaryKey
 	 */
-	public function update($values, bool $silentFilter = true, bool $includePrimaryKey = true): int
+	public function update($values, ?bool $filterByColumns = true, bool $includePrimaryKey = true): int
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
 		}
 		
-		$values = $this->loadFromArray($values, $silentFilter, $includePrimaryKey);
+		$values = $this->loadFromArray($values, $filterByColumns, $includePrimaryKey);
 		
 		$values = $this->getParent()->getRepository()->propertiesToColumns($values);
 		
