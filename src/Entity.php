@@ -112,8 +112,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param mixed[]|object $values
 	 * @param bool $silentFilter
 	 * @param bool $includePrimaryKey
+	 * @return mixed[]
 	 */
-	public function loadFromArray($values, bool $silentFilter = true, bool $includePrimaryKey = true): void
+	public function loadFromArray($values, bool $silentFilter = true, bool $includePrimaryKey = true): array
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -139,7 +140,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			$this->$name = $value;
 		}
 		
-		return;
+		return $values;
 	}
 	
 	/**
@@ -264,7 +265,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			$values = Helpers::toArrayRecursive($values);
 		}
 		
-		$this->loadFromArray($values, $silentFilter, $includePrimaryKey);
+		$values = $this->loadFromArray($values, $silentFilter, $includePrimaryKey);
 		
 		$values = $this->getParent()->getRepository()->propertiesToColumns($values);
 		
