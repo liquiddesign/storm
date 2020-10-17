@@ -20,9 +20,15 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 - generator entit 
 - tracydebug -> link na soubor z kteryho se to vola + proklik, explain
 - kdyz nema Entita zadnou anotaci spadne to, dedicnost ?
+
+"INSERT INTO member_relations (member_id,member_level,upline_member_id,upline_member_level,max_position_between,max_position_between_upper) SELECT '$member->uuid', '$level', pr.upline_member_id, pr.upline_member_level, pr.max_position_between, pr.max_position_between_upper FROM member_relations pr WHERE pr.member_id = '" . $userValues['sponsorId'] . "';"
 ---------------------------
 PHPSTAN error pri Ramissio DB user 
 /** @var \App\Eshop\DB\PositionsRepository $positionsRepository */
 $positionsRepository = $this->getConnection()->findRepository(Positions::class);
 $positionsRepository->many($positionId)->first()->acronym; // error
 $positionsRepository->one($positionId)->acronym;
+---------------------------------
+$sub = new Literal("SELECT MAX(count) FROM users WHERE name=:name",["name"=>"Petr"]);
+petr  15:57
+tady je to podle dokumentace ale pak dojde k chybě že konstruktor bere jen 1 argument

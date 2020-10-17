@@ -104,6 +104,7 @@ class Structure
 					if ($relation->isKeyHolder()) {
 						$fk = new Column($dataModel->getEntityClass(), $relation->getName());
 						$fk->setName($relation->getSourceKey());
+						$fk->setNullable($relation->isNullable());
 						$fk->setForeignKey(true);
 						$fk->setPropertyType($relation->getKeyType());
 						$columns[$relation->getName()] = $fk;
@@ -613,14 +614,14 @@ class Structure
 		$properties = [];
 		
 		foreach (\get_class_vars($this->entityClass) as $name => $defaultValue) {
-			$reflection = new \ReflectionProperty($this->entityClass, $name);
-			$properties[$name] = Helpers::parseDocComment($reflection->getDocComment());
+			$ref = new \ReflectionProperty($this->entityClass, $name);
+			$properties[$name] = Helpers::parseDocComment($ref->getDocComment());
 			
 			if (!isset($properties[$name]['default']) && $defaultValue !== null) {
 				$properties[$name]['default'] = $defaultValue;
 			}
 			
-			if (!$reflection->hasType() || $reflection->getType()->isBuiltin()) {
+			if (!$ref->hasType() || $ref->getType()->isBuiltin()) {
 				continue;
 			}
 			
@@ -628,7 +629,7 @@ class Structure
 			
 			/** @noinspection PhpPossiblePolymorphicInvocationInspection */
 			/** @phpstan-ignore-next-line */
-			$properties[$name][self::ANNOTATION_VAR] = $reflection->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '');
+			$properties[$name][self::ANNOTATION_VAR] = $ref->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '') . ($ref->getType()->allowsNull() ? "|null" : '');
 		}
 		
 		return $properties;
@@ -713,13 +714,13 @@ class Structure
 		
 		$jsonType = $parsedDocComment[self::ANNOTATION_VAR] ?? null;
 		
-		
 		$relation = $relationNxN ? new RelationNxN($class, $name) : new Relation($class, $name);
 		$relation->setName($name);
 		$relation->setSource($class);
 		
 		if ($jsonType) {
 			$loaded = $relation->loadFromType($jsonType);
+			
 			$target = $relation->getTarget();
 			
 			if ($loaded) {

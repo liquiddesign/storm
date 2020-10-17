@@ -21,6 +21,8 @@ class Relation extends AnnotationProperty
 	
 	protected bool $isKeyHolder;
 	
+	protected bool $nullable = false;
+	
 	public function getSource(): string
 	{
 		return $this->source;
@@ -81,29 +83,38 @@ class Relation extends AnnotationProperty
 		$this->isKeyHolder = $holder;
 	}
 	
+	public function isNullable(): bool
+	{
+		return $this->nullable;
+	}
+	
 	public function loadFromType(string $type): bool
 	{
 		$types = \explode('|', $type);
+		$found = false;
 		
-		foreach ($types as $type) {
-			$typeLower = \strtolower($type);
+		foreach ($types as $str) {
+			$typeLower = \strtolower($str);
 			
 			if ($typeLower === 'null') {
+				$this->nullable = true;
+				
 				continue;
 			}
 			
-			$offset = \strpos($type, '[]');
-			$target = $offset === false ? $type : \substr($type, 0, $offset);
+			$offset = \strpos($str, '[]');
+			$target = $offset === false ? $str : \substr($str, 0, $offset);
 			
-			if (Structure::isEntityClass($target)) {
-				$this->target = \substr($target, 0, 1) === "\\" ? \substr($target, 1) : $target;
-				$this->isKeyHolder = $offset === false;
-				
-				return true;
+			if (!Structure::isEntityClass($target)) {
+				continue;
 			}
+
+			$this->target = \substr($target, 0, 1) === "\\" ? \substr($target, 1) : $target;
+			$this->isKeyHolder = $offset === false;
+			$found = true;
 		}
 		
-		return false;
+		return $found;
 	}
 	
 	public function getSchema(): Schema
