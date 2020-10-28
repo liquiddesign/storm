@@ -9,7 +9,7 @@ use Nette\Schema\Schema;
 
 class Table extends AnnotationClass
 {
-	private const DEFAULT_ENTITY_NAMESPACE = 'DB';
+	private const STRIP_NAMESPACES = ["DB\\", "App\\"];
 	
 	protected ?string $collate = null;
 	
@@ -71,8 +71,8 @@ class Table extends AnnotationClass
 	
 	private function getTableNameFromClass(string $model): string
 	{
-		$db = self::DEFAULT_ENTITY_NAMESPACE;
+		$replace = self::STRIP_NAMESPACES;
 		
-		return \strtolower(\str_replace("\\", '_', \str_replace("$db\\", '', $model)));
+		return \strtolower(\str_replace("\\", '_', \str_replace($replace, '', $model)));
 	}
 }

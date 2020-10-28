@@ -104,42 +104,6 @@ class Structure
 		}
 	}
 	
-	private function isInited()
-	{
-		return $this->relations !== null && $this->columns !== null;
-	}
-	
-	private function init(): void
-	{
-		$class = $this->entityClass;
-		$fileName = (new \ReflectionClass($class))->getFileName();
-		$dataModel = $this;
-		
-		$auxData = $this->cache->load("$class-init", static function (&$dependencies) use ($fileName, $dataModel) {
-			$dependencies = [
-				Cache::FILES => $fileName,
-			];
-			$propertiesDocComments = $dataModel->getPropertiesDocComments();
-			$columns = [$dataModel->getPK()->getName() => $dataModel->getPK()] + $dataModel->loadColumns($propertiesDocComments);
-			$relations = $dataModel->loadRelations($propertiesDocComments, $dataModel->getTable()->getName(), $dataModel->getPK());
-			
-			foreach ($relations as $relation) {
-				if ($relation->isKeyHolder()) {
-					$fk = new Column($dataModel->getEntityClass(), $relation->getName());
-					$fk->setName($relation->getSourceKey());
-					$fk->setNullable($relation->isNullable());
-					$fk->setForeignKey(true);
-					$fk->setPropertyType($relation->getKeyType());
-					$columns[$relation->getName()] = $fk;
-				}
-			}
-			
-			return [$columns, $relations, $dataModel->hasMutations];
-		});
-		
-		[$this->columns, $this->relations, $this->hasMutations] = $auxData;
-	}
-	
 	/**
 	 * Get custom class annotation
 	 * @param string $annotationName
@@ -547,12 +511,9 @@ class Structure
 	
 	/**
 	 * @param string[][]|string[][][] $docComments
-	 * @return \StORM\Meta\Column[]
 	 */
 	protected function loadPK(array $docComments): ?Column
 	{
-		$properties = [];
-		$pk = [];
 		$class = $this->getEntityClass();
 		
 		foreach ($docComments as $name => $docComment) {
@@ -566,6 +527,7 @@ class Structure
 			
 			$pk = $this->loadColumn($name, $docComment);
 			$pk->setPrimaryKey(true);
+			
 			return $pk;
 		}
 		
@@ -821,6 +783,42 @@ class Structure
 		}
 		
 		return $relation;
+	}
+	
+	private function isInited(): bool
+	{
+		return $this->relations !== null && $this->columns !== null;
+	}
+	
+	private function init(): void
+	{
+		$class = $this->entityClass;
+		$fileName = (new \ReflectionClass($class))->getFileName();
+		$dataModel = $this;
+		
+		$auxData = $this->cache->load("$class-init", static function (&$dependencies) use ($fileName, $dataModel) {
+			$dependencies = [
+				Cache::FILES => $fileName,
+			];
+			$propertiesDocComments = $dataModel->getPropertiesDocComments();
+			$columns = [$dataModel->getPK()->getName() => $dataModel->getPK()] + $dataModel->loadColumns($propertiesDocComments);
+			$relations = $dataModel->loadRelations($propertiesDocComments, $dataModel->getTable()->getName(), $dataModel->getPK());
+			
+			foreach ($relations as $relation) {
+				if ($relation->isKeyHolder()) {
+					$fk = new Column($dataModel->getEntityClass(), $relation->getName());
+					$fk->setName($relation->getSourceKey());
+					$fk->setNullable($relation->isNullable());
+					$fk->setForeignKey(true);
+					$fk->setPropertyType($relation->getKeyType());
+					$columns[$relation->getName()] = $fk;
+				}
+			}
+			
+			return [$columns, $relations, $dataModel->hasMutations];
+		});
+		
+		[$this->columns, $this->relations, $this->hasMutations] = $auxData;
 	}
 	
 	/**
