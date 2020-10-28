@@ -243,7 +243,6 @@ class Column extends AnnotationProperty
 			'comment' => Expect::string(null),
 			'mutations' => Expect::bool(null),
 			'locale' => Expect::bool(null),
-			'primaryKey' => Expect::bool(null),
 			'autoincrement' => Expect::bool(null),
 			'unique' => Expect::bool(null),
 		]);

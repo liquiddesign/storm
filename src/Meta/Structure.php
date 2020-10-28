@@ -32,12 +32,12 @@ class Structure
 	/**
 	 * @var \StORM\Meta\Column[]
 	 */
-	private array $columns = [];
+	private ?array $columns = null;
 	
 	/**
 	 * @var \StORM\Meta\Relation[]
 	 */
-	private array $relations = [];
+	private ?array $relations = null;
 	
 	/**
 	 * @var mixed[][]
@@ -69,8 +69,8 @@ class Structure
 	{
 		$this->entityClass = $class;
 		$this->schemaManager = $schemaManager;
-		$this->cache = $cache;
 		$this->defaultPK = $defaultPK;
+		$this->cache = $cache;
 		
 		try {
 			$annotations = $schemaManager->getCustomAnnotations();
@@ -79,7 +79,7 @@ class Structure
 			
 			$dataModel = $this;
 			
-			$auxData = $cache->load("$class-meta", static function (&$dependencies) use ($fileName, $dataModel, $annotations, $defaultPK) {
+			$auxData = $this->cache->load("$class-basic", static function (&$dependencies) use ($fileName, $dataModel, $annotations, $defaultPK) {
 				$dependencies = [
 					Cache::FILES => $fileName,
 				];
@@ -88,37 +88,56 @@ class Structure
 				$propertiesDocComments = $dataModel->getPropertiesDocComments();
 				
 				$table = $dataModel->loadTable($classDocComment);
-				$columns = $dataModel->loadColumns($propertiesDocComments);
-				$firstColumn = \reset($columns);
+				$pk = $dataModel->loadPK($propertiesDocComments);
 				
-				if ($firstColumn && $firstColumn->isPrimaryKey()) {
-					$pk = $firstColumn;
-				} else {
-					$pk = $defaultPK ?: $dataModel->loadPK($table->getName());
-					$columns = [$pk->getName() => $pk] + $columns;
-				}
-				
-				$relations = $dataModel->loadRelations($propertiesDocComments, $table->getName(), $pk);
-				
-				foreach ($relations as $relation) {
-					if ($relation->isKeyHolder()) {
-						$fk = new Column($dataModel->getEntityClass(), $relation->getName());
-						$fk->setName($relation->getSourceKey());
-						$fk->setNullable($relation->isNullable());
-						$fk->setForeignKey(true);
-						$fk->setPropertyType($relation->getKeyType());
-						$columns[$relation->getName()] = $fk;
-					}
+				if (!$pk) {
+					$pk = $defaultPK ?: $dataModel->generatePK($table->getName());
 				}
 				
 				$dataModel->loadCustomAnnotations($annotations, $classDocComment, $propertiesDocComments);
 				
-				return [$table, $columns, $pk, $relations, $dataModel->hasMutations];
+				return [$table, $pk];
 			});
-			[$this->table, $this->columns, $this->pk, $this->relations, $this->hasMutations] = $auxData;
+			[$this->table, $this->pk] = $auxData;
 		} catch (\ReflectionException $x) {
 			throw new NotExistsException(null, NotExistsException::SCHEMA, $class);
 		}
+	}
+	
+	private function isInited()
+	{
+		return $this->relations !== null && $this->columns !== null;
+	}
+	
+	private function init(): void
+	{
+		$class = $this->entityClass;
+		$fileName = (new \ReflectionClass($class))->getFileName();
+		$dataModel = $this;
+		
+		$auxData = $this->cache->load("$class-init", static function (&$dependencies) use ($fileName, $dataModel) {
+			$dependencies = [
+				Cache::FILES => $fileName,
+			];
+			$propertiesDocComments = $dataModel->getPropertiesDocComments();
+			$columns = [$dataModel->getPK()->getName() => $dataModel->getPK()] + $dataModel->loadColumns($propertiesDocComments);
+			$relations = $dataModel->loadRelations($propertiesDocComments, $dataModel->getTable()->getName(), $dataModel->getPK());
+			
+			foreach ($relations as $relation) {
+				if ($relation->isKeyHolder()) {
+					$fk = new Column($dataModel->getEntityClass(), $relation->getName());
+					$fk->setName($relation->getSourceKey());
+					$fk->setNullable($relation->isNullable());
+					$fk->setForeignKey(true);
+					$fk->setPropertyType($relation->getKeyType());
+					$columns[$relation->getName()] = $fk;
+				}
+			}
+			
+			return [$columns, $relations, $dataModel->hasMutations];
+		});
+		
+		[$this->columns, $this->relations, $this->hasMutations] = $auxData;
 	}
 	
 	/**
@@ -211,6 +230,10 @@ class Structure
 	 */
 	public function getColumns(bool $includePK = true, bool $includeFK = true): array
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		if ($includePK && $includeFK) {
 			return $this->columns;
 		}
@@ -225,6 +248,10 @@ class Structure
 	 */
 	public function getRelations(): array
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return $this->relations;
 	}
 	
@@ -233,6 +260,10 @@ class Structure
 	 */
 	public function hasMutations(): bool
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return $this->hasMutations;
 	}
 	
@@ -243,6 +274,10 @@ class Structure
 	
 	public function getColumn(string $name): ?Column
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return $this->columns[$name] ?? null;
 	}
 	
@@ -253,6 +288,10 @@ class Structure
 	
 	public function getRelation(string $name): ?Relation
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return $this->relations[$name] ?? null;
 	}
 	
@@ -493,7 +532,7 @@ class Structure
 		}
 	}
 	
-	protected function loadPK(string $tableName): \StORM\Meta\Column
+	protected function generatePK(string $tableName): \StORM\Meta\Column
 	{
 		$columnName = $this->schemaManager->getPrimaryKeyName($tableName);
 		$isAutoincrement = $this->schemaManager->isAutoincrement($tableName, $columnName);
@@ -504,6 +543,33 @@ class Structure
 		$pk->setAutoincrement($isAutoincrement);
 		
 		return $pk;
+	}
+	
+	/**
+	 * @param string[][]|string[][][] $docComments
+	 * @return \StORM\Meta\Column[]
+	 */
+	protected function loadPK(array $docComments): ?Column
+	{
+		$properties = [];
+		$pk = [];
+		$class = $this->getEntityClass();
+		
+		foreach ($docComments as $name => $docComment) {
+			if (!isset($docComment[Column::getAnnotationName()]) || !isset($docComment[Column::ANNOTATION_PK])) {
+				continue;
+			}
+			
+			if (isset($docComment[Column::getAnnotationName()]) && \is_array($docComment[Column::getAnnotationName()])) {
+				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class::$name", Column::getAnnotationName());
+			}
+			
+			$pk = $this->loadColumn($name, $docComment);
+			$pk->setPrimaryKey(true);
+			return $pk;
+		}
+		
+		return null;
 	}
 	
 	/**
@@ -721,9 +787,9 @@ class Structure
 		if ($jsonType) {
 			$loaded = $relation->loadFromType($jsonType);
 			
-			$target = $relation->getTarget();
-			
 			if ($loaded) {
+				$target = $relation->getTarget();
+				
 				if ($relation instanceof RelationNxN) {
 					$relation->setSourceKey($sourcePk->getName());
 					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
