@@ -643,7 +643,13 @@ class Structure
 		
 		foreach (\get_class_vars($this->entityClass) as $name => $defaultValue) {
 			$ref = new \ReflectionProperty($this->entityClass, $name);
-			$properties[$name] = Helpers::parseDocComment($ref->getDocComment());
+			$docComment = $ref->getDocComment();
+			
+			if (!$docComment) {
+				continue;
+			}
+			
+			$properties[$name] = Helpers::parseDocComment($docComment);
 			
 			if (!isset($properties[$name]['default']) && $defaultValue !== null) {
 				$properties[$name]['default'] = $defaultValue;
