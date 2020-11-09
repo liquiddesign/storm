@@ -93,11 +93,12 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Create new collection
 	 * @param bool $optimization
+	 * @param bool $autojoin
 	 * @phpstan-return \StORM\Collection<T>
 	 */
-	final public function many(bool $optimization = true): Collection
+	final public function many(bool $optimization = true, bool $autojoin = true): Collection
 	{
-		return new Collection($this, $optimization);
+		return new Collection($this, $optimization, $autojoin);
 	}
 	
 	/**

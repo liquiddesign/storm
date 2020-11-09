@@ -30,17 +30,20 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	private int $skipSelectLength;
 	
-	private bool $isOptimization;
+	private bool $enableOptimization;
+	
+	private bool $enableAutojoin;
 	
 	/**
 	 * Collection constructor.
 	 * @param \StORM\Repository $repository
-	 * @param bool $isOptimization
+	 * @param bool $enableOptimization
 	 */
-	public function __construct(Repository $repository, bool $isOptimization = true)
+	public function __construct(Repository $repository, bool $enableOptimization = true, bool $enableAutojoin = true)
 	{
 		$this->repository = $repository;
-		$this->isOptimization = $isOptimization;
+		$this->enableOptimization = $enableOptimization;
+		$this->enableAutojoin = $enableAutojoin;
 		
 		$classParameters = $this->createClassParameters();
 		$index = $repository->getStructure()->getPK()->getName();
@@ -105,9 +108,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this->getRepository()->getConnection();
 	}
 	
-	public function isOptimization(): bool
+	public function enableOptimization(): bool
 	{
-		return $this->isOptimization;
+		return $this->enableOptimization;
 	}
 	
 	/**
@@ -249,11 +252,15 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	private function autojoin(): void
 	{
+		if (!$this->enableAutojoin) {
+			return;
+		}
+		
 		$modifiersToParse = [self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY, self::MODIFIER_WHERE];
 		$i = 0;
 		
 		foreach (\array_keys($this->modifiers[self::MODIFIER_SELECT]) as $k) {
-			if ($i++ < $this->skipSelectLength) {
+			if ($i++ < $this->skipSelectLength || !\is_string($this->modifiers[self::MODIFIER_SELECT][$k])) {
 				continue;
 			}
 			
@@ -262,6 +269,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		
 		foreach ($modifiersToParse as $modifierName) {
 			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
+				if (!\is_string($this->modifiers[$modifierName][$k])) {
+					continue;
+				}
+				
 				$this->parseExpression($this->modifiers[$modifierName][$k]);
 			}
 		}
