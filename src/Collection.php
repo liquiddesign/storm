@@ -108,7 +108,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this->getRepository()->getConnection();
 	}
 	
-	public function enableOptimization(): bool
+	public function isOptimization(): bool
 	{
 		return $this->enableOptimization;
 	}
