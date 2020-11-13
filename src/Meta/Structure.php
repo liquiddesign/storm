@@ -277,7 +277,7 @@ class Structure
 				$index->setUnique(true);
 				$index->setColumns([$column->getPropertyName()]);
 				
-				$indexes[$column->getPropertyName()] = $index;
+				$indexes[$index->getName()] = $index;
 			}
 		}
 		
@@ -286,7 +286,7 @@ class Structure
 				$index = new Index($class);
 				$index->setName($this->setPrefix($relation->getName()));
 				$index->setColumns([$relation->getSourceKey()]);
-				$indexes[$relation->getPropertyName()] = $index;
+				$indexes[$index->getName()] = $index;
 			}
 		}
 		
