@@ -193,6 +193,13 @@ class Helpers
 			return;
 		}
 		
+		if ($rawValue instanceof Entity) {
+			$values["$varPrefix$column$varPostfix"] = (string) $rawValue;
+			$binds[":$varPrefix$column$varPostfix"] = "$property";
+			
+			return;
+		}
+		
 		$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
 		
 		throw new InvalidStateException(null, InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
