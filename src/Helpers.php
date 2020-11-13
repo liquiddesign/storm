@@ -193,7 +193,7 @@ class Helpers
 			return;
 		}
 		
-		if ($rawValue instanceof Entity) {
+		if (\is_object($rawValue) && \method_exists($rawValue, '__toString')) {
 			$values["$varPrefix$column$varPostfix"] = (string) $rawValue;
 			$binds[":$varPrefix$column$varPostfix"] = "$property";
 			
