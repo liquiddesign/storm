@@ -49,7 +49,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	public function __construct(array $vars, ?IEntityParent $parent = null, array $mutations = [], ?string $mutation = null)
 	{
 		if ($parent) {
-			$this->setParent($parent);
+			$this->setParent($parent, false);
 		}
 		
 		$this->activeMutation = $mutation;
@@ -86,7 +86,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->parent;
 	}
 	
-	public function setParent(IEntityParent $parent): void
+	public function setParent(IEntityParent $parent, bool $recursive = true): void
 	{
 		$this->parent = $parent;
 		
@@ -96,6 +96,16 @@ abstract class Entity implements \JsonSerializable, IDumper
 			if ($relation->isKeyHolder() && !\array_key_exists($name, $this->foreignKeys)) {
 				$this->foreignKeys[$name] = $this->properties[$fkName] ?? null;
 				unset($this->properties[$fkName]);
+			}
+			
+			if ($recursive && isset($this->relations[$name])) {
+				if ($this->relations[$name] instanceof Entity) {
+					$this->relations[$name]->setParent($this->getConnection()->findRepository($relation->getTarget()));
+				}
+				
+				if ($this->relations[$name] instanceof Collection) {
+					$this->relations[$name]->setRepository($this->getConnection()->findRepository($relation->getTarget()));
+				}
 			}
 			
 			unset($this->$name);
