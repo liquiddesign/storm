@@ -551,6 +551,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	{
 		if (\array_key_exists($name, $this->foreignKeys)) {
 			$this->foreignKeys[$name] = $value === null ? null : (string) $value;
+			
+			if ($value instanceof Entity || $value instanceof RelationCollection) {
+				$this->relations[$name] = $value;
+			}
 		} else {
 			$this->properties[$name] = $value;
 		}
