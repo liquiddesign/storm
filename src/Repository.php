@@ -92,13 +92,14 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Create new collection
+	 * @param string|null $mutation
 	 * @param bool $optimization
 	 * @param bool $autojoin
 	 * @phpstan-return \StORM\Collection<T>
 	 */
-	final public function many(bool $optimization = true, bool $autojoin = true): Collection
+	final public function many(?string $mutation = null, bool $optimization = true, bool $autojoin = true): Collection
 	{
-		return new Collection($this, $optimization, $autojoin);
+		return new Collection($this, $mutation, $optimization, $autojoin);
 	}
 	
 	/**
@@ -106,10 +107,11 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|string|int $condition
 	 * @param bool $needed
 	 * @param string[]|null $select
-	 * @phpstan-return T|null
+	 * @param string|null $mutation
 	 * @throws \StORM\Exception\NotFoundException
+	 * @phpstan-return T|null
 	 */
-	final public function one($condition, bool $needed = false, ?array $select = null): ?Entity
+	final public function one($condition, bool $needed = false, ?array $select = null, ?string $mutation = null): ?Entity
 	{
 		$conditionValidTypes = ['array', 'string', 'integer'];
 		
@@ -118,7 +120,7 @@ abstract class Repository implements IEntityParent
 		}
 		
 		/** @var \StORM\Collection $collection */
-		$collection = $this->many(false);
+		$collection = $this->many($mutation, false);
 		
 		if ($select !== null) {
 			$collection->setSelect($select, [], true);

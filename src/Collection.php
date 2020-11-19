@@ -34,14 +34,19 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	private bool $enableAutojoin;
 	
+	private ?string $mutation;
+	
 	/**
 	 * Collection constructor.
 	 * @param \StORM\Repository $repository
+	 * @param string|null $mutation
 	 * @param bool $enableOptimization
+	 * @param bool $enableAutojoin
 	 */
-	public function __construct(Repository $repository, bool $enableOptimization = true, bool $enableAutojoin = true)
+	public function __construct(Repository $repository, ?string $mutation = null, bool $enableOptimization = true, bool $enableAutojoin = true)
 	{
 		$this->repository = $repository;
+		$this->mutation = $mutation;
 		$this->enableOptimization = $enableOptimization;
 		$this->enableAutojoin = $enableAutojoin;
 		
@@ -288,8 +293,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$repository = $this->repository;
 		$connection = $this->repository->getConnection();
 		$hasMutations = $repository->getStructure()->hasMutations();
+		$mutation = $this->mutation ?: $connection->getMutation();
 		
-		return [[], $this, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $connection->getMutation() : null];
+		return [[], $this, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $mutation : null];
 	}
 	
 	private function parseExpression(string &$expression): void
