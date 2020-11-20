@@ -53,10 +53,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$classParameters = $this->createClassParameters();
 		$index = $repository->getStructure()->getPK()->getName();
 		
-		$defaultSelect = $repository->getDefaultSelect();
+		$defaultSelect = $repository->getDefaultSelect($mutation);
 		$this->skipSelectLength = \count($defaultSelect);
 		
-		parent::__construct($this->repository->getConnection(), $repository->getDefaultFrom(), $repository->getDefaultSelect(), $repository->getEntityClass(), $classParameters, $index);
+		parent::__construct($this->repository->getConnection(), $repository->getDefaultFrom(), $repository->getDefaultSelect($mutation), $repository->getEntityClass(), $classParameters, $index);
 	}
 	
 	/**

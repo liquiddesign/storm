@@ -390,11 +390,12 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get default SELECT modifier array for new collection
+	 * @param string|null $mutation
 	 * @return string[]
 	 */
-	public function getDefaultSelect(): array
+	public function getDefaultSelect(?string $mutation = null): array
 	{
-		return $this->getStructure()->getColumnsSelect(self::DEFAULT_ALIAS . '.');
+		return $this->getStructure()->getColumnsSelect(self::DEFAULT_ALIAS . '.', '', $mutation);
 	}
 	
 	/**

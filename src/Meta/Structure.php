@@ -153,9 +153,10 @@ class Structure
 	/**
 	 * @param string $expressionPrefix
 	 * @param string $aliasPrefix
+	 * @param string|null $mutation
 	 * @return string[]
 	 */
-	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = ''): array
+	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = '', ?string $mutation = null): array
 	{
 		if (!$this->getColumns()) {
 			return ["$expressionPrefix*"];
@@ -166,10 +167,12 @@ class Structure
 		
 		$pk = $this->getPK();
 		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
+		$mutation = $mutation ?: $this->schemaManager->getConnection()->getMutation();
+		$mutationSuffix = $this->schemaManager->getConnection()->getAvailableMutations()[$mutation];
 		
 		foreach ($this->getColumns() as $column) {
 			if ($column->hasMutations()) {
-				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $this->schemaManager->getConnection()->getMutationSuffix();
+				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $mutationSuffix;
 				$locales[] = $column;
 			} else {
 				$select[$aliasPrefix . $column->isForeignKey() ? $column->getName() : $column->getPropertyName()] = $expressionPrefix . $column->getName();
