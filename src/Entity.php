@@ -550,7 +550,13 @@ abstract class Entity implements \JsonSerializable, IDumper
 	public function __set(string $name, $value): void
 	{
 		if (\array_key_exists($name, $this->foreignKeys)) {
-			$this->foreignKeys[$name] = $value === null ? null : (string) $value;
+			if ($value === null) {
+				$this->foreignKeys[$name] = null;
+			}
+			
+			if (\is_scalar($value) || $value instanceof Entity) {
+				$this->foreignKeys[$name] = (string) $value;
+			}
 			
 			if ($value instanceof Entity || $value instanceof RelationCollection) {
 				$this->relations[$name] = $value;
