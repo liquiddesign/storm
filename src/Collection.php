@@ -51,7 +51,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->enableAutojoin = $enableAutojoin;
 		
 		$classParameters = $this->createClassParameters();
-		$index = $repository->getStructure()->getPK()->getName();
+		$index = $repository::DEFAULT_ALIAS . '.' . $repository->getStructure()->getPK()->getName();
 		
 		$defaultSelect = $repository->getDefaultSelect($mutation);
 		$this->skipSelectLength = \count($defaultSelect);
