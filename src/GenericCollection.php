@@ -377,7 +377,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function getSql(): string
 	{
-		$indexSelect = $this->index ? [$this->index] : [];
+		$indexSelect = $this->index ? [$this->modifiers[self::MODIFIER_SELECT][$this->index] ?? $this->index] : [];
 		
 		if ($indexSelect && isset($this->modifiers[self::MODIFIER_SELECT][0]) && $this->modifiers[self::MODIFIER_SELECT][0] === '*') {
 			if (\count($this->modifiers[self::MODIFIER_FROM]) > 1) {
