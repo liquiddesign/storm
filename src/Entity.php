@@ -265,6 +265,30 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->properties[$property];
 	}
 	
+	public function syncRelated(string $related, $values): Entity
+	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		$relationMeta = $this->getStructure()->getRelation($related);
+		
+		if (!$relationMeta) {
+			throw new \InvalidArgumentException("$related is not entity relation");
+		}
+		
+		if (!$this->$related) {
+			$object = $this->getConnection()->findRepository($relationMeta->getTarget())->createOne($values);
+			$this->update([$related => $object]);
+			
+			return $object;
+		}
+		
+		$this->$related->update($values);
+		
+		return $this->$related;
+	}
+	
 	/**
 	 * Update entity object
 	 * @param mixed[]|mixed[][]|object $values
@@ -539,7 +563,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function __isset(string $name)
 	{
-		return \array_key_exists($name, $this->properties);
+		return \array_key_exists($name, $this->properties) || isset($this->foreignKeys[$name]);
 	}
 	
 	/**
