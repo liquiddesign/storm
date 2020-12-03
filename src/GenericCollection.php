@@ -1386,7 +1386,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		if ($isAssociative && $count) {
 			if (\strpos($expression, ':') === false) {
-				throw new \InvalidArgumentException("Passed associative array and there is no bind variable with ':'. Call \array_values() or toArray(..., true).");
+				throw new \InvalidArgumentException("Passed associative array and there is no bind variable with ':'. Call \array_values() or toArrayOf(..., true).");
 			}
 			
 			$this->modifiers[self::MODIFIER_WHERE][] = $not ? "!($expression)" : "($expression)";

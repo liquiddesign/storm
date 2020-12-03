@@ -20,7 +20,7 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 
 - zrusit isStored + spoji Update updateAll u entity (sequencni pole), loadFromEntity -> pryc
 
-- kdyby fungovalo update (['name' => 'test', 'account' => ['login' => true]])
+- kdyby fungovalo update (['name' => 'test', 'account' => ['login' => true]]) -> prepsat at se pouzije sync at je to shodne
 
 - dump debug metody prenyst mimo kod do staticke metody
 
