@@ -28,6 +28,10 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 
 - eventy na delete, update, insert - priklad pro logger
 
+- @suffix (add mutation suffix property
+
+- toArray moznost expadnovat property
+
 - tracydebug -> link na soubor z kteryho se to vola + proklik, explain
 
 - kdyz nema Entita zadnou anotaci spadne to, dedicnost ?
@@ -38,3 +42,5 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 - Vylepšení literálu
 $sub = new Literal("SELECT MAX(count) FROM users WHERE name=:name",["name"=>"Petr"]);
 tady je to podle dokumentace ale pak dojde k chybě že konstruktor bere jen 1 argument
+
+- sem tam je potreba konvertovat ze vstupu '' => null, napriklad kdyz je typ datetime, mohlo by to umet automaticky nebo zadat

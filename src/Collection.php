@@ -261,7 +261,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			return;
 		}
 		
-		$modifiersToParse = [self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY, self::MODIFIER_WHERE];
 		$i = 0;
 		
 		foreach (\array_keys($this->modifiers[self::MODIFIER_SELECT]) as $k) {
@@ -272,7 +271,17 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$this->parseExpression($this->modifiers[self::MODIFIER_SELECT][$k]);
 		}
 		
-		foreach ($modifiersToParse as $modifierName) {
+		foreach ([self::MODIFIER_ORDER_BY] as $modifierName) {
+			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
+				if (!\is_string($k)) {
+					continue;
+				}
+				
+				$this->parseExpression($k);
+			}
+		}
+		
+		foreach ([self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY] as $modifierName) {
 			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
 				if (!\is_string($this->modifiers[$modifierName][$k])) {
 					continue;
