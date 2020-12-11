@@ -79,7 +79,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	public function getParent(): IEntityParent
 	{
-		if (!$this->parent) {
+		if (!isset($this->parent)) {
 			throw new NotExistsException($this, NotExistsException::SERIALIZE, 'setParent()');
 		}
 		
@@ -88,6 +88,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	public function setParent(IEntityParent $parent, bool $recursive = true): void
 	{
+		if (isset($this->parent) && $this->parent === $parent) {
+			return;
+		}
+		
 		$this->parent = $parent;
 		
 		foreach ($parent->getRepository()->getStructure()->getRelations() as $name => $relation) {
