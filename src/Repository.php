@@ -513,7 +513,10 @@ abstract class Repository implements IEntityParent
 			if ($relation->isKeyHolder()) {
 				$values[$name] = $this->getConnection()->findRepository($relation->getTarget())->syncOne($values[$name], $sync ? null : []);
 			} else {
-				$joinRelations[$name] = \array_values($values[$name]);
+				if (\count($values[$name])) {
+					$joinRelations[$name] = \array_values($values[$name]);
+				}
+				
 				unset($values[$name]);
 			}
 		}
