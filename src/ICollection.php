@@ -233,6 +233,11 @@ interface ICollection
 	public function from(array $from, array $values = []): self;
 	
 	/**
+	 * Returns prefix for columns expressions, like "this."
+	 */
+	public function getPrefix(bool $dot = true): ?string;
+	
+	/**
 	 * Set SELECT clause and replace previous
 	 * @param string[] $select
 	 * @param mixed[] $values

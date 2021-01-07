@@ -723,6 +723,23 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		return $this;
 	}
 	
+	public function getPrefix(bool $dot = true): ?string
+	{
+		if (!$this->modifiers[self::MODIFIER_FROM]) {
+			return null;
+		}
+		
+		$tableName = \reset($this->modifiers[self::MODIFIER_FROM]);
+		$alias = \key($this->modifiers[self::MODIFIER_FROM]);
+		$dot = $dot ? '.' : '';
+		
+		if ($alias === 0) {
+			return "$tableName$dot";
+		}
+		
+		return $alias ? "$alias$dot" : '';
+	}
+	
 	/**
 	 * Set SELECT clause and replace previous
 	 * @param string[] $select
@@ -1537,23 +1554,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 				unset($this->aliases[$alias]);
 			}
 		}
-	}
-	
-	private function getPrefix(bool $dot = true): ?string
-	{
-		if (!$this->modifiers[self::MODIFIER_FROM]) {
-			return null;
-		}
-		
-		$tableName = \reset($this->modifiers[self::MODIFIER_FROM]);
-		$alias = \key($this->modifiers[self::MODIFIER_FROM]);
-		$dot = $dot ? '.' : '';
-		
-		if ($alias === 0) {
-			return "$tableName$dot";
-		}
-		
-		return $alias ? "$alias$dot" : '';
 	}
 	
 	/**
