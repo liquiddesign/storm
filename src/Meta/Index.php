@@ -20,9 +20,24 @@ class Index extends AnnotationClass
 	 */
 	protected bool $unique = false;
 	
+	/**
+	 * Mutations true | false
+	 */
+	protected bool $mutations = false;
+	
 	public function __construct(string $class)
 	{
 		parent::__construct($class);
+	}
+	
+	public function hasMutations(): bool
+	{
+		return $this->mutations;
+	}
+	
+	public function setMutations(bool $mutations): void
+	{
+		$this->mutations = $mutations;
 	}
 
 	/**
@@ -62,6 +77,7 @@ class Index extends AnnotationClass
 			'name' => Expect::string()->required(),
 			'columns' => Expect::listOf('string')->min(1),
 			'unique' => Expect::bool(false),
+			'mutations' => Expect::bool(null),
 		]);
 	}
 	

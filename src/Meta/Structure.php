@@ -278,6 +278,7 @@ class Structure
 				$index = new Index($class);
 				$index->setName($this->setPrefix($column->getPropertyName()));
 				$index->setUnique(true);
+				$index->setMutations($column->hasMutations());
 				$index->setColumns([$column->getPropertyName()]);
 				
 				$indexes[$index->getName()] = $index;
@@ -296,7 +297,7 @@ class Structure
 		$docComment = $this->getClassDocComment();
 		
 		if (!isset($docComment[Index::getAnnotationName()])) {
-			return [];
+			return $indexes;
 		}
 		
 		$indexDefinitions = $docComment[Index::getAnnotationName()];
