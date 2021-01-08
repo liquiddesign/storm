@@ -28,7 +28,7 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 
 - eventy na delete, update, insert - priklad pro logger
 
-- @suffix (add mutation suffix property
+- @suffix (add mutation suffix property nebo nejak jinak
 
 - toArray moznost expadnovat property
 
