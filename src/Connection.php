@@ -314,11 +314,13 @@ class Connection
 		$sql = '';
 		$i = 0;
 		$noInserts = null;
+		$firstCycle = false;
 		$values = $binds = [];
 		
 		foreach ($manyInserts as $inserts) {
 			if ($i === 0) {
 				$noInserts = \count($inserts);
+				$firstCycle = true;
 			}
 			
 			if ($noInserts === 0) {
@@ -335,7 +337,7 @@ class Connection
 				$this->bindVariables($property, $rawValue, $values, $binds, '', (string) $i);
 			}
 			
-			if ($i === 0) {
+			if ($firstCycle) {
 				$flags = $ignore ? ' IGNORE' : '';
 				$sql .= Helpers::createSqlClauseString("INSERT$flags INTO $table", \array_values($binds), ',', '', true);
 				$sql .= ' VALUES';
