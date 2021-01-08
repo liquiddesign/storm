@@ -12,7 +12,7 @@
 		"ext-json": "*",
 		"nette/di":"~3.0.0",
 		"nette/caching":"~3.0.0",
-		"tracy/tracy":"~2.7.0",
+		"tracy/tracy":"~2.0",
 		"panique/pdo-debug": "~0.2"
 	},
 	"require-dev": 
