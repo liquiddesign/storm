@@ -314,13 +314,12 @@ class Connection
 		$sql = '';
 		$i = 0;
 		$noInserts = null;
-		$firstCycle = false;
+		$firstCycle = true;
 		$values = $binds = [];
 		
 		foreach ($manyInserts as $inserts) {
 			if ($i === 0) {
 				$noInserts = \count($inserts);
-				$firstCycle = true;
 			}
 			
 			if ($noInserts === 0) {
@@ -347,6 +346,7 @@ class Connection
 			
 			$sql .= Helpers::createSqlClauseString('', \array_keys($binds), ',', '', true);
 			$i++;
+			$firstCycle = false;
 		}
 		
 		if ($onDuplicateUpdate === null || $onDuplicateUpdate) {
