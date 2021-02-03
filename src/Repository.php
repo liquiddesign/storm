@@ -255,7 +255,11 @@ abstract class Repository implements IEntityParent
 		// update all subject
 		foreach ($joinRelations as $relation => $keys) {
 			if ($object->$relation instanceof IRelation) {
-				$object->$relation->relate($keys);
+				$object->$relation->unrelateAll();
+				
+				if ($keys) {
+					$object->$relation->relate($keys);
+				}
 			}
 			
 			continue;
@@ -513,10 +517,7 @@ abstract class Repository implements IEntityParent
 			if ($relation->isKeyHolder()) {
 				$values[$name] = $this->getConnection()->findRepository($relation->getTarget())->syncOne($values[$name], $sync ? null : []);
 			} else {
-				if (\count($values[$name])) {
-					$joinRelations[$name] = \array_values($values[$name]);
-				}
-				
+				$joinRelations[$name] = \array_values($values[$name]);
 				unset($values[$name]);
 			}
 		}
