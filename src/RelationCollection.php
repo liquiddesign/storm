@@ -83,7 +83,8 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		$collection = $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
 		if ($checkKeys) {
-			$resultArray = (clone $collection)->toArrayOf('uuid');
+			$pkName = $this->getRepository()->getConnection()->findRepository($class)->getStructure()->getPK()->getName();
+			$resultArray = (clone $collection)->toArrayOf($pkName);
 			$desiredArray = \array_combine(\array_values($primaryKeys), \array_values($primaryKeys));
 			
 			if ($diff = \array_diff_key($desiredArray, $resultArray)) {

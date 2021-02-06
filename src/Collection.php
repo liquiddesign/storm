@@ -129,6 +129,52 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		throw new GeneralException('Cannot set connection to CollectionEntity, setRepository() instead.');
 	}
 	
+	public function update($values, bool $ignore = false): int
+	{
+		if (\is_object($values)) {
+			$values = Helpers::toArrayRecursive($values);
+		}
+		
+		$relations = [];
+		$result = 0;
+		
+		foreach ($this->getRepository()->getStructure()->getRelations() as $name => $relation) {
+			if ($relation->isKeyHolder() || !isset($values[$name])) {
+				continue;
+			}
+			
+			$relations[$name] = [$relation, \array_values($values[$name])];
+			unset($values[$name]);
+		}
+		
+		if ($values || (!$values && !$relations)) {
+			$result = parent::update($values, $ignore);
+		}
+		
+		if (!$relations) {
+			return $result;
+		}
+		
+		$pkName = $this->getRepository()->getStructure()->getPK()->getName();
+		$clone = clone $this;
+		
+		foreach ($clone->clear(false)->setSelect([$pkName])->toArrayOf($pkName) as $id) {
+			foreach ($relations as $aux) {
+				[$relation, $value] = $aux;
+				$relationCollection = new RelationCollection($this->getRepository(), $relation, $id);
+				$relationCollection->unrelateAll();
+				
+				if (!$value) {
+					continue;
+				}
+				
+				$relationCollection->relate($value);
+			}
+		}
+		
+		return $result;
+	}
+	
 	/**
 	 * Get object by relations, all collection will be prefetched
 	 * @internal
