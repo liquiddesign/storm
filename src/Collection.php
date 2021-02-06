@@ -135,6 +135,16 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$values = Helpers::toArrayRecursive($values);
 		}
 		
+		if (!\is_array($values)) {
+			$type = \gettype($values);
+			
+			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
+		}
+		
+		if (\count($values) === 0) {
+			throw new \InvalidArgumentException('No value to update');
+		}
+		
 		$relations = [];
 		$result = 0;
 		
@@ -147,7 +157,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			unset($values[$name]);
 		}
 		
-		if ($values || (!$values && !$relations)) {
+		if ($values) {
 			$result = parent::update($values, $ignore);
 		}
 		
