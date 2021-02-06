@@ -111,14 +111,14 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 			$viaTargetKey = $this->relation->getTargetViaKey();
 			$viaSourceKey = $this->relation->getSourceViaKey();
 			
-			return $this->getConnection()->rows()->setFrom(['this' => $via])->setWhere("this.$viaSourceKey", $this->keyValue)->setWhere("this.$viaTargetKey", \array_values($primaryKeys))->delete();
+			return $this->getConnection()->rows()->setFrom(['this' => $via])->where("this.$viaSourceKey", $this->keyValue)->where("this.$viaTargetKey", \array_values($primaryKeys))->delete();
 		}
 		
 		// RelationNx1
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
 		
-		return $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
+		return $this->getRepository()->getConnection()->findRepository($class)->many()->where('this.uuid', \array_values($primaryKeys))->update([$targetKey => null]);
 	}
 	
 	/**
