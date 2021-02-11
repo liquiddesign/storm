@@ -32,7 +32,7 @@ interface ICollection
 	/**
 	 * Get fetch class
 	 * @param mixed[] $params
-	 * @phpstan-var class-string<T>
+	 * @phpstan-var class-string<T> $params
 	 */
 	public function getFetchClass(array &$params = []): string;
 	
