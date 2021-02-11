@@ -168,9 +168,7 @@ class Column extends AnnotationProperty
 	 */
 	public function getDefault()
 	{
-		$defaultValue = (new \ReflectionClass($this->getEntityClass()))->getDefaultProperties()[$this->getPropertyName()] ?? null;
-		
-		return $this->default ?? $defaultValue;
+		return $this->default;
 	}
 	
 	/**
