@@ -136,8 +136,9 @@ interface ICollection
 	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
+	 * @param bool $prefixIndex
 	 */
-	public function setIndex(?string $index): ICollection;
+	public function setIndex(?string $index, bool $prefixIndex = true): ICollection;
 	
 	/**
 	 * Count internal array if loaded, otherwise call enum()

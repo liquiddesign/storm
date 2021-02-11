@@ -111,6 +111,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	protected ?string $index;
 	
+	protected bool $prefixIndex = true;
+	
 	/**
 	 * @var mixed[]
 	 */
@@ -388,7 +390,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		$sql = '';
-		$sql .= $this->createSqlPrefix(true, true, true, $indexSelect);
+		$sql .= $this->createSqlPrefix(true, true, true, $this->prefixIndex ? $indexSelect : []);
 		$sql .= $this->createSqlSuffix(true, true);
 		
 		$sql = $this->replaceLiterals($sql, $this->vars);
@@ -513,14 +515,16 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
+	 * @param bool $prefixIndex
 	 */
-	public function setIndex(?string $index): ICollection
+	public function setIndex(?string $index, bool $prefixIndex = true): ICollection
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		$this->index = $index;
+		$this->prefixIndex = $prefixIndex;
 		
 		return $this;
 	}
