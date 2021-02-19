@@ -30,7 +30,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	protected array $relations = [];
 	
-	protected ?\StORM\IEntityParent $parent;
+	protected ?\StORM\IEntityParent $parent = null;
 	
 	protected ?string $activeMutation;
 	
