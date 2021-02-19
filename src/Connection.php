@@ -489,11 +489,12 @@ class Connection
 		return;
 	}
 	
-	/**
-	 * Generate 24 chars long uuid
-	 */
-	public static function generateUuid(): string
+	public static function generateUuid(?string $namespace = null, ?string $string = null): string
 	{
+		if ($namespace && $string) {
+			return \md5($namespace . '!._.!' . $string);
+		}
+		
 		return \str_replace('.', '', \uniqid('', true) . \rand(10, 99));
 	}
 	
