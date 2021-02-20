@@ -21,7 +21,7 @@
 		"tracy/tracy":"*",
 		"composer/composer": "*",
 		"liquiddesign/codestyle": "@dev",
-		"phpstan/phpstan": "*"
+		"phpstan/phpstan": "0.12.74"
 	},
 	"scripts": {
 		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",

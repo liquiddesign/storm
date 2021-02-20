@@ -157,6 +157,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			unset($values[$name]);
 		}
 		
+		$values = $this->getRepository()->propertiesToColumns($values);
+		
 		if ($values) {
 			$result = parent::update($values, $ignore);
 		}
