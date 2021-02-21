@@ -252,7 +252,7 @@ abstract class Repository implements IEntityParent
 		/** @phpstan-var T $object */
 		$object = new $class($values, $this, $hasMutations ? $this->connection->getAvailableMutations() : [], $hasMutations ? $this->connection->getMutation() : null);
 		
-		if ($rowCount === InsertResult::UPDATE_AFFECTED_COUNT) {
+		if ($rowCount === 0 || $rowCount === InsertResult::UPDATE_AFFECTED_COUNT) {
 			$object->setParent($this->many()->where($this->getStructure()->getPK()->getName(), $object->getPk()));
 		}
 		
