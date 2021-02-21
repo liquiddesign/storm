@@ -181,7 +181,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Synchronize entity row by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param mixed[]|object $values
-	 * @param string[]|null $updateProps
+	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @phpstan-return T
 	 * @throws \StORM\Exception\NotFoundException
@@ -289,7 +289,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Synchronize entity rows by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param mixed[][]|object[] $manyValues
-	 * @param string[]|null $updateProps
+	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize

@@ -257,7 +257,7 @@ class Connection
 	 * Synchronize row by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
 	 * @param mixed[]|object $values
-	 * @param string[]|null $columnsToUpdate
+	 * @param string[]|\StORM\Literal[]|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 */
@@ -279,7 +279,7 @@ class Connection
 	 * Synchronize rows by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
 	 * @param mixed[][]|object[] $manyValues
-	 * @param string[]|null $columnsToUpdate
+	 * @param string[]|\StORM\Literal[]|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
@@ -306,7 +306,7 @@ class Connection
 	 * @param string $table
 	 * @param mixed[][] $manyInserts
 	 * @param mixed[] $vars
-	 * @param string[]|null $onDuplicateUpdate
+	 * @param string[]|\StORM\Literal[]|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
 	public function getSqlInsert(string $table, array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
