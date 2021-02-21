@@ -13,6 +13,11 @@ class InsertResult
 	 */
 	public const UPDATE_AFFECTED_COUNT = 2;
 	
+	/**
+	 * PDO rowCount return 21 if row is inserted
+	 */
+	public const INSERT_AFFECTED_COUNT = 2;
+	
 	private ?\StORM\Connection $connection;
 	
 	private int $rowCount;
