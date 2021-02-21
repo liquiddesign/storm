@@ -355,12 +355,16 @@ class Connection
 			
 			$onDuplicateUpdate = $onDuplicateUpdate ?: $binds;
 			
-			foreach (\array_values($onDuplicateUpdate) as $name) {
+			foreach ($onDuplicateUpdate as $name => $value) {
 				if ($i !== 0) {
 					$sql .= ',';
 				}
 				
-				$sql .= "$name=VALUES($name)";
+				if (\is_int($name)) {
+					$name = $value;
+				}
+				
+				$sql .= $name. '=' . ($value instanceof Literal ? (string) $value : 'VALUES('. $name . ')');
 				$i++;
 			}
 		}

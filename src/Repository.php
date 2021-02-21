@@ -210,6 +210,10 @@ abstract class Repository implements IEntityParent
 		
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
+				if ($name instanceof Literal) {
+					continue;
+				}
+				
 				if (!isset($columns[$name])) {
 					throw new NotExistsException(null, NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
