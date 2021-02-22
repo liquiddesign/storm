@@ -353,7 +353,7 @@ class Connection
 			$i = 0;
 			$sql .= ' ON DUPLICATE KEY UPDATE ';
 			
-			$onDuplicateUpdate = $onDuplicateUpdate ?: $binds;
+			$onDuplicateUpdate = $onDuplicateUpdate ?: \array_values($binds);
 			
 			foreach ($onDuplicateUpdate as $name => $value) {
 				if ($i !== 0) {
