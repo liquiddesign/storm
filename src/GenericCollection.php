@@ -645,6 +645,21 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * Call multiple where
+	 * @param mixed[] $conditions
+	 * @param string $columnPrefix
+	 * @return static
+	 */
+	public function match(array $conditions, string $columnPrefix = ''): self
+	{
+		foreach ($conditions as $property => $value) {
+			$this->where($columnPrefix . $property, $value);
+		}
+		
+		return $this;
+	}
+	
+	/**
 	 * Set WHERE negated condition and replace previous
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values

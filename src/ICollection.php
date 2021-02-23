@@ -202,6 +202,14 @@ interface ICollection
 	public function where(string $expression, $values = null): self;
 	
 	/**
+	 * Call multiple where
+	 * @param mixed[] $conditions
+	 * @param string $columnPrefix
+	 * @return static
+	 */
+	public function match(array $conditions, string $columnPrefix = ''): self;
+	
+	/**
 	 * Set WHERE negated condition and replace previous
 	 * @param string $expression
 	 * @param mixed[]|null|mixed $values

@@ -127,9 +127,7 @@ abstract class Repository implements IEntityParent
 		}
 		
 		if (\is_array($condition)) {
-			foreach ($condition as $property => $value) {
-				$collection->where(self::DEFAULT_ALIAS . '.' . $property, $value);
-			}
+			$collection->match($condition, self::DEFAULT_ALIAS . '.');
 		} else {
 			$collection->setWhere(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
 		}
