@@ -158,10 +158,12 @@ abstract class Repository implements IEntityParent
 	 * Create entity row = insert row into table
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
-	 * @phpstan-return T
+	 * @param bool $ignore
+	 * @return \StORM\Entity
 	 * @throws \StORM\Exception\NotFoundException
+	 * @phpstan-return T
 	 */
-	final public function createOne($values, ?bool $filterByColumns = false): Entity
+	final public function createOne($values, ?bool $filterByColumns = false, bool $ignore = false): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -173,7 +175,7 @@ abstract class Repository implements IEntityParent
 			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
 		}
 		
-		return $this->syncOne($values, [], $filterByColumns);
+		return $this->syncOne($values, [], $filterByColumns, $ignore);
 	}
 	
 	/**
@@ -181,10 +183,12 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
-	 * @phpstan-return T
+	 * @param bool|null $ignore
+	 * @return \StORM\Entity
 	 * @throws \StORM\Exception\NotFoundException
+	 * @phpstan-return T
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -234,7 +238,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, false);
+		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore === null ? !$updateProps : $ignore);
 		$beforeId = $this->getPrimaryKeyNextValue(false);
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
