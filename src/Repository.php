@@ -159,7 +159,6 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
-	 * @return \StORM\Entity
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
@@ -184,7 +183,6 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool|null $ignore
-	 * @return \StORM\Entity
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
@@ -238,7 +236,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore === null ? !$updateProps : $ignore);
+		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? !$updateProps);
 		$beforeId = $this->getPrimaryKeyNextValue(false);
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
