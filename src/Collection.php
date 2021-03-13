@@ -450,5 +450,11 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->connection = null;
 		$this->sth = null;
 		$this->repository = null;
+		$this->classParameters = $this->createClassParameters();
+	}
+	
+	public function __clone()
+	{
+		$this->classParameters = $this->createClassParameters();
 	}
 }
