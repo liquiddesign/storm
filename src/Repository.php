@@ -159,10 +159,11 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
+	 * @param array $checkKeys
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function createOne($values, ?bool $filterByColumns = false, bool $ignore = false): Entity
+	final public function createOne($values, ?bool $filterByColumns = false, bool $ignore = false, array $checkKeys = []): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -174,7 +175,7 @@ abstract class Repository implements IEntityParent
 			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
 		}
 		
-		return $this->syncOne($values, [], $filterByColumns, $ignore);
+		return $this->syncOne($values, [], $filterByColumns, $ignore, $checkKeys);
 	}
 	
 	/**
@@ -183,10 +184,11 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool|null $ignore
+	 * @param array $checkKeys
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null, array $checkKeys = []): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -264,7 +266,7 @@ abstract class Repository implements IEntityParent
 				$object->$relation->unrelateAll();
 				
 				if ($keys) {
-					$object->$relation->relate($keys);
+					$object->$relation->relate($keys, $checkKeys[$relation] ?? true);
 				}
 			}
 			

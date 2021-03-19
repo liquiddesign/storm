@@ -43,4 +43,5 @@ ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Ne
 $sub = new Literal("SELECT MAX(count) FROM users WHERE name=:name",["name"=>"Petr"]);
 tady je to podle dokumentace ale pak dojde k chybě že konstruktor bere jen 1 argument
 
+
 - sem tam je potreba konvertovat ze vstupu '' => null, napriklad kdyz je typ datetime, mohlo by to umet automaticky nebo zadat
