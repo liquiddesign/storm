@@ -486,9 +486,9 @@ class Connection
 		$this->debug = $debug;
 	}
 	
-	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix): void
+	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
-		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, []);
+		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, [], $prefix);
 		
 		return;
 	}

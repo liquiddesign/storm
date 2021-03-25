@@ -129,7 +129,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		throw new GeneralException('Cannot set connection to CollectionEntity, setRepository() instead.');
 	}
 	
-	public function update($values, bool $ignore = false): int
+	public function update($values, bool $ignore = false, ?string $alias = null): int
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -160,7 +160,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$values = $this->getRepository()->propertiesToColumns($values);
 		
 		if ($values) {
-			$result = parent::update($values, $ignore);
+			$result = parent::update($values, $ignore, $alias);
 		}
 		
 		if (!$relations) {
@@ -234,13 +234,14 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * Get sql string for sql UPDATE records and bind variables in updates
 	 * @param mixed[] $updates
 	 * @param bool $ignore
+	 * @param string|null $alias
 	 * @override adding autojoin feature
 	 */
-	public function getSqlUpdate(array &$updates, bool $ignore = false): string
+	public function getSqlUpdate(array &$updates, bool $ignore = false, ?string $alias = null): string
 	{
 		$this->autojoin();
 		
-		return parent::getSqlUpdate($updates, $ignore);
+		return parent::getSqlUpdate($updates, $ignore, $alias);
 	}
 	
 	/**

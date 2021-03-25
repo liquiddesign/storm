@@ -347,8 +347,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Update all record equals condition and return number of affected rows
 	 * @param mixed[]|object $values
 	 * @param bool $ignore
+	 * @param string|null $alias
 	 */
-	public function update($values, bool $ignore = false): int
+	public function update($values, bool $ignore = false, ?string $alias = null): int
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -364,7 +365,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new \InvalidArgumentException('No value to update');
 		}
 		
-		$sql = $this->getSqlUpdate($values, $ignore);
+		$sql = $this->getSqlUpdate($values, $ignore, $alias);
 		
 		$flags = self::MODIFIER_FROM_FLAG | self::MODIFIER_JOIN_FLAG | self::MODIFIER_WHERE_FLAG | self::MODIFIER_ORDER_BY_FLAG;
 	
@@ -426,8 +427,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Get sql string for sql UPDATE records and bind variables in updates
 	 * @param mixed[] $updates
 	 * @param bool $ignore
+	 * @param string|null $alias
 	 */
-	public function getSqlUpdate(array &$updates, bool $ignore = false): string
+	public function getSqlUpdate(array &$updates, bool $ignore = false, ?string $alias = null): string
 	{
 		if ($this->modifiers[self::MODIFIER_GROUP_BY]) {
 			throw new InvalidStateException($this, InvalidStateException::GROUP_BY_NOT_ALLOWED);
@@ -437,7 +439,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$varPrefix = self::UNIQUE_BINDER_PREFIX;
 		
 		foreach ($updates as $property => $rawValue) {
-			$this->getConnection()->bindVariables($property, $rawValue, $values, $binds, $varPrefix, '');
+			$this->getConnection()->bindVariables($property, $rawValue, $values, $binds, $varPrefix, '', $alias === null ? '' : "$alias.");
 		}
 		
 		$updates = $values;

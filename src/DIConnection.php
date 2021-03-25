@@ -136,9 +136,9 @@ class DIConnection extends \StORM\Connection
 		$this->mutation = (string) \key($mutations);
 	}
 	
-	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix): void
+	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
-		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, $this->getAvailableMutations());
+		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, $this->getAvailableMutations(), $prefix);
 		
 		return;
 	}

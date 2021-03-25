@@ -152,9 +152,10 @@ class Helpers
 	 * @param mixed[] $binds
 	 * @param string $varPrefix
 	 * @param string $varPostfix
-	 * @param string[] $mutations
+	 * @param array $mutations
+	 * @param string $prefix
 	 */
-	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations): void
+	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations, string $prefix = ''): void
 	{
 		// cannot bind character "."
 		$column = \str_replace('.', '_', $property);
@@ -167,7 +168,7 @@ class Helpers
 				
 				$realProperty = $column . $mutations[$mutation] ?? '';
 				$values["$varPrefix$realProperty$varPostfix"] = \is_bool($value) ? (int) $value : $value;
-				$binds[":$varPrefix$realProperty$varPostfix"] = $realProperty;
+				$binds[":$varPrefix$realProperty$varPostfix"] = $prefix . $realProperty;
 			}
 			
 			return;
@@ -175,19 +176,19 @@ class Helpers
 		
 		if (\is_scalar($rawValue) || $rawValue === null) {
 			$values["$varPrefix$column$varPostfix"] = \is_bool($rawValue) ? (int) $rawValue : $rawValue;
-			$binds[":$varPrefix$column$varPostfix"] = "$property";
+			$binds[":$varPrefix$column$varPostfix"] = $prefix . $property;
 			
 			return;
 		}
 		
 		if ($rawValue instanceof Literal) {
-			$binds[(string) $rawValue] = $property;
+			$binds[(string) $rawValue] = $prefix . $property;
 			
 			return;
 		}
 		
 		if ($rawValue instanceof ICollection) {
-			$binds[(string)$rawValue] = $property;
+			$binds[(string)$rawValue] = $prefix . $property;
 			$values += $rawValue->getVars();
 			
 			return;
@@ -195,7 +196,7 @@ class Helpers
 		
 		if (\is_object($rawValue) && \method_exists($rawValue, '__toString')) {
 			$values["$varPrefix$column$varPostfix"] = (string) $rawValue;
-			$binds[":$varPrefix$column$varPostfix"] = "$property";
+			$binds[":$varPrefix$column$varPostfix"] = $prefix . $property;
 			
 			return;
 		}

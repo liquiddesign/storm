@@ -82,8 +82,9 @@ interface ICollection
 	 * Update all record equals condition and return number of affected rows
 	 * @param string[]|null[] $values
 	 * @param bool $ignore
+	 * @param string|null $alias
 	 */
-	public function update(array $values, bool $ignore = false): int;
+	public function update(array $values, bool $ignore = false, ?string $alias = null): int;
 	
 	/**
 	 * Get sql SELECT string
@@ -106,8 +107,9 @@ interface ICollection
 	 * Get sql string for sql UPDATE records and bind variables in updates
 	 * @param mixed[] $updates
 	 * @param bool $ignore
+	 * @param string|null $alias
 	 */
-	public function getSqlUpdate(array &$updates, bool $ignore = false): string;
+	public function getSqlUpdate(array &$updates, bool $ignore = false, ?string $alias = null): string;
 	
 	/**
 	 * Clear all data in collection, can clear modifiers also
