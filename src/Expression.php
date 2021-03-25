@@ -42,7 +42,7 @@ class Expression
 
 	public function getSql(): string
 	{
-		return '(' . $this->sql . ')';
+		return $this->sql;
 	}
 	
 	/**
