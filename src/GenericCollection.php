@@ -132,6 +132,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	protected array $possibleValues = [];
 	
+	private string $binderName;
+	
 	/**
 	 * Rows constructor.
 	 * @param \StORM\Connection $connection
@@ -149,6 +151,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$this->baseFrom = $from;
 		$this->baseSelect = $select;
 		$this->classParameters = $classParameters;
+		$this->binderName = self::BINDER_NAME . \spl_object_id($this);
 		
 		$this->init();
 	}
@@ -1388,7 +1391,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	private function generateBinder(): string
 	{
-		$binder = self::BINDER_NAME . (string) $this->binderCounter;
+		$binder = $this->binderName . (string) $this->binderCounter;
 		$this->binderCounter++;
 		
 		return $binder;
