@@ -1544,7 +1544,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @param string[] $aliases
+	 * @param string[]|\StORM\ICollection[] $aliases
 	 * @param string $modifier
 	 */
 	private function addAlias(array $aliases, string $modifier): void
@@ -1567,7 +1567,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			}
 			
 			$this->aliases[$alias] = $modifier;
-			$this->tableAliases[$table] = $alias;
+			$this->tableAliases[\is_string($table) ? $table : $alias] = $alias;
 		}
 	}
 	
