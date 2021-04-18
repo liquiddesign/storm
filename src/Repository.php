@@ -243,7 +243,7 @@ abstract class Repository implements IEntityParent
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
 		
-		if ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false))) {
+		if (!isset($values[$pk->getPropertyName()]) && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false)))) {
 			$values[$pk->getPropertyName()] = $this->getPrimaryKeyNextValue();
 		}
 		
