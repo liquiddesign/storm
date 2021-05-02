@@ -18,6 +18,11 @@ class DIConnection extends \StORM\Connection
 	private array $availableMutations = [];
 	
 	/**
+	 * @var string[]
+	 */
+	private array $fallbackMutations = [];
+	
+	/**
 	 * Connection constructor.
 	 * @param \Nette\DI\Container $container
 	 * @param string $name
@@ -86,6 +91,19 @@ class DIConnection extends \StORM\Connection
 		}
 		
 		return $repository;
+	}
+	
+	public function setFallbackMutations(array $fallbacks): void
+	{
+		$this->fallbackMutations = $fallbacks;
+	}
+	
+	/**
+	 * @return string[]
+	 */
+	public function getFallbackMutations(): array
+	{
+		return $this->fallbackMutations;
 	}
 	
 	public function setMutation(string $mutation): void

@@ -164,15 +164,22 @@ class Structure
 		
 		$select = [];
 		$locales = [];
+		$connection = $this->schemaManager->getConnection();
 		
 		$pk = $this->getPK();
 		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
-		$mutation = $mutation ?: $this->schemaManager->getConnection()->getMutation();
-		$mutationSuffix = $this->schemaManager->getConnection()->getAvailableMutations()[$mutation];
+		$mutation = $mutation ?: $connection->getMutation();
+		$mutationSuffix = $connection->getAvailableMutations()[$mutation];
+		$fallbackMutationSuffix = isset($connection->getFallbackMutations()[$mutation]) ? $connection->getAvailableMutations()[$connection->getFallbackMutations()[$mutation]]  : null;
 		
 		foreach ($this->getColumns() as $column) {
 			if ($column->hasMutations()) {
-				$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $mutationSuffix;
+				if ($fallbackMutationSuffix) {
+					$select[$aliasPrefix . $column->getPropertyName()] = 'COALESCE(' . $expressionPrefix . $column->getName() . $mutationSuffix . ',' . $expressionPrefix . $column->getName() . $fallbackMutationSuffix . ')';
+				} else {
+					$select[$aliasPrefix . $column->getPropertyName()] = $expressionPrefix . $column->getName() . $mutationSuffix;
+				}
+				
 				$locales[] = $column;
 			} else {
 				$select[$aliasPrefix . $column->isForeignKey() ? $column->getName() : $column->getPropertyName()] = $expressionPrefix . $column->getName();
