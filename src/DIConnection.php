@@ -93,9 +93,12 @@ class DIConnection extends \StORM\Connection
 		return $repository;
 	}
 	
-	public function setFallbackMutations(array $fallbacks): void
+	/**
+	 * @param string[] $fallbackMutations
+	 */
+	public function setFallbackMutations(array $fallbackMutations): void
 	{
-		$this->fallbackMutations = $fallbacks;
+		$this->fallbackMutations = $fallbackMutations;
 	}
 	
 	/**
