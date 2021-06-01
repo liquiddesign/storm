@@ -209,10 +209,18 @@ abstract class Repository implements IEntityParent
 		}
 		
 		$insert = $this->propertiesToColumns($values);
+		$updateRelations = [];
 		
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
 				if ($name instanceof Literal) {
+					continue;
+				}
+				
+				if (isset($joinRelations[$name])) {
+					$updateRelations[$name] = $name;
+					unset($updateProps[$name]);
+					
 					continue;
 				}
 				
@@ -261,16 +269,15 @@ abstract class Repository implements IEntityParent
 		}
 		
 		// update all subject
+		
 		foreach ($joinRelations as $relation => $keys) {
-			if ($object->$relation instanceof IRelation) {
+			if ($object->$relation instanceof IRelation && ($rowCount === InsertResult::INSERT_AFFECTED_COUNT || $updateProps === null || isset($updateRelations[$relation]))) {
 				$object->$relation->unrelateAll();
 				
 				if ($keys) {
 					$object->$relation->relate($keys, $checkKeys[$relation] ?? true);
 				}
 			}
-			
-			continue;
 		}
 		
 		return $object;
