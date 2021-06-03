@@ -188,7 +188,7 @@ abstract class Repository implements IEntityParent
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null, array $checkKeys = []): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, bool $ignore = true, array $checkKeys = []): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -246,7 +246,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? $updateProps === null || $updateProps);
+		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore);
 		$beforeId = $this->getPrimaryKeyNextValue(false);
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
