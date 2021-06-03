@@ -246,7 +246,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? !$updateProps);
+		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? $updateProps === null || $updateProps);
 		$beforeId = $this->getPrimaryKeyNextValue(false);
 		
 		$rowCount = $this->connection->query($sql, $vars)->rowCount();
