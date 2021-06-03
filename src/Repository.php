@@ -183,7 +183,7 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
-	 * @param bool|null $ignore
+	 * @param bool $ignore
 	 * @param array $checkKeys
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
