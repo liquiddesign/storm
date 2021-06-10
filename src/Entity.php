@@ -249,8 +249,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		$vars = Helpers::getModelVars($this);
+		$auxProperty = $property;
+		$existsProperty = \array_key_exists($property, $vars);
 		
-		if (\array_key_exists($property, $vars) && ($mutation === null || $mutation === $this->activeMutation)) {
+		if ($existsProperty && ($mutation === null || $mutation === $this->activeMutation)) {
 			return $vars[$property];
 		}
 		
@@ -266,7 +268,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			throw new NotExistsException($this, NotExistsException::VALUE, $property, static::class, $this->getHintProperties());
 		}
 		
-		return $this->properties[$property];
+		return $existsProperty ? Helpers::castScalar($this->properties[$property], \gettype($vars[$auxProperty])) : $this->properties[$property];
 	}
 	
 	public function syncRelated(string $related, $values): Entity
@@ -354,7 +356,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 					$array[$name] = [];
 					
 					foreach ($this->availableMutations as $mutation => $suffix) {
-						$array[$name][$mutation] = $array[$name . $suffix] ?? null;
+						$array[$name][$mutation] = isset($array[$name . $suffix]) ? Helpers::castScalar($array[$name . $suffix], \gettype($this->$name)) : null;
 						unset($array[$name . $suffix]);
 					}
 				}

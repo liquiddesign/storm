@@ -233,4 +233,25 @@ class Helpers
 		
 		return $values;
 	}
+	
+	/**
+	 * @param mixed $scalar
+	 * @return mixed
+	 */
+	public static function castScalar($scalar, $type)
+	{
+		if ($type === 'boolean') {
+			return \boolval($scalar);
+		}
+		
+		if ($type === 'integer') {
+			return \intval($scalar);
+		}
+		
+		if ($type === 'double') {
+			return \floatval($scalar);
+		}
+		
+		return $scalar;
+	}
 }
