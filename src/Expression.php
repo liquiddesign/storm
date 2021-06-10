@@ -21,7 +21,7 @@ class Expression
 	 * @param mixed[] $vars
 	 * @param string $binderName
 	 */
-	public function add(?string $glue, string $expression, array $vars, string $binderName = '__var'): void
+	public function add(?string $glue, string $expression, array $vars = [], string $binderName = '__var'): void
 	{
 		$iterator = $this->iterator;
 		$stmVars = [];
