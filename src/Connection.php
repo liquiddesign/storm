@@ -495,7 +495,7 @@ class Connection
 	
 	public static function generateUuid(?string $namespace = null, ?string $string = null): string
 	{
-		if ($namespace && $string) {
+		if ($namespace !== null && $string !== null) {
 			return \md5($namespace . '!._.!' . $string);
 		}
 		
