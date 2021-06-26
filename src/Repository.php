@@ -159,11 +159,12 @@ abstract class Repository implements IEntityParent
 	 * @param mixed[]|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
-	 * @param array $checkKeys
+	 * @param mixed[] $checkKeys
+	 * @param mixed[] $primaryKeyNames
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function createOne($values, ?bool $filterByColumns = false, bool $ignore = false, array $checkKeys = []): Entity
+	final public function createOne($values, ?bool $filterByColumns = false, bool $ignore = false, array $checkKeys = [], array $primaryKeyNames = []): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -175,7 +176,7 @@ abstract class Repository implements IEntityParent
 			throw new \InvalidArgumentException("Input is not array or cannot be converted to array. $type given.");
 		}
 		
-		return $this->syncOne($values, [], $filterByColumns, $ignore, $checkKeys);
+		return $this->syncOne($values, [], $filterByColumns, $ignore, $checkKeys, $primaryKeyNames);
 	}
 	
 	/**
@@ -184,11 +185,12 @@ abstract class Repository implements IEntityParent
 	 * @param string[]|\StORM\Literal[]|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool|null $ignore
-	 * @param array $checkKeys
+	 * @param mixed[] $checkKeys
+	 * @param mixed[] $primaryKeyNames
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null, array $checkKeys = []): Entity
+	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null, array $checkKeys = [], array $primaryKeyNames = []): Entity
 	{
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
@@ -275,7 +277,7 @@ abstract class Repository implements IEntityParent
 				$object->$relation->unrelateAll();
 				
 				if ($keys) {
-					$object->$relation->relate($keys, $checkKeys[$relation] ?? true);
+					$object->$relation->relate($keys, $checkKeys[$relation] ?? true, $primaryKeyNames[$relation] ?? null);
 				}
 			}
 		}
