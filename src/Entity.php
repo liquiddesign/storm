@@ -373,6 +373,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 					$array[$relationName] = $value->toArray();
 				}
 			} catch (NotFoundException $x) {
+				unset($x);
 			}
 		}
 		
@@ -606,6 +607,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 		try {
 			return (string) $this->getPK();
 		} catch (InvalidStateException $x) {
+			unset($x);
+			
 			return '';
 		}
 	}
