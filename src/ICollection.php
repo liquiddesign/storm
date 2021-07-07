@@ -229,7 +229,7 @@ interface ICollection
 	
 	/**
 	 * Set FROM clause and remove previous
-	 * @param string[] $from
+	 * @param string[]|\StORM\ICollection[] $from
 	 * @param mixed[] $values
 	 * @return static
 	 */
@@ -237,7 +237,7 @@ interface ICollection
 	
 	/**
 	 * Add FROM clause and merge with previous
-	 * @param string[] $from
+	 * @param string[]|\StORM\ICollection[] $from
 	 * @param mixed[] $values
 	 * @return static
 	 */

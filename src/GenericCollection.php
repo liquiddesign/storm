@@ -700,7 +700,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add FROM clause and merge with previous
-	 * @param string[] $from
+	 * @param string[]|\StORM\ICollection[] $from
 	 * @param mixed[] $values
 	 * @return static
 	 */
@@ -723,7 +723,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set FROM clause and remove previous
-	 * @param string[] $from
+	 * @param string[]|\StORM\ICollection[] $from
 	 * @param mixed[] $values
 	 * @return static
 	 */
