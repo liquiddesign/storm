@@ -117,7 +117,7 @@ class Helpers
 	/**
 	 * Create SQL clause string
 	 * @param string $prefix
-	 * @param string[]|null $fragments
+	 * @param string[]|\StORM\ICollection[]|null $fragments
 	 * @param string $glue
 	 * @param string $assocGlue
 	 * @param bool $brackets
@@ -135,6 +135,10 @@ class Helpers
 		foreach ($fragments as $k => $v) {
 			if ($i !== 0) {
 				$string .= $glue;
+			}
+			
+			if ($v instanceof ICollection) {
+				$v->setIndex(null);
 			}
 			
 			$string .= \is_int($k) ? $v : (!$reverse ? "$v$assocGlue$k" : "$k$assocGlue$v");
