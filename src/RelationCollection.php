@@ -71,8 +71,10 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 			$vars = [];
 			$sql = $this->getConnection()->getSqlInsert($via, $inserts, $vars, null, !$checkKeys);
 			$sth = $this->getConnection()->query($sql, $vars);
+			$count = $sth->rowCount();
+			unset($sth);
 			
-			return $sth->rowCount();
+			return $count;
 		}
 		
 		// RelationNx1
