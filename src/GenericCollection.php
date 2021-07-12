@@ -188,7 +188,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string|null $class
 	 * @param mixed[]|null $params
 	 */
-	public function setFetchClass(?string $class, ?array $params = []): void
+	public function setFetchClass(?string $class, ?array $params = []): self
 	{
 		if ($class !== null) {
 			$this->class = $class;
@@ -198,7 +198,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$this->classParameters = $params;
 		}
 		
-		return;
+		return $this;
 	}
 	
 	/**
