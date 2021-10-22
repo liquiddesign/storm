@@ -1045,7 +1045,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add JOIN clause and merge with previous
-	 * @param string[] $from
+	 * @param string[]|\StORM\ICollection[] $from
 	 * @param string $condition
 	 * @param mixed[] $values
 	 * @param string|null $type
