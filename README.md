@@ -2,7 +2,6 @@
 ORM knihovna pro práci s databázi, postavená PDO a lehce integrovatelná s Nette frameworkem
 
 ![Travis](https://travis-ci.org/liquiddesign/storm.svg?branch=master)
-![Release](https://img.shields.io/github/v/release/liquiddesign/storm.svg?1)
 
 ## Dokumentace
 ☞ [Dropbox paper](https://paper.dropbox.com/doc/StORM--A576bYGiU0wgYv3aYVPU5U4nAg-62jqUghrsrzhpC7WWHwRL)
