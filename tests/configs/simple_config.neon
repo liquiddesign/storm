@@ -1,0 +1,17 @@
+services:
+	- Nette\Caching\Storages\DevNullStorage
+	db.alerts: \DB\AlertRepository
+storm:
+	schema:
+		customAnnotations:
+			testClass: class
+			testProperty: property
+	connections:
+		default:
+			host: 127.0.0.1
+			dbname: _test_storm
+			user: root
+			password: ""
+			driver: mysql
+			mutations:
+				en: '_en'

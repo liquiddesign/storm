@@ -1,0 +1,28 @@
+services:
+	- Nette\Caching\Storages\DevNullStorage
+	db.stocks: \DB\StockRepository
+	- Tracy\Debugger::getBar
+
+storm:
+	debug: true
+	connections:
+		default:
+			host: 127.0.0.1
+			dbname: _test_storm
+			user: root
+			password: ""
+			charset: utf8
+			driver: mysql
+			collate: utf8_czech_ci
+			mutations:
+				en: '_en'
+		test:
+			host: 127.0.0.1
+			dbname: _test_storm2
+			user: root
+			password: ""
+			charset: utf8
+			driver: mysql
+			collate: utf8_czech_ci
+			mutations:
+				en: '_en'

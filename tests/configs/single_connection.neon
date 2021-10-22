@@ -1,0 +1,27 @@
+services:
+	#- Nette\Caching\Storages\FileStorage('temp_fixed')
+	- Nette\Caching\Storages\DevNullStorage
+	db.stocks: \DB\StockRepository
+	db.tags: \DB\TagRepository
+	db.sectors: \DB\SectorRepository
+	db.industry: \DB\IndustryRepository
+	db.alerts: \DB\AlertRepository
+	db.types: \DB\TypeRepository
+	db.tests: \DB\TestRepository
+	db.tests2: \DB\Test2Repository
+	- Tracy\Debugger::getBar
+
+storm:
+	debug: true
+	connections:
+		default:
+			host: 127.0.0.1
+			dbname: _test_storm
+			user: root
+			password: ""
+			driver: mysql
+			charset: utf8
+			collate: utf8_czech_ci
+			primaryKeyGenerator: StORM\Connection::generateUuid
+			mutations:
+				en: '_en'

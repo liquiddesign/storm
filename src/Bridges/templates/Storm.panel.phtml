@@ -1,0 +1,25 @@
+<div>
+    <div class="nette-inner">
+        <div class="tracy-inner tracy-InfoPanel">
+            <h1>StORM [<?= $this->name ?>] queries</h1>
+                <table>
+                    <tbody>
+                        <?php $i = 0; ?>
+                        <?php foreach ($this->db->getLog() as $item): ?>
+                        <tr>
+                            <td>
+                                <span style="color: red;"><?= $item->hasError() ? '[ERROR!]':'' ?></span>
+                                <?= $item->getSql() ?>
+                                <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>" style="width:1px;">
+                                <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); copyText.select(); document.execCommand("copy"); alert("Copied the text: " + copyText.value);'>[copy]</a>
+                            </td>
+                            <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)</td>
+                            <td><?= \Tracy\Debugger::dump($item->getVars(), true) ?></td>
+                        </tr>
+                        <?php $i++ ?>
+                        <?php endforeach ?>
+                    </tbody>
+                </table>
+        </div>
+    </div>
+</div>

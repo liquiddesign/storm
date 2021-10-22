@@ -1,0 +1,32 @@
+{
+	"name": "liquiddesign/storm",
+	"description": "ϟ StORM is lightweight PHP ORM library based on PDO",
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {"StORM\\": "src/"}
+	},
+	"require" :
+	{
+		"php": ">=7.4.0",
+		"ext-pdo": "*",
+		"ext-json": "*",
+		"nette/di":"~3.0",
+		"nette/caching":"~3.0",
+		"tracy/tracy":"~2.0",
+		"panique/pdo-debug": "~0.2"
+	},
+	"require-dev": 
+	{
+		"nette/tester":"*",
+		"tracy/tracy":"*",
+		"composer/composer": "*",
+		"liquiddesign/codestyle": "@dev",
+		"phpstan/phpstan": "0.12.74"
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
+		"phpcs": "phpcs --standard=ruleset.xml src",
+		"phpcsfix": "phpcbf --standard=ruleset.xml src",
+		"tester": "tester tests/*.phpt  -c tests/php.ini --setup tests/setup.php"
+	}
+}
