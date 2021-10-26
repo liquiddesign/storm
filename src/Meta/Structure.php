@@ -182,7 +182,7 @@ class Structure
 				
 				$locales[] = $column;
 			} else {
-				$select[$aliasPrefix . $column->isForeignKey() ? $column->getName() : $column->getPropertyName()] = $expressionPrefix . $column->getName();
+				$select[$aliasPrefix . ($column->isForeignKey() ? $column->getName() : $column->getPropertyName())] = $expressionPrefix . $column->getName();
 			}
 		}
 		
