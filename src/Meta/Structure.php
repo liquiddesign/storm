@@ -666,7 +666,7 @@ class Structure
 				$properties[$name]['default'] = $defaultValue;
 			}
 			
-			if (!$ref->hasType() || $ref->getType()->isBuiltin()) {
+			if (!$ref->hasType() || (\method_exists($ref->getType(), 'isBuiltin') && $ref->getType()->isBuiltin())) {
 				continue;
 			}
 			
