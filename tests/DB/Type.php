@@ -8,7 +8,8 @@ namespace DB;
 class Type extends \StORM\Entity // @codingStandardsIgnoreLine
 {
 	/**
-	 * @column{"primaryKey":true}
+	 * @column
+	 * @pk
 	 * @var string
 	 */
 	public $id;
