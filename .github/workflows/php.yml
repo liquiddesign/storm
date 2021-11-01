@@ -57,6 +57,3 @@ jobs:
     
     - name: Run phpcs
       run: composer phpcs
-
-    - name: Run tester
-      run: composer tester
