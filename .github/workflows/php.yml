@@ -13,10 +13,11 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
+          MYSQL_HOST: 127.0.0.1
           MYSQL_ALLOW_EMPTY_PASSWORD: true
           MYSQL_DATABASE: _test_storm
         ports:
-          - 3306
+          - 3306:3306
     steps:
     - uses: actions/checkout@v2
 
