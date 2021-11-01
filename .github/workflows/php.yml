@@ -37,6 +37,10 @@ jobs:
     - name: Check PHP info
       run: php --ini
 
+    - name: Check PHP locate
+      run: locate php.ini
+
+
     - name: Validate composer.json and composer.lock
       run: composer validate
 
