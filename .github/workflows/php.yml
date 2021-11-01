@@ -35,7 +35,7 @@ jobs:
       run: php -m
 
     - name: Check PHP info
-      run: php --ini
+      run: php -i
 
     - name: Check PHP locate
       run: cat /etc/php/8.0/cli/php.ini
