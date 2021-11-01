@@ -3,7 +3,7 @@
 namespace DB;
 
 /**
- * @table{"name":"stocks_tests"}
+ * @table{"name":"stocks_test"}
  * @index{"name":"test2keysUnique","columns":["testUnique"],"unique":true}
  * @index{"name":"test2keys","columns":["testNullable","testLength"],"unique":false}
  */
