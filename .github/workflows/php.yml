@@ -38,7 +38,7 @@ jobs:
       run: php --ini
 
     - name: Check PHP locate
-      run: locate php.ini
+      run: cat /etc/php/8.0/cli/php.ini
 
 
     - name: Validate composer.json and composer.lock
