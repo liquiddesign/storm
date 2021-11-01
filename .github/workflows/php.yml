@@ -35,7 +35,7 @@ jobs:
       run: php -m
 
     - name: Check PHP info
-      run: php -i
+      run: php --ini
 
     - name: Validate composer.json and composer.lock
       run: composer validate
