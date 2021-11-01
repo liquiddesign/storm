@@ -28,6 +28,6 @@
 		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
 		"phpcs": "phpcs --standard=ruleset.xml src",
 		"phpcsfix": "phpcbf --standard=ruleset.xml src",
-		"tester": "tester tests/*.phpt -i -c tests/php.ini --setup tests/setup.php"
+		"tester": "tester tests/*.phpt -c tests/php.ini --setup tests/setup.php"
 	}
 }
