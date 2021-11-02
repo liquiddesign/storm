@@ -479,7 +479,9 @@ DROP TABLE IF EXISTS `tests`;
 CREATE TABLE IF NOT EXISTS `tests` (
     `id` varchar(36) COLLATE utf8_czech_ci NOT NULL,
     PRIMARY KEY (`uuid`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;-- --------------------------------------------------------
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `stocks_type`
