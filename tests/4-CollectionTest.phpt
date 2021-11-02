@@ -417,48 +417,56 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 4.a in
 		$collection = $storm->rows($from);
+		$binderId0 = \spl_object_id($collection) . '0';
+		$binderId1 = \spl_object_id($collection) . '1';
 		$collection->setWhere('uuid', ['AAPL','IBM']);
-		Assert::same(['(uuid IN (:__var0,:__var1))'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSql());
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1))", $collection->getSqlDelete());
-		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
+		Assert::same(["(uuid IN (:__var$binderId0,:__var$binderId1))"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1))", $collection->getSql());
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1))", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1))", $collection->getSqlDelete());
+		Assert::same(["__var$binderId0" => 'AAPL', "__var$binderId1" => 'IBM'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.b in include NULL
 		$collection = $storm->rows($from);
+		$binderId0 = \spl_object_id($collection) . '0';
+		$binderId1 = \spl_object_id($collection) . '1';
 		$collection->setWhere('uuid', ['AAPL','IBM', null]);
-		Assert::same(['(uuid IN (:__var0,:__var1) OR uuid IS NULL)'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSql());
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid IN (:__var0,:__var1) OR uuid IS NULL)", $collection->getSqlDelete());
-		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
+		Assert::same(["(uuid IN (:__var$binderId0,:__var$binderId1) OR uuid IS NULL)"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1) OR uuid IS NULL)", $collection->getSql());
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1) OR uuid IS NULL)", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid IN (:__var$binderId0,:__var$binderId1) OR uuid IS NULL)", $collection->getSqlDelete());
+		Assert::same(["__var$binderId0" => 'AAPL', "__var$binderId1" => 'IBM'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.c not in
 		$collection = $storm->rows($from);
+		$binderId0 = \spl_object_id($collection) . '0';
+		$binderId1 = \spl_object_id($collection) . '1';
 		$collection->setWhereNot('uuid', ['AAPL','IBM']);
-		Assert::same(['(uuid NOT IN (:__var0,:__var1))'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSql());
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1))", $collection->getSqlDelete());
-		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
+		Assert::same(["(uuid NOT IN (:__var$binderId0,:__var$binderId1))"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1))", $collection->getSql());
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1))", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1))", $collection->getSqlDelete());
+		Assert::same(["__var$binderId0" => 'AAPL', "__var$binderId1" => 'IBM'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 4.d not in include null
 		$collection = $storm->rows($from);
+		$binderId0 = \spl_object_id($collection) . '0';
+		$binderId1 = \spl_object_id($collection) . '1';
 		$collection->setWhereNot('uuid', ['AAPL','IBM', null]);
-		Assert::same(['(uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSql());
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid NOT IN (:__var0,:__var1) AND uuid IS NOT NULL)", $collection->getSqlDelete());
-		Assert::same(['__var0' => 'AAPL', '__var1' => 'IBM'], $collection->getVars());
+		Assert::same(["(uuid NOT IN (:__var$binderId0,:__var$binderId1) AND uuid IS NOT NULL)"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1) AND uuid IS NOT NULL)", $collection->getSql());
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1) AND uuid IS NOT NULL)", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid NOT IN (:__var$binderId0,:__var$binderId1) AND uuid IS NOT NULL)", $collection->getSqlDelete());
+		Assert::same(["__var$binderId0" => 'AAPL', "__var$binderId1" => 'IBM'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
