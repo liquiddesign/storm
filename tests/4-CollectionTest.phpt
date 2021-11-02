@@ -367,23 +367,25 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2.a equals
 		$collection = $storm->rows($from);
+		$binderId = \spl_object_id($this) . '0';
 		$collection->setWhere('uuid', 'AAPL');
-		Assert::same(['(uuid = :__var0)'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSql());
-		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid = :__var0)", $collection->getSqlDelete());
-		Assert::same(['__var0' => 'AAPL'], $collection->getVars());
+		Assert::same(["(uuid = :__var$binderId)"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid = :__var$binderId)", $collection->getSql());
+		Assert::contains(" WHERE (uuid = :__var$binderId)", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid = :__var$binderId)", $collection->getSqlDelete());
+		Assert::same(["__var$binderId" => 'AAPL'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
 		$collection->clear()->setWhere('1=0')->update($toUpdateReal);
 		
 		// 2.b not equals
 		$collection = $storm->rows($from);
+		$binderId = \spl_object_id($this) . '0';
 		$collection->setWhereNot('uuid', 'AAPL');
-		Assert::same(['(uuid != :__var0)'], $collection->getModifiers()['WHERE']);
-		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSql());
-		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSqlUpdate($toUpdate));
-		Assert::contains(" WHERE (uuid != :__var0)", $collection->getSqlDelete());
+		Assert::same(["(uuid != :__var$binderId)"], $collection->getModifiers()['WHERE']);
+		Assert::contains(" WHERE (uuid != :__var$binderId)", $collection->getSql());
+		Assert::contains(" WHERE (uuid != :__var$binderId)", $collection->getSqlUpdate($toUpdate));
+		Assert::contains(" WHERE (uuid != :__var$binderId)", $collection->getSqlDelete());
 		Assert::same(['__var0' => 'AAPL'], $collection->getVars());
 		$collection->clear()->setWhere('1=0')->load();
 		$collection->clear()->setWhere('1=0')->delete();
