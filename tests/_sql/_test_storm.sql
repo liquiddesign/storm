@@ -466,7 +466,20 @@ INSERT INTO `stocks_test` (`uuid`, `name`, `test`, `flag`) VALUES
 ('uuid7-testInsertRows', 'name7', 'test7', 'testInsertRows'),
 ('uuid8-testInsertRows', 'name8', 'test8', 'testInsertRows');
 
+
+
+
 -- --------------------------------------------------------
+
+--
+-- Table structure for table `stocks_test`
+--
+
+DROP TABLE IF EXISTS `tests`;
+CREATE TABLE IF NOT EXISTS `tests` (
+    `id` varchar(36) COLLATE utf8_czech_ci NOT NULL,
+    PRIMARY KEY (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;-- --------------------------------------------------------
 
 --
 -- Table structure for table `stocks_type`
