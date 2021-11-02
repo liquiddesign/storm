@@ -98,7 +98,7 @@ class CollectionEntityTest extends \Tester\TestCase // @codingStandardsIgnoreLin
 		Assert::same(1, $storm->getLastLogItem()->getAmount());
 		
 		// turn off loops optimalization
-		foreach ($types->many(false)->setFrom(['this' => 'stocks_type2']) as $type) {
+		foreach ($types->many()->setOptimization(false)->setFrom(['this' => 'stocks_type2']) as $type) {
 			Assert::type(Sector::class, $type->sector);
 			Assert::same('energy', $type->sector->uuid);
 		}
