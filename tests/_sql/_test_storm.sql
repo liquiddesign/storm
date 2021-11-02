@@ -517,7 +517,7 @@ CREATE TABLE IF NOT EXISTS `stocks_type2` (
   `name` varchar(255) COLLATE utf8_czech_ci DEFAULT NULL,
   `fk_sector` varchar(36) COLLATE utf8_czech_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `stocks_type_fk_sector` (`fk_sector`)
+  KEY `stocks_type2_fk_sector` (`fk_sector`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 
 --
