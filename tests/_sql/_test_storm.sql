@@ -466,21 +466,6 @@ INSERT INTO `stocks_test` (`uuid`, `name`, `test`, `flag`) VALUES
 ('uuid7-testInsertRows', 'name7', 'test7', 'testInsertRows'),
 ('uuid8-testInsertRows', 'name8', 'test8', 'testInsertRows');
 
-
-
-
--- --------------------------------------------------------
-
---
--- Table structure for table `stocks_test`
---
-
-DROP TABLE IF EXISTS `tests`;
-CREATE TABLE IF NOT EXISTS `tests` (
-    `id` varchar(36) COLLATE utf8_czech_ci NOT NULL,
-    PRIMARY KEY (`uuid`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
-
 -- --------------------------------------------------------
 
 --
@@ -552,6 +537,12 @@ ALTER TABLE `stocks_stock_nxn_stocks_tag`
   ADD CONSTRAINT `stocks_stock_fk_stock` FOREIGN KEY (`fk_stock`) REFERENCES `stocks_stock` (`uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `stocks_stock_fk_tag` FOREIGN KEY (`fk_tag`) REFERENCES `stocks_tag` (`uuid`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+
+DROP TABLE IF EXISTS `tests`;
+CREATE TABLE IF NOT EXISTS `tests` (
+    `id` varchar(36) COLLATE utf8_czech_ci NOT NULL,
+    PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_czech_ci;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
