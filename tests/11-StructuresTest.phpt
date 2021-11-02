@@ -38,8 +38,8 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::type(\StORM\Meta\Structure::class, $meta);
 		Assert::type(\StORM\Meta\Structure::class, $meta2);
 		
-		Assert::equal('test', $meta->getTable()->getName());
-		Assert::equal('tests', $meta2->	getTable()->getName());
+		Assert::equal('stocks_test', $meta->getTable()->getName());
+		Assert::equal('tests', $meta2->getTable()->getName());
 		
 		Assert::equal('uuid', $meta->getPK()->getName());
 		Assert::equal('id', $meta2->getPK()->getName());

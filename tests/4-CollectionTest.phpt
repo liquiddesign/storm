@@ -367,7 +367,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2.a equals
 		$collection = $storm->rows($from);
-		$binderId = \spl_object_id($this) . '0';
+		$binderId = \spl_object_id($collection) . '0';
 		$collection->setWhere('uuid', 'AAPL');
 		Assert::same(["(uuid = :__var$binderId)"], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid = :__var$binderId)", $collection->getSql());
@@ -380,7 +380,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 2.b not equals
 		$collection = $storm->rows($from);
-		$binderId = \spl_object_id($this) . '0';
+		$binderId = \spl_object_id($collection) . '0';
 		$collection->setWhereNot('uuid', 'AAPL');
 		Assert::same(["(uuid != :__var$binderId)"], $collection->getModifiers()['WHERE']);
 		Assert::contains(" WHERE (uuid != :__var$binderId)", $collection->getSql());
