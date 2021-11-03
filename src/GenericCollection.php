@@ -134,7 +134,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	protected ?bool $bufferedQuery = null;
 	
-	private string $binderName;
+	protected string $binderName;
 	
 	/**
 	 * Rows constructor.

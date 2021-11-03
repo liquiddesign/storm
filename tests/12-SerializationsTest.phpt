@@ -141,6 +141,7 @@ class SerializationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$rowsDeserialized->setRepository($stocks);
 		//var_dump($rowsDeserialized);
 		//var_dump($rows);
+	
 		Assert::equal($rowsDeserialized, $rows);
 		
 		// loaded

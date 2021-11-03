@@ -497,8 +497,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	public function __wakeup(): void
 	{
-		$this->connection = null;
-		$this->sth = null;
+		parent::__wakeup();
+		
 		$this->repository = null;
 	}
 	

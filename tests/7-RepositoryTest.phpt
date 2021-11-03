@@ -279,9 +279,10 @@ class RepositoryTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::same('test2', $object2->myName);
 		Assert::same('finance', $object2->sector->uuid);
 		Assert::same('finance', $object1->sector->uuid);
-		$object1->removeParent();
-		$object2->removeParent();
-		Assert::equal($object1, $object2);
+		//$object1->removeParent();
+		//$object2->removeParent();
+		
+		Assert::equal($object1->toArray(), $object2->toArray());
 		
 		// 2, sync selected
 		$types->many()->delete();

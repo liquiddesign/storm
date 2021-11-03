@@ -81,37 +81,37 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$constraints = $meta->getConstraints();
 		
-		Assert::equal(true, isset($constraints['test_testForce']));
-		$constraint = $constraints['test_testForce'];
+		Assert::equal(true, isset($constraints['stocks_test_testForce']));
+		$constraint = $constraints['stocks_test_testForce'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
-		Assert::equal('test_testForce', $constraint->getName());
-		Assert::equal('test', $constraint->getSource());
+		Assert::equal('stocks_test_testForce', $constraint->getName());
+		Assert::equal('stocks_test', $constraint->getSource());
 		Assert::equal('tests', $constraint->getTarget());
 		Assert::equal('fk_test', $constraint->getSourceKey());
 		Assert::equal('id', $constraint->getTargetKey());
 		Assert::equal(null, $constraint->getOnUpdate());
 		Assert::equal(null, $constraint->getOnDelete());
 		
-		Assert::equal(true, isset($constraints['test_accountMultiple']));
-		$constraint = $constraints['test_accountMultiple'];
+		Assert::equal(true, isset($constraints['stocks_test_accountMultiple']));
+		$constraint = $constraints['stocks_test_accountMultiple'];
 		Assert::equal('tests', $constraint->getTarget());
 		Assert::equal('fk_accountMultiple', $constraint->getSourceKey());
 		
 		
-		Assert::equal(true, isset($constraints['test_accountMultipleNullable']));
-		$constraint = $constraints['test_accountMultipleNullable'];
+		Assert::equal(true, isset($constraints['stocks_test_accountMultipleNullable']));
+		$constraint = $constraints['stocks_test_accountMultipleNullable'];
 		Assert::equal(null, $constraint->getOnDelete());
 		Assert::equal(null, $constraint->getOnUpdate());
 		
-		Assert::equal(true, isset($constraints['test_accountMultiple2']));
-		$constraint = $constraints['test_accountMultiple2'];
+		Assert::equal(true, isset($constraints['stocks_test_accountMultiple2']));
+		$constraint = $constraints['stocks_test_accountMultiple2'];
 		Assert::equal('SET NULL', $constraint->getOnDelete());
 		Assert::equal(null, $constraint->getOnUpdate());
 		
-		Assert::equal(true, isset($constraints['test_accountMultiple3']));
-		$constraint = $constraints['test_accountMultiple3'];
+		Assert::equal(true, isset($constraints['stocks_test_accountMultiple3']));
+		$constraint = $constraints['stocks_test_accountMultiple3'];
 		Assert::equal(\DB\Test::class, $constraint->getEntityClass());
-		Assert::equal('test_accountMultiple3', $constraint->getName());
+		Assert::equal('stocks_test_accountMultiple3', $constraint->getName());
 		Assert::equal('tests', $constraint->getSource());
 		Assert::equal('tests2', $constraint->getTarget());
 		Assert::equal('fk_test', $constraint->getSourceKey());
@@ -121,9 +121,9 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		$indexes = $meta->getIndexes();
 		
-		Assert::equal(true, isset($indexes['testUnique']));
-		$index = $indexes['testUnique'];
-		Assert::equal('test_testUnique', $index->getName());
+		Assert::equal(true, isset($indexes['stocks_test_testUnique']));
+		$index = $indexes['stocks_test_testUnique'];
+		Assert::equal('stocks_test_testUnique', $index->getName());
 		Assert::equal(\DB\Test::class, $index->getEntityClass());
 		Assert::equal(['testUnique'], $index->getColumns());
 		Assert::equal(true, $index->isUnique());
@@ -133,13 +133,13 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal(['testNullable','testLength'], $index->getColumns());
 		Assert::equal(false, $index->isUnique());
 		
-		Assert::equal(true, isset($indexes['testForce']));
-		$index = $indexes['testForce'];
+		Assert::equal(true, isset($indexes['stocks_test_testForce']));
+		$index = $indexes['stocks_test_testForce'];
 		Assert::equal(['fk_test'], $index->getColumns());
 		Assert::equal(false, $index->isUnique());
 		
-		Assert::equal(true, isset($indexes['accountMultiple']));
-		$index = $indexes['accountMultiple'];
+		Assert::equal(true, isset($indexes['stocks_test_accountMultiple']));
+		$index = $indexes['stocks_test_accountMultiple'];
 		Assert::equal(['fk_accountMultiple'], $index->getColumns());
 		Assert::equal(false, $index->isUnique());
 		
@@ -259,7 +259,7 @@ class StructuresTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		Assert::equal('tests3', $relation->getName());
 		Assert::equal('fk_test', $relation->getSourceViaKey());
 		Assert::equal('fk_test2', $relation->getTargetViaKey());
-		Assert::equal('test_nxn_tests', $relation->getVia());
+		Assert::equal('stocks_test_nxn_tests', $relation->getVia());
 		
 		Assert::equal(\DB\Test::class, $relation->getSource());
 		Assert::equal(\DB\Test2::class, $relation->getTarget());
