@@ -128,7 +128,7 @@ interface ICollection
 	/**
 	 * Convert collection to array of trings
 	 * @param string $columnOrExpression
-	 * @param string[] $callbacks or $columns
+	 * @param string[]|callable[] $callbacks or $columns
 	 * @param bool $toArrayValues
 	 * @phpstan-return mixed[]
 	 * @return mixed[]
@@ -259,7 +259,7 @@ interface ICollection
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param string[] $select
+	 * @param string[]|\StORM\ICollection[] $select
 	 * @param mixed[] $values
 	 * @return static
 	 */
