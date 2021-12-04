@@ -56,8 +56,6 @@ class Column extends AnnotationProperty
 
 	protected string $extra = '';
 	
-	protected string $attribute = '';
-	
 	protected ?string $collate = null;
 	
 	protected string $comment = '';
@@ -110,16 +108,6 @@ class Column extends AnnotationProperty
 		$this->extra = $extra;
 	}
 	
-	public function getAttribute(): string
-	{
-		return $this->attribute;
-	}
-	
-	public function setAttribute(string $attribute): void
-	{
-		$this->attribute = $attribute;
-	}
-
 	public function hasMutations(): bool
 	{
 		return $this->mutations;
@@ -251,7 +239,6 @@ class Column extends AnnotationProperty
 			'default' => Expect::type('string|int|float|null'),
 			'charset' => Expect::type('string|null'),
 			'collate' => Expect::type('string|null'),
-			'attribute' => Expect::string(null),
 			'extra' => Expect::string(null),
 			'comment' => Expect::string(null),
 			'mutations' => Expect::bool(null),
