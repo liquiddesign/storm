@@ -46,7 +46,7 @@ class SchemaManager
 	 */
 	public function getStructure(string $class, ?Cache $cache = null, ?Column $defaultPK = null): Structure
 	{
-		if (!isset($this->dataModels[$class])) {
+		if (!isset($this->dataModels[$class]) || $cache !== null) {
 			if (!\class_exists($class)) {
 				throw new \InvalidArgumentException("Class $class not exists");
 			}
