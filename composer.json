@@ -21,7 +21,7 @@
 		"nette/tester":"*",
 		"tracy/tracy":"*",
 		"composer/composer": "*",
-		"liquiddesign/codestyle": "@dev",
+		"liquiddesign/codestyle": "~1.0",
 		"phpstan/phpstan": "0.12.74"
 	},
 	"scripts": {
