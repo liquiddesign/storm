@@ -8,7 +8,6 @@ use Nette\Utils\Arrays;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
-use StORM\Exception\SqlSchemaException;
 use StORM\Meta\Structure;
 
 /**
@@ -265,13 +264,13 @@ abstract class Repository implements IEntityParent
 		}
 		
 		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? !$updateProps);
-		$beforeId = $this->getPrimaryKeyNextValue(false);
+		$beforeId = $this->getPrimaryKeyNextValue();
 		
 		$sth = $this->connection->query($sql, $vars);
 		$rowCount = $sth->rowCount();
 		$sth->closeCursor();
 		
-		if (!isset($values[$pk->getPropertyName()]) && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false)))) {
+		if (!isset($values[$pk->getPropertyName()]) && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue()))) {
 			$values[$pk->getPropertyName()] = $this->getPrimaryKeyNextValue();
 		}
 		
@@ -372,7 +371,7 @@ abstract class Repository implements IEntityParent
 				$joinRelations = $this->createRelations($value, $updateProps === null);
 				
 				if ($filterByColumns !== null) {
-					$value = Helpers::filterInputArray($value, \array_keys($columns), (bool)$filterByColumns);
+					$value = Helpers::filterInputArray($value, \array_keys($columns), $filterByColumns);
 				}
 				
 				$row = $this->propertiesToColumns($value);
@@ -403,14 +402,14 @@ abstract class Repository implements IEntityParent
 			
 			$vars = [];
 			
-			$beforeId = $this->getPrimaryKeyNextValue(false);
+			$beforeId = $this->getPrimaryKeyNextValue();
 			
 			$sql = $this->getSqlInsert($insert, $vars, $updateProps, $ignore);
 			$sth = $this->connection->query($sql, $vars);
 			$affected += $sth->rowCount();
 			$sth->closeCursor();
 			
-			if (!$ignore && $updateProps === array() && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue(false)))) {
+			if (!$ignore && $updateProps === array() && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue()))) {
 				$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
 			}
 			
@@ -541,12 +540,8 @@ abstract class Repository implements IEntityParent
 		return $return;
 	}
 	
-	private function getPrimaryKeyNextValue(bool $check = true): int
+	private function getPrimaryKeyNextValue(): int
 	{
-		if ($check && (int) $this->connection->getLink()->lastInsertId() === 0) {
-			throw new SqlSchemaException('Cannot get last inserted ID in autoincrement PK');
-		}
-		
 		return (int) $this->connection->getLink()->lastInsertId();
 	}
 	

@@ -233,7 +233,7 @@ class Column extends AnnotationProperty
 	{
 		return Expect::structure([
 			'name' => Expect::string(null),
-			'type' => Expect::string(null),
+			'type' => Expect::string(null)->pattern('[a-z]*'),
 			'nullable' => Expect::bool(null),
 			'length' => Expect::type('string|int|null'),
 			'default' => Expect::type('string|int|float|null'),
