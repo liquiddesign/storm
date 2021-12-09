@@ -6,6 +6,7 @@ namespace StORM;
 
 use StORM\Exception\AlreadyExistsException;
 use StORM\Exception\InvalidStateException;
+use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
 
 /**
@@ -313,6 +314,40 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		$sth = $this->getPDOStatement();
 		$sth->setFetchMode(...$this->getFetchParameters());
+		/** @var mixed $object */
+		$object = $sth->fetch();
+		
+		$sth->closeCursor();
+		
+		if ($object === false && $needed) {
+			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+		}
+		
+		return $object === false ? null : $object;
+	}
+	
+	/**
+	 * @param string|null $columnName
+	 * @param bool $needed
+	 * @return T|null
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	public function last(?string $columnName = null, bool $needed = false): ?object
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		if (!$columnName) {
+			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
+		}
+		
+		$this->setOrderBy([$columnName => 'DESC']);
+		$this->setTake(1);
+		
+		$sth = $this->getPDOStatement();
+		$sth->setFetchMode(...$this->getFetchParameters());
+		
 		/** @var mixed $object */
 		$object = $sth->fetch();
 		
