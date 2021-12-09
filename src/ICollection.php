@@ -63,6 +63,13 @@ interface ICollection
 	public function first(bool $needed = false): ?object;
 	
 	/**
+	 * @param string|null $columnName
+	 * @param bool $needed
+	 * @return T|null
+	 */
+	public function last(?string $columnName = null, bool $needed = false): ?object;
+	
+	/**
 	 * Fetch object and move cursor
 	 * @phpstan-return T|null
 	 */

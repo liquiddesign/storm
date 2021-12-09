@@ -117,6 +117,20 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
+	 * @param string|null $columnName
+	 * @param bool $needed
+	 * @return T|null
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	public function last(?string $columnName = null, bool $needed = false): ?Entity
+	{
+		$orderByColumn = $columnName ?: $this->getRepository()->getStructure()->getPK()->getName();
+		
+		/** @phpstan-ignore-next-line */
+		return parent::last($orderByColumn, $needed);
+	}
+	
+	/**
 	 * @return T|null
 	 */
 	public function fetch(): ?Entity
