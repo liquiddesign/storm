@@ -323,7 +323,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
-		return $object === false ? null : $object;
+		return \Nette\Utils\Helpers::falseToNull($object);
 	}
 	
 	/**
@@ -357,7 +357,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
 		}
 		
-		return $object === false ? null : $object;
+		return \Nette\Utils\Helpers::falseToNull($object);
 	}
 	
 	/**
@@ -372,7 +372,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		$object = $this->getPDOStatement()->fetch();
 		
-		return $object === false ? null : $object;
+		return \Nette\Utils\Helpers::falseToNull($object);
 	}
 	
 	/**
