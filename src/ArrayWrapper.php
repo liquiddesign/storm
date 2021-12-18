@@ -64,7 +64,7 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	{
 		return \key($this->source);
 	}
-	
+
 	/**
 	 * Checks if current position is valid
 	 */
