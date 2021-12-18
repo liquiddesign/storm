@@ -739,6 +739,27 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		return $this;
 	}
+
+	public function whereBetween(string $expression, ?string $from = null, ?string $to = null, bool $fromEquals = true, bool $toEquals = true): self
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
+		}
+		
+		if ($from) {
+			$mark = $fromEquals ? '>=' : '>';
+			$binder = $this->generateBinder();
+			$this->processWhere("$expression $mark :$binder", [$binder => $from], false, false);
+		}
+		
+		if ($to) {
+			$mark = $toEquals ? '<=' : '<';
+			$binder = $this->generateBinder();
+			$this->processWhere("$expression $mark :$binder", [$binder => $to], false, false);
+		}
+		
+		return $this;
+	}
 	
 	/**
 	 * Add FROM clause and merge with previous
