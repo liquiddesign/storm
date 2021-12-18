@@ -114,6 +114,7 @@ abstract class Repository implements IEntityParent
 	 */
 	final public function many(?string $mutation = null, ?array $fallbackColumns = null): Collection
 	{
+		/** @phpstan-ignore-next-line */
 		return new Collection($this, $mutation, $fallbackColumns);
 	}
 	

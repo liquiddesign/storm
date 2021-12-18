@@ -91,6 +91,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		$this->enableSmartJoin = $enableSmartJoin;
 		
+		/** @phpstan-ignore-next-line */
 		if ($entityClass && \is_subclass_of($entityClass, Entity::class)) {
 			$this->entityClass = $entityClass;
 		}
