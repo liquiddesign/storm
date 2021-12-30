@@ -13,6 +13,7 @@ class Constraint extends AnnotationProperty
 	public const ACTION_NO = 'NO ACTION';
 	public const ACTION_SET_NULL = 'SET NULL';
 	public const ACTION_CASCADE = 'CASCADE';
+	public const ACTION_RESTRICT = 'RESTRICT';
 	
 	protected string $source;
 	
@@ -111,7 +112,7 @@ class Constraint extends AnnotationProperty
 	
 	public function getSchema(): Schema
 	{
-		$allowedActions = [self::ACTION_CASCADE, self::ACTION_SET_NULL, self::ACTION_NO, null];
+		$allowedActions = [self::ACTION_CASCADE, self::ACTION_SET_NULL, self::ACTION_NO, self::ACTION_RESTRICT, null];
 		
 		return Expect::structure([
 			'name' => Expect::string(),
