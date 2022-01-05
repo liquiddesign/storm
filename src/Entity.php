@@ -634,7 +634,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			\trigger_error('Call to undefined method '.self::class.'::'.$name.'()', \E_USER_ERROR);
 		}
 		
-		$relation = clone $this->$property;
+		$relation = new RelationCollection($this->getConnection()->findRepository(static::class), $relation, $this->getPK());
 		
 		if (\is_array($arguments) && Helpers::isAssociative($arguments)) {
 			$relation->match($arguments);
