@@ -621,6 +621,29 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
+	 * @param mixed $name
+	 * @param mixed $arguments
+	 * @return mixed
+	 */
+	public function __call($name, $arguments)
+	{
+		$property = \lcfirst(\substr($name, 3));
+		$relation = $this->getStructure()->getRelation($property);
+		
+		if (!$relation || $relation->isKeyHolder()) {
+			\trigger_error('Call to undefined method '.self::class.'::'.$name.'()', \E_USER_ERROR);
+		}
+		
+		$relation = clone $this->$property;
+		
+		if (\is_array($arguments) && Helpers::isAssociative($arguments)) {
+			$relation->match($arguments);
+		}
+		
+		return $relation;
+	}
+	
+	/**
 	 * Convert to string = return primary key value in string
 	 */
 	public function __toString(): string

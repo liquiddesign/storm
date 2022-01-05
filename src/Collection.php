@@ -132,6 +132,20 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
+	 * @param string|null $property
+	 * @param string|null $columnName
+	 * @param bool $needed
+	 * @return bool|string|null
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
+	{
+		$orderByColumn = $columnName ?: $this->getRepository()->getStructure()->getPK()->getName();
+		
+		return parent::lastValue($property, $orderByColumn, $needed);
+	}
+	
+	/**
 	 * @return T|null
 	 */
 	public function fetch(): ?Entity

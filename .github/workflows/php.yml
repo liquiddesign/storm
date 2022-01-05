@@ -1,55 +1,69 @@
-name: Analysis
+name: Tests and analysis
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    steps:
-      - name: CRLF
-        run: |
-          git config --global core.autocrlf true
-
-      - uses: actions/checkout@v2
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.0
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate
-
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v2
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
-
-      # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-      # Docs: https://getcomposer.org/doc/articles/scripts.md
-
-      - name: Run phpstan
-        run: composer phpstan
-
-      - name: Run phpcs
-        run: composer phpcs
-
-      - uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,author
+    services:
+      mysql:
+        image: mysql:5.7
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        if: failure()
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_DATABASE: _test_storm
+        ports:
+          - 3306:3306
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup PHP with PECL extension
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.0'
+        extensions: pdo, pdo_mysql, json, tokenizer, mbstring
+
+    - name: Check PHP Version
+      run: php -v
+    - name: Check Composer Version
+      run: composer -V
+    - name: Check PHP Extensions
+      run: php -m
+
+    - name: Check PHP info
+      run: php -i
+
+    - name: Check PHP locate
+      run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
+
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v2
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+
+    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
+    # Docs: https://getcomposer.org/doc/articles/scripts.md
+    
+    - name: Run phpstan
+      run: composer phpstan
+    
+    - name: Run phpcs
+      run: composer phpcs
+
+    - name: Run tester
+      run: composer tester

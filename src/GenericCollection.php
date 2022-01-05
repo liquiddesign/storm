@@ -286,16 +286,30 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		$this->setTake(1);
 		
-		isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->setSelect([$property]);
-		$sth = $this->getPDOStatement();
-		$result = $sth->fetchColumn(0);
-		$sth->closeCursor();
-		
-		if ($result === false && $needed) {
-			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+		return $this->getValue($property, $needed);
+	}
+	
+	/**
+	 * Take 1, fetch fetch the last column and close cursor
+	 * @param string|null $property
+	 * @param bool $needed
+	 * @return null|string|bool
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
+	{
+		if ($this->isLoaded()) {
+			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		return $result;
+		if (!$columnName) {
+			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
+		}
+		
+		$this->setTake(1);
+		$this->setOrderBy([$columnName => 'DESC']);
+		
+		return $this->getValue($property, $needed);
 	}
 	
 	/**
@@ -1497,7 +1511,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$this->modifiers[self::MODIFIER_WHERE][] = $not ? "!($expression)" : "($expression)";
 			
 			foreach ($values as $k => $v) {
-				$this->bindVar($k, $v, self::MODIFIER_WHERE_FLAG);
+				$this->bindVar((string) $k, $v, self::MODIFIER_WHERE_FLAG);
 			}
 		} else {
 			if ($count === 1 && \array_key_exists(0, $values)) {
@@ -1557,6 +1571,27 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		return;
+	}
+	
+	/**
+	 * @return null|string|bool
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	private function getValue(?string $property, bool $needed)
+	{
+		if ($property !== null) {
+			isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->setSelect([$property]);
+		}
+		
+		$sth = $this->getPDOStatement();
+		$result = $sth->fetchColumn();
+		$sth->closeCursor();
+		
+		if ($result === false && $needed) {
+			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+		}
+		
+		return $result;
 	}
 	
 	private function createSqlPrefix(bool $select, bool $from, bool $join, array $indexSelect = []): string
