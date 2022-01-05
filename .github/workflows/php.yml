@@ -2,9 +2,9 @@ name: Tests and analysis
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -19,6 +19,10 @@ jobs:
         ports:
           - 3306:3306
     steps:
+    - name: CRLF
+      run: |
+        git config --global core.autocrlf true
+
     - uses: actions/checkout@v2
 
     - name: Setup PHP with PECL extension
@@ -55,9 +59,6 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
-
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
     
     - name: Run phpstan
       run: composer phpstan
