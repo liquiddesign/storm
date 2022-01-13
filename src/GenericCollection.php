@@ -1609,7 +1609,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		if ($join) {
 			foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
 				[$type, $aliases, $condition] = $join;
-				$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ', true) . ' ON (' . $condition . ')';
+				$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ') . ' ON (' . $condition . ')';
 			}
 		}
 		

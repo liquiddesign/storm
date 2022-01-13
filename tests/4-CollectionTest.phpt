@@ -277,9 +277,9 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$condition = '1=1';
 		$baseCollection = $storm->rows($from)->join([$table2], $condition);
 		Assert::same([['LEFT', [$table2], $condition]], $baseCollection->getModifiers()['JOIN']);
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSql());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlDelete());
 		$baseCollection->clear()->setWhere('1=0')->load();
 		$baseCollection->clear()->setWhere('1=0')->delete();
 		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
@@ -290,12 +290,12 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$condition = '1=1';
 		$baseCollection = $baseCollection->join([$alias3 => $table3], $condition);
 		Assert::same([['LEFT', [$table2], $condition], ['LEFT', [$alias3 => $table3], $condition]], $baseCollection->getModifiers()['JOIN']);
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
-		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSql());
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
-		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
-		Assert::contains(" LEFT JOIN ($table3 AS $alias3) ON ($condition)", $baseCollection->getSqlDelete());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSql());
+		Assert::contains(" LEFT JOIN $table3 AS $alias3 ON ($condition)", $baseCollection->getSql());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
+		Assert::contains(" LEFT JOIN $table3 AS $alias3 ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlDelete());
+		Assert::contains(" LEFT JOIN $table3 AS $alias3 ON ($condition)", $baseCollection->getSqlDelete());
 		$baseCollection->clear()->setWhere('1=0')->load();
 		$baseCollection->clear()->setWhere('1=0')->delete();
 		$baseCollection->clear()->setWhere('1=0')->update($toUpdateReal);
@@ -308,9 +308,9 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$condition = 'aux.name=:var2';
 		$baseCollection = $storm->rows()->setFrom(['aux' => $subselect], $vars1)->join([$table2], $condition, $vars2);
 		Assert::same([['LEFT', [$table2], $condition]], $baseCollection->getModifiers()['JOIN']);
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSql());
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
-		Assert::contains(" LEFT JOIN ($table2) ON ($condition)", $baseCollection->getSqlDelete());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSql());
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
+		Assert::contains(" LEFT JOIN $table2 ON ($condition)", $baseCollection->getSqlDelete());
 		Assert::same($vars1 + $vars2, $baseCollection->getVars());
 		$baseCollection->clear()->setWhere('1=0')->load();
 		
@@ -320,9 +320,9 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		$baseCollection = $storm->rows($from)->join([$table2], $condition);
 		$baseCollection->setJoin([$table], $condition);
 		Assert::same([['LEFT', [$table], $condition]], $baseCollection->getModifiers()['JOIN']);
-		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSql());
-		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
-		Assert::contains(" LEFT JOIN ($table) ON ($condition)", $baseCollection->getSqlDelete());
+		Assert::contains(" LEFT JOIN $table ON ($condition)", $baseCollection->getSql());
+		Assert::contains(" LEFT JOIN $table ON ($condition)", $baseCollection->getSqlUpdate($toUpdate));
+		Assert::contains(" LEFT JOIN $table ON ($condition)", $baseCollection->getSqlDelete());
 		Assert::same([], $baseCollection->getVars());
 		$baseCollection->clear()->setWhere('1=0')->load();
 		$baseCollection->clear()->setWhere('1=0')->delete();
