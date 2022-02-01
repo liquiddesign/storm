@@ -342,11 +342,11 @@ class Connection
 			}
 			
 			if ($noInserts === 0) {
-				throw new \InvalidArgumentException("There is no columns to insert");
+				throw new \InvalidArgumentException('There is no columns to insert');
 			}
 			
 			if ($noInserts !== \count($inserts)) {
-				throw new \InvalidArgumentException("Columns count mismatch");
+				throw new \InvalidArgumentException('Columns count mismatch');
 			}
 			
 			$binds = [];
@@ -383,7 +383,7 @@ class Connection
 					$name = $value;
 				}
 				
-				$sql .= $name. '=' . ($value instanceof Literal ? (string) $value : 'VALUES('. $name . ')');
+				$sql .= $name . '=' . ($value instanceof Literal ? (string) $value : 'VALUES(' . $name . ')');
 				$i++;
 			}
 		}

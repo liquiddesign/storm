@@ -23,7 +23,7 @@ class NotFoundException extends \Exception implements IContextException
 		$printedConditions = \print_r($conditions, true);
 		$printedSource = \is_array($source) ? \implode(', ', $source) : $source;
 		
-		$message = 'Object/row of "'.$printedSource.'" with condition: "' . \print_r($printedConditions, true) . '" not found';
+		$message = 'Object/row of "' . $printedSource . '" with condition: "' . \print_r($printedConditions, true) . '" not found';
 		$this->context = $context;
 		
 		parent::__construct($message, 0, $previous);

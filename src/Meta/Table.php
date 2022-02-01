@@ -9,7 +9,7 @@ use Nette\Schema\Schema;
 
 class Table extends AnnotationClass
 {
-	private const STRIP_NAMESPACES = ["DB\\", "App\\"];
+	private const STRIP_NAMESPACES = ['DB\\', 'App\\'];
 	
 	protected ?string $collate = null;
 	
@@ -73,6 +73,6 @@ class Table extends AnnotationClass
 	{
 		$replace = self::STRIP_NAMESPACES;
 		
-		return \strtolower(\str_replace("\\", '_', \str_replace($replace, '', $model)));
+		return \strtolower(\str_replace('\\', '_', \str_replace($replace, '', $model)));
 	}
 }

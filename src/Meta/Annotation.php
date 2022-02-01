@@ -38,7 +38,7 @@ abstract class Annotation implements \JsonSerializable
 				continue;
 			}
 			
-			\call_user_func_array([$this, 'set'. \ucfirst($attribute)], [$value]);
+			\call_user_func_array([$this, 'set' . \ucfirst($attribute)], [$value]);
 		}
 	}
 	

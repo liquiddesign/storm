@@ -382,7 +382,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$suggestions = '';
 			$class = \get_class($this->getRepository());
 			
-			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this->getRepository())))) {
+			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this->getRepository())))) {
 				$suggestions = " Do you mean '$match'?";
 			}
 			

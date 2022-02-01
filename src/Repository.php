@@ -391,7 +391,7 @@ abstract class Repository implements IEntityParent
 				
 				foreach ($joinRelations as $name => $keys) {
 					if (!$primaryKey) {
-						throw new \InvalidArgumentException("Primary key not found for joining relations.");
+						throw new \InvalidArgumentException('Primary key not found for joining relations.');
 					}
 					
 					$collectionRelation = new RelationCollection($this, $this->getStructure()->getRelation($name), $primaryKey);
@@ -465,7 +465,7 @@ abstract class Repository implements IEntityParent
 		$name = $relation->getName();
 		$class = $relation->getTarget();
 		
-		return $this->getSchemaManager()->getStructure($class)->getColumnsSelect("$name.", $name. self::RELATION_SEPARATOR);
+		return $this->getSchemaManager()->getStructure($class)->getColumnsSelect("$name.", $name . self::RELATION_SEPARATOR);
 	}
 	
 	/**
@@ -507,7 +507,7 @@ abstract class Repository implements IEntityParent
 			$suggestions = '';
 			$class = static::class;
 			
-			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^'.Repository::FILTER_PREFIX.'/', \get_class_methods($this)))) {
+			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this)))) {
 				$suggestions = " Do you mean '$match'?";
 			}
 			

@@ -574,6 +574,21 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
+	 * @param string $property
+	 * @phpstan-return T[][]
+	 * @return object[][]
+	 */
+	public function getGroups(string $property): array
+	{
+		$collection = clone $this;
+		$collection->setIndex($property);
+		$sth = $this->getConnection()->query($collection->getSql(), $collection->getVars(), [], $this->bufferedQuery);
+		
+		return $sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classParameters);
+	}
+	
+	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
 	 * @param bool $prefixIndex
@@ -1631,13 +1646,13 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_ORDER_BY, $this->modifiers[self::MODIFIER_ORDER_BY], ',', ' ', false, true);
 		}
 		
-		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' .self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
+		$sql .= $this->modifiers[self::MODIFIER_LIMIT] === null ? '' : ' ' . self::MODIFIER_LIMIT . ' ' . $this->modifiers[self::MODIFIER_LIMIT];
 		
 		if ($this->modifiers[self::MODIFIER_LIMIT] === null && $this->modifiers[self::MODIFIER_OFFSET] !== null) {
-			$sql .= ' ' .self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
+			$sql .= ' ' . self::MODIFIER_LIMIT . ' ' . self::MAX_LIMIT;
 		}
 		
-		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' .self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
+		$sql .= $this->modifiers[self::MODIFIER_OFFSET] === null ? '' : ' ' . self::MODIFIER_OFFSET . ' ' . $this->modifiers[self::MODIFIER_OFFSET];
 		
 		return $sql;
 	}

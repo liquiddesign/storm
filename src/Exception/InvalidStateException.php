@@ -28,9 +28,9 @@ class InvalidStateException extends \LogicException implements IContextException
 		$message = null;
 		
 		if ($errorCode === self::CONNECTION_NOT_SET) {
-			$message = "Connection is not set. Call setConnection()";
+			$message = 'Connection is not set. Call setConnection()';
 		} elseif ($errorCode === self::COLLECTION_ALREADY_LOADED) {
-			$message = "Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops";
+			$message = 'Collection is already loaded. Call clear() on collection on do not call modifers and fetch after load / loops';
 		} elseif ($errorCode === self::INVALID_IDENTIFIER) {
 			$message = "Invalid identifier: $extraMessage";
 		} elseif ($errorCode === self::INVALID_BINDER_VAR) {
@@ -48,9 +48,9 @@ class InvalidStateException extends \LogicException implements IContextException
 		} elseif ($errorCode === self::FULL_GROUP_BY_WITH_STAR) {
 			$message = "Cannot use setFullGroupBy with '*' name each column in SELECT clause";
 		} elseif ($errorCode === self::IGNORE) {
-			$message = "Cannot get autoincrement primary keys with IGNORE = true and multiple inserts";
+			$message = 'Cannot get autoincrement primary keys with IGNORE = true and multiple inserts';
 		} elseif ($errorCode === self::SYNCED) {
-			$message = "Cannot get is synced with multiple inserts";
+			$message = 'Cannot get is synced with multiple inserts';
 		}
 		
 		$message = $message ?: $extraMessage;

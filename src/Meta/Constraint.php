@@ -107,7 +107,7 @@ class Constraint extends AnnotationProperty
 		$this->source = $relation->getVia();
 		$this->sourceKey = \call_user_func([$relation, 'get' . $glue . 'ViaKey']);
 		$this->target = $schemaManager->getStructure((string) \call_user_func([$relation, 'get' . $glue]))->getTable()->getName();
-		$this->targetKey =\call_user_func([$relation, 'get' . $glue . 'Key']);
+		$this->targetKey = \call_user_func([$relation, 'get' . $glue . 'Key']);
 	}
 	
 	public function getSchema(): Schema

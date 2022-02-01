@@ -109,7 +109,7 @@ class Relation extends AnnotationProperty
 				continue;
 			}
 
-			$this->target = \substr($target, 0, 1) === "\\" ? \substr($target, 1) : $target;
+			$this->target = \substr($target, 0, 1) === '\\' ? \substr($target, 1) : $target;
 			$this->isKeyHolder = $offset === false;
 			$found = true;
 		}

@@ -631,7 +631,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		$relation = $this->getStructure()->getRelation($property);
 		
 		if (!$relation || $relation->isKeyHolder()) {
-			\trigger_error('Call to undefined method '.self::class.'::'.$name.'()', \E_USER_ERROR);
+			\trigger_error('Call to undefined method ' . self::class . '::' . $name . '()', \E_USER_ERROR);
 		}
 		
 		$relation = new RelationCollection($this->getConnection()->findRepository(static::class), $relation, $this->getPK());

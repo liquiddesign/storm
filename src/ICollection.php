@@ -143,6 +143,14 @@ interface ICollection
 	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array;
 	
 	/**
+	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
+	 * @param string $property
+	 * @phpstan-return T[][]
+	 * @return object[][]
+	 */
+	public function getGroups(string $property): array;
+	
+	/**
 	 * Set collection index of internal array
 	 * @param string|null $index
 	 * @param bool $prefixIndex

@@ -674,7 +674,7 @@ class Structure
 			
 			/** @noinspection PhpPossiblePolymorphicInvocationInspection */
 			/** @phpstan-ignore-next-line */
-			$properties[$name][self::ANNOTATION_VAR] = $ref->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '') . ($ref->getType()->allowsNull() ? "|null" : '');
+			$properties[$name][self::ANNOTATION_VAR] = $ref->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '') . ($ref->getType()->allowsNull() ? '|null' : '');
 		}
 		
 		return $properties;
