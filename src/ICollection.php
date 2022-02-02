@@ -127,10 +127,11 @@ interface ICollection
 	
 	/**
 	 * Convert collection to array of object
+	 * @param bool $toArrayValues
 	 * @phpstan-return T[]
 	 * @return object[]
 	 */
-	public function toArray(): array;
+	public function toArray(bool $toArrayValues = false): array;
 	
 	/**
 	 * Convert collection to array of trings
@@ -141,6 +142,14 @@ interface ICollection
 	 * @return mixed[]
 	 */
 	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array;
+	
+	/**
+	 * Call array map on collection
+	 * @param callable $callback
+	 * @param bool $toArrayValues
+	 * @return mixed[]
+	 */
+	public function map(callable $callback, bool $toArrayValues = false): array;
 	
 	/**
 	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)

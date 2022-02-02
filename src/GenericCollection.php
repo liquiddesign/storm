@@ -534,16 +534,17 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Convert collection to array of object
+	 * @param bool $toArrayValues
 	 * @phpstan-return T[]
 	 * @return object[]
 	 */
-	public function toArray(): array
+	public function toArray(bool $toArrayValues = false): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
 		}
 		
-		return $this->items;
+		return $toArrayValues ? \array_values($this->items) : $this->items;
 	}
 	
 	/**
@@ -571,6 +572,17 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		return $toArrayValues ? \array_values($return) : $return;
+	}
+	
+	/**
+	 * Call array map on collection
+	 * @param callable $callback
+	 * @param bool $toArrayValues
+	 * @return mixed[]
+	 */
+	public function map(callable $callback, bool $toArrayValues = false): array
+	{
+		return \array_map($callback, $this->toArray($toArrayValues));
 	}
 	
 	/**

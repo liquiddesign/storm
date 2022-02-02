@@ -156,16 +156,17 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * Convert collection to array of object
+	 * @param bool $toArrayValues
 	 * @phpstan-return T[]
-	 * @return T[]
+	 * @return object[]
 	 */
-	public function toArray(): array
+	public function toArray(bool $toArrayValues = false): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
 		}
 		
-		return $this->items;
+		return $toArrayValues ? \array_values($this->items) : $this->items;
 	}
 	
 	public function getConnection(): DIConnection
