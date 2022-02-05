@@ -637,7 +637,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		$relation = new RelationCollection($this->getConnection()->findRepository(static::class), $relation, $this->getPK());
 		
 		if (\is_array($arguments) && Helpers::isAssociative($arguments)) {
-			$relation->match($arguments);
+			$relation->whereMatch($arguments);
 		}
 		
 		return $relation;

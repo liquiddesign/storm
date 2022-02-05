@@ -48,6 +48,11 @@ abstract class Repository implements IEntityParent
 	protected \StORM\SchemaManager $schemaManager;
 	
 	/**
+	 * @var mixed[]
+	 */
+	private array $injectedArguments;
+	
+	/**
 	 * Repository constructor
 	 * @param \StORM\DIConnection $connection
 	 * @param \StORM\SchemaManager $schemaManager
@@ -65,6 +70,25 @@ abstract class Repository implements IEntityParent
 	final public function getEntityClass(): string
 	{
 		return $this->getStructure()->getEntityClass();
+	}
+	
+	final public function injectEntityArguments(...$arguments): void
+	{
+		$this->injectedArguments = $arguments;
+	}
+	
+	/**
+	 * @param \StORM\IEntityParent $parent
+	 * @param string|null $mutation
+	 * @return mixed[]
+	 */
+	final public function getEntityArguments(IEntityParent $parent, ?string $mutation = null): array
+	{
+		$connection = $this->getConnection();
+		$hasMutations = $this->getStructure()->hasMutations();
+		$mutation = $mutation ?: $this->getConnection()->getMutation();
+		
+		return \array_merge([[]], $this->injectedArguments, [$parent, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $mutation : null]);
 	}
 	
 	/**
@@ -143,7 +167,7 @@ abstract class Repository implements IEntityParent
 		}
 		
 		if (\is_array($condition)) {
-			$collection->match($condition, self::DEFAULT_ALIAS . '.');
+			$collection->whereMatch($condition, self::DEFAULT_ALIAS . '.');
 		} else {
 			$collection->setWhere(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
 		}

@@ -22,7 +22,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected const UNIQUE_BINDER_PREFIX = '__';
 	
 	/**
-	 * according MySQL
+	 * According to MySQL
 	 */
 	protected const MAX_LIMIT = '18446744073709551615';
 	
@@ -79,7 +79,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * @var mixed[]
 	 */
-	protected array $classParameters = [];
+	protected array $classArguments = [];
 	
 	protected ?\PDOStatement $sth = null;
 	
@@ -143,17 +143,17 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string[] $from
 	 * @param string[] $select
 	 * @param string $class
-	 * @param mixed[] $classParameters
+	 * @param mixed[] $classArguments
 	 * @param string|null $index
 	 */
-	public function __construct(Connection $connection, ?array $from, array $select, string $class, array $classParameters = [], ?string $index = null)
+	public function __construct(Connection $connection, ?array $from, array $select, string $class, array $classArguments = [], ?string $index = null)
 	{
 		$this->connection = $connection;
 		$this->class = $class;
 		$this->index = $index;
 		$this->baseFrom = $from;
 		$this->baseSelect = $select;
-		$this->classParameters = $classParameters;
+		$this->classArguments = $classArguments;
 		$this->binderName = self::BINDER_NAME . \spl_object_id($this);
 		
 		$this->init();
@@ -205,7 +205,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		if ($params !== null) {
-			$this->classParameters = $params;
+			$this->classArguments = $params;
 		}
 		
 		return $this;
@@ -218,7 +218,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function getFetchClass(array &$params = []): string
 	{
-		$params = $this->classParameters;
+		$params = $this->classArguments;
 		
 		return $this->class;
 	}
@@ -597,7 +597,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$collection->setIndex($property);
 		$sth = $this->getConnection()->query($collection->getSql(), $collection->getVars(), [], $this->bufferedQuery);
 		
-		return $sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classParameters);
+		return $sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classArguments);
 	}
 	
 	/**
@@ -738,13 +738,25 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string $columnPrefix
 	 * @return static
 	 */
-	public function match(array $conditions, string $columnPrefix = ''): self
+	public function whereMatch(array $conditions, string $columnPrefix = ''): self
 	{
 		foreach ($conditions as $property => $value) {
 			$this->where($columnPrefix . $property, $value);
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Call multiple where
+	 * @deprecated use whereMatch
+	 * @param mixed[] $conditions
+	 * @param string $columnPrefix
+	 * @return static
+	 */
+	public function match(array $conditions, string $columnPrefix = ''): self
+	{
+		return $this->whereMatch($conditions, $columnPrefix);
 	}
 	
 	/**
@@ -780,8 +792,16 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		return $this;
 	}
-
-	public function whereBetween(string $expression, ?string $from = null, ?string $to = null, bool $fromEquals = true, bool $toEquals = true): self
+	
+	/**
+	 * @param string $expression
+	 * @param string|int|float|null $from
+	 * @param string|int|float|null $to
+	 * @param bool $fromEquals
+	 * @param bool $toEquals
+	 * @return $this
+	 */
+	public function whereBetween(string $expression, $from = null, $to = null, bool $fromEquals = true, bool $toEquals = true): self
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -1430,7 +1450,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$mode |= \PDO::FETCH_UNIQUE;
 		}
 		
-		return [$mode, $this->class, $this->classParameters];
+		return [$mode, $this->class, $this->classArguments];
 	}
 	
 	protected function init(): void

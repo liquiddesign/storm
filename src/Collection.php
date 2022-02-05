@@ -50,8 +50,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->repository = $repository;
 		$this->mutation = $mutation;
 		$this->entityClass = $repository->getEntityClass();
+		$this->classArguments = $repository->getEntityArguments($this, $mutation);
 		
-		$classParameters = $this->createClassParameters();
 		$index = $repository::DEFAULT_ALIAS . '.' . $repository->getStructure()->getPK()->getName();
 		
 		$defaultSelect = $repository->getDefaultSelect($mutation);
@@ -62,7 +62,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$repository->getDefaultFrom(),
 			$repository->getDefaultSelect($mutation, $fallbackColumns),
 			$repository->getEntityClass(),
-			$classParameters,
+			$this->classArguments,
 			$index,
 		);
 	}
@@ -83,8 +83,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		$this->repository = $repository;
 		$this->connection = $repository->getConnection();
-		$this->classParameters = $this->createClassParameters();
-		$this->setFetchClass(null, $this->classParameters);
+		$this->classArguments = $repository->getEntityArguments($this);
+		$this->setFetchClass(null, $this->classArguments);
 	}
 	
 	public function setSmartJoin(bool $enableSmartJoin, ?string $entityClass = null): self
@@ -432,19 +432,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return;
 	}
 	
-	/**
-	 * @return mixed[]
-	 */
-	private function createClassParameters(): array
-	{
-		$repository = $this->repository;
-		$connection = $this->repository->getConnection();
-		$hasMutations = $repository->getStructure()->hasMutations();
-		$mutation = $this->mutation ?: $connection->getMutation();
-		
-		return [[], $this, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $mutation : null];
-	}
-	
 	private function parseExpression(string &$expression): void
 	{
 		$regexp = self::REGEXP_AUTOJOIN;
@@ -534,6 +521,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	public function __clone()
 	{
-		$this->classParameters = $this->createClassParameters();
+		$this->classArguments = $this->getRepository()->getEntityArguments($this);
 	}
 }

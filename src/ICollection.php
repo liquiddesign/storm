@@ -233,7 +233,17 @@ interface ICollection
 	 * @param string $columnPrefix
 	 * @return static
 	 */
-	public function match(array $conditions, string $columnPrefix = ''): self;
+	public function whereMatch(array $conditions, string $columnPrefix = ''): self;
+	
+	/**
+	 * @param string $expression
+	 * @param string|int|float|null $from
+	 * @param string|int|float|null $to
+	 * @param bool $fromEquals
+	 * @param bool $toEquals
+	 * @return $this
+	 */
+	public function whereBetween(string $expression, $from = null, $to = null, bool $fromEquals = true, bool $toEquals = true): self;
 	
 	/**
 	 * Set WHERE negated condition and replace previous
