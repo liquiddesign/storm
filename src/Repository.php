@@ -50,7 +50,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * @var mixed[]
 	 */
-	private array $injectedArguments;
+	private array $injectedArguments = [];
 	
 	/**
 	 * Repository constructor
