@@ -456,7 +456,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 				return $this->getConnection()->findRepository($relation->getTarget())->one([$relation->getTargetKey() => $this->getPK()]);
 			}
 			
-			if ($this->parent && $this->parent instanceof Collection && $this->parent->isLoaded() && $this->parent->isOptimization()) {
+			if ($this->parent instanceof Collection && $this->parent->isLoaded() && $this->parent->isOptimization()) {
 				$object = $this->parent->getRelatedObject($relation, $this->foreignKeys[$name]);
 				
 				if ($object === null) {
