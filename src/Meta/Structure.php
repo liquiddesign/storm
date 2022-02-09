@@ -822,7 +822,7 @@ class Structure
 			$relations = $dataModel->loadRelations($propertiesDocComments, $dataModel->getTable()->getName(), $dataModel->getPK());
 			
 			foreach ($relations as $relation) {
-				if ($relation->isKeyHolder()) {
+				if ($relation->isKeyHolder() && !isset($columns[$relation->getSourceKey()])) {
 					$fk = new Column($dataModel->getEntityClass(), $relation->getName());
 					$fk->setName($relation->getSourceKey());
 					$fk->setNullable($relation->isNullable());
