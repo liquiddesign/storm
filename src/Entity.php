@@ -533,7 +533,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	{
 		$relatedClass = $relation->getTarget();
 		$name = $relation->getName();
-		$length = \strlen($name) + \strlen(Repository::RELATION_SEPARATOR);
+		$length = Strings::length($name) + Strings::length(Repository::RELATION_SEPARATOR);
 		$data = [];
 		
 		foreach ($this->properties as $property => $value) {
