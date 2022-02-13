@@ -14,7 +14,7 @@ use StORM\Meta\Structure;
 class SchemaManager
 {
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	private array $customAnnotations = [];
 	
@@ -23,7 +23,7 @@ class SchemaManager
 	private ?\StORM\DIConnection $connection;
 	
 	/**
-	 * @var \StORM\Meta\Structure[]
+	 * @var array<\StORM\Meta\Structure>
 	 */
 	private array $dataModels = [];
 	
@@ -122,7 +122,7 @@ class SchemaManager
 	}
 	
 	/**
-	 * @param string[] $customAnnotations
+	 * @param array<string> $customAnnotations
 	 */
 	public function setCustomAnnotations(array $customAnnotations): void
 	{
@@ -130,7 +130,7 @@ class SchemaManager
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getCustomAnnotations(): array
 	{
@@ -138,7 +138,7 @@ class SchemaManager
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function __sleep(): array
 	{

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
+use Nette\Utils\Strings;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
@@ -16,17 +17,17 @@ use StORM\Meta\Structure;
 abstract class Entity implements \JsonSerializable, IDumper
 {
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	protected array $properties = [];
 	
 	/**
-	 * @var string[]|null[]
+	 * @var array<string>|array<null>
 	 */
 	protected array $foreignKeys = [];
 	
 	/**
-	 * @var \StORM\Entity[]|\StORM\RelationCollection[]|null[]
+	 * @var array<\StORM\Entity>|array<\StORM\RelationCollection>|array<null>
 	 */
 	protected array $relations = [];
 	
@@ -35,15 +36,15 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected ?string $activeMutation;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $availableMutations;
 	
 	/**
 	 * Entity constructor.
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 * @param \StORM\IEntityParent|null $parent
-	 * @param string[] $mutations
+	 * @param array<string> $mutations
 	 * @param string|null $mutation
 	 */
 	public function __construct(array $vars, ?IEntityParent $parent = null, array $mutations = [], ?string $mutation = null)
@@ -132,10 +133,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Load from array and filter mess in array by column names by default
-	 * @param mixed[]|object $values
+	 * @param array<mixed>|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $includePrimaryKey
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function loadFromArray($values, ?bool $filterByColumns = true, bool $includePrimaryKey = true): array
 	{
@@ -306,7 +307,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Update entity object
-	 * @param mixed[]|mixed[][]|object $values
+	 * @param array<mixed>|array<array<mixed>>|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $includePrimaryKey
 	 */
@@ -335,7 +336,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Update all properties and if $propertiesToUpdate is not null update certains columns
-	 * @param string[]|null $propertiesToUpdate
+	 * @param array<string>|null $propertiesToUpdate
 	 */
 	public function updateAll(?array $propertiesToUpdate = null): int
 	{
@@ -360,10 +361,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Convert entity to array. You can name relation to load. Collection are converted to array. If $expandRelations is set to null, all relation is loaded.
-	 * @param string[] $relations
+	 * @param array<string> $relations
 	 * @param bool $groupLocales
 	 * @param bool $includeNonColumns
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false): array
 	{
@@ -401,7 +402,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Convert all properties to array. None of relation is loaded. Objects are converted to primary keys and collections to array of primary keys
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function jsonSerialize(): array
 	{
@@ -504,7 +505,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * @param bool $includeNonColumns
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	private function getVars(bool $includeNonColumns = false): array
 	{
@@ -536,11 +537,11 @@ abstract class Entity implements \JsonSerializable, IDumper
 		$data = [];
 		
 		foreach ($this->properties as $property => $value) {
-			if (\strpos($property, $name . Repository::RELATION_SEPARATOR) === false) {
+			if (!Strings::contains($property, $name . Repository::RELATION_SEPARATOR)) {
 				continue;
 			}
-			
-			$data[\substr($property, $length)] = $value;
+	
+			$data[Strings::substring($property, $length)] = $value;
 		}
 		
 		$repository = $this->getConnection()->findRepository($relatedClass);
@@ -549,7 +550,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	private function getHintProperties(): array
 	{
@@ -631,7 +632,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function __call($name, $arguments)
 	{
-		$property = \lcfirst(\substr($name, 3));
+		$property = Strings::firstLower(Strings::substring($name, 3));
 		$relation = $this->getStructure()->getRelation($property);
 		
 		if (!$relation || $relation->isKeyHolder()) {
@@ -662,7 +663,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function __sleep(): array
 	{

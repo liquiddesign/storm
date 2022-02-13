@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
+use Nette\Utils\Strings;
 use StORM\Exception\GeneralException;
 
 class Connection
@@ -23,7 +24,7 @@ class Connection
 	private string $name;
 	
 	/**
-	 * @var int[]
+	 * @var array<int>
 	 */
 	private array $attributes;
 	
@@ -39,7 +40,7 @@ class Connection
 	private string $quoteChar;
 	
 	/**
-	 * @var \StORM\LogItem[]
+	 * @var array<\StORM\LogItem>
 	 */
 	private array $log = [];
 	
@@ -54,14 +55,14 @@ class Connection
 	 * @param string $dsn
 	 * @param string $user
 	 * @param string $password
-	 * @param int[] $attributes
+	 * @param array<int> $attributes
 	 */
 	public function __construct(string $name, string $dsn, string $user, string $password, array $attributes = [])
 	{
 		$this->name = $name;
 		$parsedDsn = \explode(':', $dsn, 2);
 		$this->driver = $parsedDsn[0];
-		\parse_str(\str_replace(';', '&', $parsedDsn[1]), $matches);
+		\parse_str(Strings::replace($parsedDsn[1], ';', '&'), $matches);
 		$this->user = $user;
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
@@ -102,7 +103,7 @@ class Connection
 	
 	/**
 	 * Get PDO configuration attributes
-	 * @return int[]
+	 * @return array<int>
 	 */
 	public function getAttributes(): array
 	{
@@ -139,8 +140,8 @@ class Connection
 	 * Execute query with binding vars and quoting identifiers and return PDO statement
 	 * Identifiers are parsed by sprintf
 	 * @param string $sql
-	 * @param string[] $vars
-	 * @param string[] $identifiers
+	 * @param array<string> $vars
+	 * @param array<string> $identifiers
 	 * @param bool|null $bufferedQuery
 	 * @param bool|null $debug
 	 */
@@ -193,10 +194,10 @@ class Connection
 	
 	/**
 	 * Get collection of rows
-	 * @param string[]|null $from
-	 * @param string[] $select
+	 * @param array<string>|null $from
+	 * @param array<string> $select
 	 * @param string $class
-	 * @param mixed[] $classParameters
+	 * @param array<mixed> $classParameters
 	 * @param string|null $index
 	 */
 	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): GenericCollection
@@ -207,7 +208,7 @@ class Connection
 	/**
 	 * Create row = insert row into table
 	 * @param string $table
-	 * @param mixed[]|object $values
+	 * @param array<mixed>|object $values
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 */
@@ -241,7 +242,7 @@ class Connection
 	/**
 	 * Create multiple rows at once
 	 * @param string $table
-	 * @param mixed[][]|object[] $manyValues
+	 * @param array<array<mixed>>|array<object> $manyValues
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
@@ -252,7 +253,7 @@ class Connection
 		$primaryKeys = [];
 		$beforeId = (int) $this->getLink()->lastInsertId();
 		
-		/** @var mixed[]|object $values */
+		/** @var array<mixed>|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
 			
@@ -271,8 +272,8 @@ class Connection
 	/**
 	 * Synchronize row by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
-	 * @param mixed[]|object $values
-	 * @param string[]|\StORM\Literal[]|null $columnsToUpdate
+	 * @param array<mixed>|object $values
+	 * @param array<string>|array<\StORM\Literal>|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 */
@@ -295,8 +296,8 @@ class Connection
 	/**
 	 * Synchronize rows by unique index, if $columnsToUpdate is null all columns are updated
 	 * @param string $table
-	 * @param mixed[][]|object[] $manyValues
-	 * @param string[]|\StORM\Literal[]|null $columnsToUpdate
+	 * @param array<array<mixed>>|array<object> $manyValues
+	 * @param array<string>|array<\StORM\Literal>|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
 	 * @param int $chunkSize
@@ -307,7 +308,7 @@ class Connection
 		$primaryKeys = [];
 		$beforeId = (int) $this->getLink()->lastInsertId();
 		
-		/** @var mixed[]|object $values */
+		/** @var array<mixed>|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$values = $this->prepareInputArray($values, $primaryKeys, $nonAutoincrementPK);
 			$vars = [];
@@ -323,9 +324,9 @@ class Connection
 	/**
 	 * Generate SQL string for insert
 	 * @param string $table
-	 * @param mixed[][] $manyInserts
-	 * @param mixed[] $vars
-	 * @param string[]|\StORM\Literal[]|null $onDuplicateUpdate
+	 * @param array<array<mixed>> $manyInserts
+	 * @param array<mixed> $vars
+	 * @param array<string>|array<\StORM\Literal>|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
 	public function getSqlInsert(string $table, array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
@@ -404,7 +405,7 @@ class Connection
 	/**
 	 * Execute query and return affected rows
 	 * @param string $sql
-	 * @param string[] $identifiers
+	 * @param array<string> $identifiers
 	 * @param bool|null $debug
 	 */
 	public function exec(string $sql, array $identifiers = [], ?bool $debug = null): int
@@ -441,7 +442,7 @@ class Connection
 	
 	/**
 	 * Get all logged items if debug mode is on
-	 * @return \StORM\LogItem[]
+	 * @return array<\StORM\LogItem>
 	 */
 	public function getLog(): array
 	{
@@ -451,7 +452,7 @@ class Connection
 	/**
 	 * Get real sql. Variables are binded.
 	 * @param string $sql
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 */
 	public function getRealSql(string $sql, array $vars): string
 	{
@@ -518,14 +519,14 @@ class Connection
 			return \md5($namespace . '!._.!' . $string);
 		}
 		
-		return \str_replace('.', '', \uniqid('', true) . \rand(10, 99));
+		return Strings::replace(\uniqid('', true) . \rand(10, 99), '.', '');
 	}
 	
 	/**
-	 * @param mixed[]|object $values
-	 * @param string[] $primaryKeys
+	 * @param array<mixed>|object $values
+	 * @param array<string> $primaryKeys
 	 * @param string|null $nonAutoincrementPK
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	private function prepareInputArray($values, array &$primaryKeys, ?string $nonAutoincrementPK): array
 	{
@@ -554,7 +555,7 @@ class Connection
 	
 	/**
 	 * @param string $sql
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 */
 	private function log(string $sql, array $vars): LogItem
 	{
@@ -575,7 +576,7 @@ class Connection
 	/**
 	 * Sleep
 	 * @throws \StORM\Exception\GeneralException
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function __sleep(): array
 	{

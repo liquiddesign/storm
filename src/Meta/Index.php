@@ -11,7 +11,7 @@ class Index extends AnnotationClass
 {
 	/**
 	 * Column names in array which index is on
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $columns;
 	
@@ -41,7 +41,7 @@ class Index extends AnnotationClass
 	}
 
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getColumns(): array
 	{
@@ -49,7 +49,7 @@ class Index extends AnnotationClass
 	}
 	
 	/**
-	 * @param string[] $columns
+	 * @param array<string> $columns
 	 */
 	public function setColumns(array $columns): void
 	{

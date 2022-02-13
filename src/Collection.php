@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StORM;
 
 use Nette\Utils\Arrays;
+use Nette\Utils\Strings;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Meta\Relation;
@@ -17,8 +18,8 @@ use StORM\Meta\RelationNxN;
 class Collection extends GenericCollection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
-	 * @phpstan-var T[]|null
-	 * @var \StORM\Entity[]|null
+	 * @phpstan-var array<T>|null
+	 * @var array<\StORM\Entity>|null
 	 */
 	protected ?array $items = null;
 	
@@ -35,7 +36,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	private ?\StORM\Repository $repository;
 	
 	/**
-	 * @var \StORM\Collection[]
+	 * @var array<\StORM\Collection>
 	 */
 	private array $cache;
 	
@@ -43,7 +44,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * Collection constructor.
 	 * @param \StORM\Repository $repository
 	 * @param string|null $mutation
-	 * @param string[]|null $fallbackColumns
+	 * @param array<string>|null $fallbackColumns
 	 */
 	public function __construct(Repository $repository, ?string $mutation = null, ?array $fallbackColumns = null)
 	{
@@ -87,11 +88,16 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->setFetchClass(null, $this->classArguments);
 	}
 	
+	/**
+	 * @param bool $enableSmartJoin
+	 * @param string|null $entityClass
+	 * @phpstan-param class-string<T>|null $entityClass
+	 * @return $this
+	 */
 	public function setSmartJoin(bool $enableSmartJoin, ?string $entityClass = null): self
 	{
 		$this->enableSmartJoin = $enableSmartJoin;
 		
-		/** @phpstan-ignore-next-line */
 		if ($entityClass && \is_subclass_of($entityClass, Entity::class)) {
 			$this->entityClass = $entityClass;
 		}
@@ -113,7 +119,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 */
 	public function first(bool $needed = false): ?Entity
 	{
-		/** @phpstan-ignore-next-line */
 		return parent::first($needed);
 	}
 	
@@ -127,7 +132,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		$orderByColumn = $columnName ?: $this->getRepository()->getStructure()->getPK()->getName();
 		
-		/** @phpstan-ignore-next-line */
 		return parent::last($orderByColumn, $needed);
 	}
 	
@@ -150,15 +154,14 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 */
 	public function fetch(): ?Entity
 	{
-		/** @phpstan-ignore-next-line */
 		return parent::fetch();
 	}
 	
 	/**
 	 * Convert collection to array of object
 	 * @param bool $toArrayValues
-	 * @phpstan-return T[]
-	 * @return object[]
+	 * @phpstan-return array<T>
+	 * @return array<object>
 	 */
 	public function toArray(bool $toArrayValues = false): array
 	{
@@ -302,7 +305,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * Get sql string for sql UPDATE records and bind variables in updates
-	 * @param mixed[] $updates
+	 * @param array<mixed> $updates
 	 * @param bool $ignore
 	 * @param string|null $alias
 	 * @override adding autojoin feature
@@ -336,8 +339,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * @override reset skip select length
-	 * @param string[] $select
-	 * @param mixed[] $values
+	 * @param array<string> $select
+	 * @param array<mixed> $values
 	 * @param bool $keepIndex
 	 * @return static
 	 */
@@ -352,7 +355,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * Get possible values of column based by WHERE column IN ($possibleValues)
 	 * @override adding default alias to search in array
 	 * @param string $column
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getPossibleValues(string $column): array
 	{
@@ -360,14 +363,14 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
-	 * @param mixed[] $filters
+	 * @param array<mixed> $filters
 	 * @param bool $silent
 	 * @return static
 	 */
 	public function filter(array $filters, bool $silent = false): self
 	{
 		foreach ($filters as $name => $value) {
-			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
+			$realName = Repository::FILTER_PREFIX . Strings::firstUpper($name);
 			
 			if (\method_exists($this->getRepository(), $realName)) {
 				\call_user_func_array([$this->getRepository(), $realName], [$value, $this]);
@@ -442,7 +445,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		foreach ($matches[0] as $found) {
 			$aliases = $found[0];
 			$offset = $found[1];
-			$aliases = \substr($aliases, 0, -1);
+			$aliases = Strings::substring($aliases, 0, -1);
 			
 			// if prefix exists i will avoid it
 			if (isset($this->aliases[$aliases])) {
@@ -454,7 +457,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			
 			if (\count($aliasesList) > 1) {
 				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset, 0);
-				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset + \strlen($aliases) + 1, 0);
+				$expression = \substr_replace($expression, $this->getConnection()->getQuoteIdentifierChar(), $offset + Strings::length($aliases) + 1, 0);
 			}
 			
 			$aliasPrefix = '';
@@ -499,7 +502,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function __sleep(): array
 	{

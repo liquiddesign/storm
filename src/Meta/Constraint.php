@@ -6,6 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
+use Nette\Utils\Strings;
 use StORM\SchemaManager;
 
 class Constraint extends AnnotationProperty
@@ -102,7 +103,7 @@ class Constraint extends AnnotationProperty
 			throw new \InvalidArgumentException("Type can be 'source' or 'target', '$type' given.");
 		}
 		
-		$glue = \ucfirst($type);
+		$glue = Strings::firstUpper($type);
 		$this->name = $relation->getVia() . \StORM\Meta\Structure::NAME_SEPARATOR . $type;
 		$this->source = $relation->getVia();
 		$this->sourceKey = \call_user_func([$relation, 'get' . $glue . 'ViaKey']);

@@ -75,13 +75,13 @@ class RelationNxN extends Relation
 	}
 	
 	/**
-	 * @param mixed[] $json
+	 * @param array<mixed> $json
 	 */
 	public function loadFromArray(array $json): void
 	{
 		if (isset($json['keys'])) {
-			$this->sourceViaKey = (string) $json['keys'][0] ?? '';
-			$this->targetViaKey = (string) $json['keys'][1] ?? '';
+			$this->sourceViaKey = (string) ($json['keys'][0] ?? '');
+			$this->targetViaKey = (string) ($json['keys'][1] ?? '');
 		}
 		
 		parent::loadFromArray($json);

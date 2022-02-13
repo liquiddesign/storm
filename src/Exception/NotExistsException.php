@@ -25,7 +25,7 @@ class NotExistsException extends \DomainException implements IContextException
 	 * @param int $errorCode
 	 * @param string $value
 	 * @param string|null $source
-	 * @param string[]|null $possibleValues
+	 * @param array<string>|null $possibleValues
 	 */
 	public function __construct(?IDumper $context, int $errorCode, string $value, ?string $source = null, ?array $possibleValues = null)
 	{

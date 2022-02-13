@@ -9,7 +9,7 @@ class Expression
 	private int $iterator = 0;
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	private array $vars = [];
 	
@@ -18,7 +18,7 @@ class Expression
 	/**
 	 * @param string|null $glue
 	 * @param string $expression
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 * @param string $binderName
 	 */
 	public function add(?string $glue, string $expression, array $vars = [], string $binderName = '__var'): void
@@ -47,7 +47,7 @@ class Expression
 	}
 	
 	/**
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function getVars(): array
 	{

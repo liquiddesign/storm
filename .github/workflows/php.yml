@@ -66,6 +66,9 @@ jobs:
     - name: Run phpcs
       run: composer phpcs
 
+    - name: Run phpcheck
+      run: composer phpcheck
+
     - name: Run tester
       run: composer tester
 

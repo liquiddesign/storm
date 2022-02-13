@@ -32,7 +32,7 @@ class InsertResult
 	private ?int $idAfter;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	private array $primaryKeys;
 	
@@ -51,7 +51,7 @@ class InsertResult
 	 * @param int $rowCount
 	 * @param int $idBefore
 	 * @param int|null $idAfter
-	 * @param string[] $primaryKeys
+	 * @param array<string> $primaryKeys
 	 */
 	public function __construct(Connection $connection, string $tableName, bool $multiple, bool $ignore, int $rowCount, int $idBefore, ?int $idAfter, array $primaryKeys)
 	{
@@ -85,7 +85,7 @@ class InsertResult
 	}
 	
 	/**
-	 * @return string[]|int[]
+	 * @return array<string>|array<int>
 	 */
 	public function getPrimaryKeys(): array
 	{

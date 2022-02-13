@@ -6,6 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Schema\Processor;
 use Nette\Schema\Schema;
+use Nette\Utils\Strings;
 
 abstract class Annotation implements \JsonSerializable
 {
@@ -26,7 +27,7 @@ abstract class Annotation implements \JsonSerializable
 	}
 	
 	/**
-	 * @param mixed[] $json
+	 * @param array<mixed> $json
 	 */
 	public function loadFromArray(array $json): void
 	{
@@ -38,12 +39,12 @@ abstract class Annotation implements \JsonSerializable
 				continue;
 			}
 			
-			\call_user_func_array([$this, 'set' . \ucfirst($attribute)], [$value]);
+			\call_user_func_array([$this, 'set' . Strings::firstUpper($attribute)], [$value]);
 		}
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function jsonSerialize(): array
 	{

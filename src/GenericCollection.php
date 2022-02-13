@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
+use Nette\Utils\Strings;
 use StORM\Exception\AlreadyExistsException;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
@@ -61,13 +62,13 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
 	/**
-	 * @phpstan-var T[]|null
-	 * @var object[]|null
+	 * @phpstan-var array<T>|null
+	 * @var array<object>|null
 	 */
 	protected ?array $items = null;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $keys;
 	
@@ -77,7 +78,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected string $class;
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	protected array $classArguments = [];
 	
@@ -86,27 +87,27 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected int $binderCounter = 0;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $aliases = [];
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $tableAliases = [];
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	protected array $modifiers = [];
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected ?array $baseFrom;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	protected array $baseSelect;
 	
@@ -115,12 +116,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected bool $prefixIndex = true;
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	protected array $vars = [];
 	
 	/**
-	 * @var int[]
+	 * @var array<int>
 	 */
 	protected array $varsFlags = [];
 	
@@ -129,7 +130,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected ?int $affectedNumber = null;
 	
 	/**
-	 * @var string[][]
+	 * @var array<array<string>>
 	 */
 	protected array $possibleValues = [];
 	
@@ -140,10 +141,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Rows constructor.
 	 * @param \StORM\Connection $connection
-	 * @param string[] $from
-	 * @param string[] $select
+	 * @param array<string> $from
+	 * @param array<string> $select
 	 * @param string $class
-	 * @param mixed[] $classArguments
+	 * @param array<mixed> $classArguments
 	 * @param string|null $index
 	 */
 	public function __construct(Connection $connection, ?array $from, array $select, string $class, array $classArguments = [], ?string $index = null)
@@ -179,7 +180,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get array of modifiers: WHERE, FROM, SELECT, LIMIT, OFFSET, ORDER BY, GROUP BY, HAVING BY, JOIN
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function getModifiers(): array
 	{
@@ -196,7 +197,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set fetch class or class parameters
 	 * @param string|null $class
-	 * @param mixed[]|null $params
+	 * @param array<mixed>|null $params
 	 */
 	public function setFetchClass(?string $class, ?array $params = []): self
 	{
@@ -213,7 +214,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get fetch class
-	 * @param mixed[] $params
+	 * @param array<mixed> $params
 	 * @phpstan-return class-string<T>
 	 */
 	public function getFetchClass(array &$params = []): string
@@ -244,7 +245,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Get possible values of column based by WHERE column IN ($possibleValues)
 	 * @param string $column
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getPossibleValues(string $column): array
 	{
@@ -404,7 +405,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Update all record equals condition and return number of affected rows
-	 * @param mixed[]|object $values
+	 * @param array<mixed>|object $values
 	 * @param bool $ignore
 	 * @param string|null $alias
 	 */
@@ -484,7 +485,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Get sql string for sql UPDATE records and bind variables in updates
-	 * @param mixed[] $updates
+	 * @param array<mixed> $updates
 	 * @param bool $ignore
 	 * @param string|null $alias
 	 */
@@ -535,8 +536,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Convert collection to array of object
 	 * @param bool $toArrayValues
-	 * @phpstan-return T[]
-	 * @return object[]
+	 * @phpstan-return array<T>
+	 * @return array<object>
 	 */
 	public function toArray(bool $toArrayValues = false): array
 	{
@@ -550,18 +551,18 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Convert collection to array of strings
 	 * @param string $columnOrExpression
-	 * @param string[]|callable[] $callbacks or $columns
+	 * @param array<string>|array<callable> $callbacks or $columns
 	 * @param bool $toArrayValues
-	 * @phpstan-return mixed[]
-	 * @return mixed[]
+	 * @phpstan-return array<mixed>
+	 * @return array<mixed>
 	 */
 	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array
 	{
 		if (!$this->isLoaded()) {
 			$this->load();
 		}
-		
-		if (\strpos($columnOrExpression, '%') !== false) {
+	
+		if (Strings::contains($columnOrExpression, '%')) {
 			$return = $this->format($columnOrExpression, $callbacks);
 		} else {
 			$return = [];
@@ -578,7 +579,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Call array map on collection
 	 * @param callable $callback
 	 * @param bool $toArrayValues
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function map(callable $callback, bool $toArrayValues = false): array
 	{
@@ -588,8 +589,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
 	 * @param string $property
-	 * @phpstan-return T[][]
-	 * @return object[][]
+	 * @phpstan-return array<array<T>>
+	 * @return array<array<object>>
 	 */
 	public function getGroups(string $property): array
 	{
@@ -681,7 +682,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call sql function on args and return raw value
 	 * @param string $function
-	 * @param string[] $args
+	 * @param array<string> $args
 	 */
 	public function func(string $function, array $args): string
 	{
@@ -697,7 +698,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set WHERE condition and replace previous
 	 * @param string $expression
-	 * @param mixed[]|null|mixed $values
+	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
 	public function setWhere(?string $expression, $values = null): self
@@ -718,7 +719,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Add WHERE condition with "AND" glue
 	 * @param string $expression
-	 * @param mixed[]|null|mixed $values
+	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
 	public function where(string $expression, $values = null): self
@@ -734,7 +735,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Call multiple where
-	 * @param mixed[] $conditions
+	 * @param array<mixed> $conditions
 	 * @param string $columnPrefix
 	 * @return static
 	 */
@@ -750,7 +751,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Call multiple where
 	 * @deprecated use whereMatch
-	 * @param mixed[] $conditions
+	 * @param array<mixed> $conditions
 	 * @param string $columnPrefix
 	 * @return static
 	 */
@@ -762,7 +763,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set WHERE negated condition and replace previous
 	 * @param string $expression
-	 * @param mixed[]|null|mixed $values
+	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
 	public function setWhereNot(string $expression, $values = null): self
@@ -779,7 +780,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Add WHERE negated condition with "AND" glue
 	 * @param string $expression
-	 * @param mixed[]|null|mixed $values
+	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
 	public function whereNot(string $expression, $values = null): self
@@ -824,8 +825,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add FROM clause and merge with previous
-	 * @param string[]|\StORM\ICollection[] $from
-	 * @param mixed[] $values
+	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function from(array $from, array $values = []): self
@@ -847,8 +848,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set FROM clause and remove previous
-	 * @param string[]|\StORM\ICollection[] $from
-	 * @param mixed[] $values
+	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function setFrom(array $from, array $values = []): self
@@ -890,8 +891,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set SELECT clause and replace previous
-	 * @param string[] $select
-	 * @param mixed[] $values
+	 * @param array<string> $select
+	 * @param array<mixed> $values
 	 * @param bool $keepIndex
 	 * @return static
 	 */
@@ -918,8 +919,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param string[]|\StORM\ICollection[] $select
-	 * @param mixed[] $values
+	 * @param array<string>|array<\StORM\ICollection> $select
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function select(array $select, array $values = []): self
@@ -1020,8 +1021,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set ORDER clause and replace previous
-	 * @param string[] $order
-	 * @param mixed[] $values
+	 * @param array<string> $order
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function setOrderBy(array $order, array $values = []): self
@@ -1042,8 +1043,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add ORDER clause and merge with previous
-	 * @param string[] $order
-	 * @param mixed[] $values
+	 * @param array<string> $order
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function orderBy(array $order, array $values = []): self
@@ -1063,9 +1064,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set GROUP BY and HAVING clause and replace previous
-	 * @param string[] $groups
+	 * @param array<string> $groups
 	 * @param null|string $having
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function setGroupBy(array $groups, ?string $having = null, array $values = []): self
@@ -1087,9 +1088,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * @deprecated Use setGroupBy
-	 * @param string[] $groups
+	 * @param array<string> $groups
 	 * @param null|string $having
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @return static
 	 */
 	public function groupBy(array $groups, ?string $having = null, array $values = []): self
@@ -1101,7 +1102,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set GROUP BY for all columns excepts columns in parameter $exceptColumns and HAVING clause and replace previous
-	 * @param string[] $exceptColumns
+	 * @param array<string> $exceptColumns
 	 * @param null|string $having
 	 * @return static
 	 */
@@ -1129,9 +1130,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set JOIN clause and replace previous
-	 * @param string[] $from
+	 * @param array<string> $from
 	 * @param string $condition
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @param string|null $type
 	 * @return static
 	 */
@@ -1162,9 +1163,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add JOIN clause and merge with previous
-	 * @param string[]|\StORM\ICollection[] $from
+	 * @param array<string>|array<\StORM\ICollection> $from
 	 * @param string $condition
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @param string|null $type
 	 * @return static
 	 */
@@ -1243,7 +1244,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Return array of parsed vars, means converted from Entity to primary key, from literal to SQL string
 	 * @param int|null $flags
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function getVars(?int $flags = null): array
 	{
@@ -1398,8 +1399,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @param mixed[] $vars
-	 * @return mixed[]
+	 * @param array<mixed> $vars
+	 * @return array<mixed>
 	 */
 	protected function parseVars(array $vars): array
 	{
@@ -1426,13 +1427,13 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * @param string $sql
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 */
 	protected function replaceLiterals(string $sql, array $vars): string
 	{
 		foreach ($vars as $name => $value) {
 			if ($value instanceof Literal) {
-				$sql = \str_replace(":$name", (string) $value, $sql);
+				$sql = Strings::replace($sql, ":$name", (string) $value);
 			}
 		}
 		
@@ -1440,7 +1441,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	protected function getFetchParameters(): array
 	{
@@ -1524,7 +1525,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * @param string $expression
-	 * @param mixed[]|null|mixed $values
+	 * @param array<mixed>|null|mixed $values
 	 * @param bool $not
 	 * @param bool $replace
 	 */
@@ -1551,7 +1552,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$count = \count($values);
 		
 		if ($isAssociative && $count) {
-			if (\strpos($expression, ':') === false) {
+			if (!Strings::contains($expression, ':')) {
 				throw new \InvalidArgumentException("Passed associative array and there is no bind variable with ':'. Call \array_values() or toArrayOf(..., true).");
 			}
 			
@@ -1690,7 +1691,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @param string[]|\StORM\ICollection[] $aliases
+	 * @param array<string>|array<\StORM\ICollection> $aliases
 	 * @param string $modifier
 	 */
 	private function addAlias(array $aliases, string $modifier): void
@@ -1700,8 +1701,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 				$alias = (string) $table;
 			}
 			
-			if (\substr($alias, 0, 1) === $this->getConnection()->getQuoteIdentifierChar()) {
-				$alias = \substr($alias, 1, -1);
+			if (Strings::substring($alias, 0, 1) === $this->getConnection()->getQuoteIdentifierChar()) {
+				$alias = Strings::substring($alias, 1, -1);
 			}
 			
 			if (!Helpers::isValidIdentifier($alias)) {
@@ -1730,8 +1731,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Convert collection to array of sprintf formated strings
 	 * Return sprintf formated array
 	 * @param string $format
-	 * @param string[] $callbacks or $columns
-	 * @return string[]
+	 * @param array<string> $callbacks or $columns
+	 * @return array<string>
 	 */
 	private function format(string $format, array $callbacks = []): array
 	{
@@ -1759,7 +1760,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function __sleep(): array
 	{

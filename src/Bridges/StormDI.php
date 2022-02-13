@@ -99,7 +99,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 	
 	/**
 	 * @param string $name
-	 * @param string[] $config
+	 * @param array<string> $config
 	 * @param bool $debug
 	 */
 	private function setupDatabase(string $name, array $config, bool $debug): void

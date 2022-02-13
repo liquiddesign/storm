@@ -6,6 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
+use Nette\Utils\Strings;
 
 class Table extends AnnotationClass
 {
@@ -73,6 +74,6 @@ class Table extends AnnotationClass
 	{
 		$replace = self::STRIP_NAMESPACES;
 		
-		return \strtolower(\str_replace('\\', '_', \str_replace($replace, '', $model)));
+		return Strings::lower(Strings::replace(Strings::replace($model, $replace, ''), '\\', '_'));
 	}
 }

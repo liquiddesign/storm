@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StORM\Meta;
 
 use Nette\Caching\Cache;
+use Nette\Utils\Strings;
 use StORM\Exception\AnnotationException;
 use StORM\Exception\NotExistsException;
 use StORM\Helpers;
@@ -30,22 +31,22 @@ class Structure
 	private \StORM\Meta\Table $table;
 	
 	/**
-	 * @var \StORM\Meta\Column[]
+	 * @var array<\StORM\Meta\Column>
 	 */
 	private ?array $columns = null;
 	
 	/**
-	 * @var \StORM\Meta\Relation[]
+	 * @var array<\StORM\Meta\Relation>
 	 */
 	private ?array $relations = null;
 	
 	/**
-	 * @var mixed[][]
+	 * @var array<array<mixed>>
 	 */
 	private array $customClassAnnotations = [];
 	
 	/**
-	 * @var mixed[][][]
+	 * @var array<array<array<mixed>>>
 	 */
 	private array $customPropertyAnnotations = [];
 	
@@ -107,32 +108,32 @@ class Structure
 	/**
 	 * Get custom class annotation
 	 * @param string $annotationName
-	 * @return mixed[]|null
+	 * @return array<mixed>|null
 	 */
 	public function getClassAnnotation(string $annotationName): ?array
 	{
-		return $this->customClassAnnotations[\strtolower($annotationName)] ?? null;
+		return $this->customClassAnnotations[Strings::lower($annotationName)] ?? null;
 	}
 	
 	/**
 	 * Get custom annotations for all properties
 	 * @param string $annotationName
-	 * @return mixed[][]|null
+	 * @return array<array<mixed>>|null
 	 */
 	public function getPropertiesAnnotation(string $annotationName): ?array
 	{
-		return $this->customPropertyAnnotations[\strtolower($annotationName)] ?? null;
+		return $this->customPropertyAnnotations[Strings::lower($annotationName)] ?? null;
 	}
 	
 	/**
 	 * Get custom annotations for property
 	 * @param string $property
 	 * @param string $annotationName
-	 * @return mixed[]|null
+	 * @return array<mixed>|null
 	 */
 	public function getPropertyAnnotations(string $property, string $annotationName): ?array
 	{
-		return $this->customPropertyAnnotations[\strtolower($annotationName)][$property] ?? null;
+		return $this->customPropertyAnnotations[Strings::lower($annotationName)][$property] ?? null;
 	}
 	
 	public function getEntityClass(): ?string
@@ -154,8 +155,8 @@ class Structure
 	 * @param string $expressionPrefix
 	 * @param string $aliasPrefix
 	 * @param string|null $mutation
-	 * @param string[]|null $fallbackColumns
-	 * @return string[]
+	 * @param array<string>|null $fallbackColumns
+	 * @return array<string>
 	 */
 	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = '', ?string $mutation = null, ?array $fallbackColumns = null): array
 	{
@@ -200,7 +201,7 @@ class Structure
 	/**
 	 * @param bool $includePK
 	 * @param bool $includeFK
-	 * @return \StORM\Meta\Column[]
+	 * @return array<\StORM\Meta\Column>
 	 */
 	public function getColumns(bool $includePK = true, bool $includeFK = true): array
 	{
@@ -218,7 +219,7 @@ class Structure
 	}
 	
 	/**
-	 * @return \StORM\Meta\Relation[]
+	 * @return array<\StORM\Meta\Relation>
 	 */
 	public function getRelations(): array
 	{
@@ -270,7 +271,7 @@ class Structure
 	}
 	
 	/**
-	 * @return \StORM\Meta\Index[]
+	 * @return array<\StORM\Meta\Index>
 	 * @throws \StORM\Exception\AnnotationException
 	 * @throws \ReflectionException
 	 */
@@ -329,7 +330,7 @@ class Structure
 	}
 	
 	/**
-	 * @return \StORM\Meta\Trigger[]
+	 * @return array<\StORM\Meta\Trigger>
 	 * @throws \StORM\Exception\AnnotationException
 	 * @throws \ReflectionException
 	 */
@@ -366,7 +367,7 @@ class Structure
 	}
 	
 	/**
-	 * @return \StORM\Meta\Constraint[]
+	 * @return array<\StORM\Meta\Constraint>
 	 * @throws \ReflectionException
 	 */
 	public function getConstraints(): array
@@ -415,7 +416,7 @@ class Structure
 	}
 	
 	/**
-	 * @return mixed[]
+	 * @return array<mixed>
 	 * @throws \ReflectionException
 	 */
 	public function jsonSerialize(): array
@@ -464,7 +465,7 @@ class Structure
 	
 	public static function getEntityClassFromInterface(string $repositoryClass): string
 	{
-		return \substr($repositoryClass, \strlen(self::INTERFACE_PREFIX));
+		return Strings::substring($repositoryClass, Strings::length(self::INTERFACE_PREFIX));
 	}
 	
 	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
@@ -474,18 +475,18 @@ class Structure
 	
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
 	{
-		return \substr($repositoryClass, 0, (\strrpos($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName())));
+		return Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
 	}
 	
 	/**
-	 * @param string[] $customAnnotations
-	 * @param string[] $classDocComment
-	 * @param string[][] $propertiesDocComments
+	 * @param array<string> $customAnnotations
+	 * @param array<string> $classDocComment
+	 * @param array<array<string>> $propertiesDocComments
 	 */
 	protected function loadCustomAnnotations(array $customAnnotations, array $classDocComment, array $propertiesDocComments): void
 	{
 		foreach ($customAnnotations as $annotationName => $annotationType) {
-			$annotationName = \strtolower($annotationName);
+			$annotationName = Strings::lower($annotationName);
 			
 			if ($annotationType === self::ANNOTATION_TYPE_CLASS && isset($classDocComment[$annotationName])) {
 				$this->customClassAnnotations[$annotationName] = $this->parseJson($classDocComment[$annotationName]);
@@ -521,7 +522,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[][]|string[][][] $docComments
+	 * @param array<array<string>>|array<array<array<string>>> $docComments
 	 */
 	protected function loadPK(array $docComments): ?Column
 	{
@@ -546,8 +547,8 @@ class Structure
 	}
 	
 	/**
-	 * @param string[][]|string[][][] $docComments
-	 * @return \StORM\Meta\Column[]
+	 * @param array<array<string>>|array<array<array<string>>> $docComments
+	 * @return array<\StORM\Meta\Column>
 	 */
 	protected function loadColumns(array $docComments): array
 	{
@@ -577,10 +578,10 @@ class Structure
 	}
 	
 	/**
-	 * @param string[][]|string[][][] $docComments
+	 * @param array<array<string>>|array<array<array<string>>> $docComments
 	 * @param string $table
 	 * @param \StORM\Meta\Column $pk
-	 * @return \StORM\Meta\Relation[]
+	 * @return array<\StORM\Meta\Relation>
 	 * @throws \ReflectionException
 	 */
 	protected function loadRelations(array $docComments, string $table, Column $pk): array
@@ -608,7 +609,7 @@ class Structure
 	}
 	
 	/**
-	 * @param string[]|string[][] $docComment
+	 * @param array<string>|array<array<string>> $docComment
 	 */
 	protected function loadTable(array $docComment): Table
 	{
@@ -636,7 +637,7 @@ class Structure
 	}
 	
 	/**
-	 * @return string[][]|string[]|int[][]|int[]
+	 * @return array<array<string>>|array<string>|array<array<int>>|array<int>
 	 * @throws \ReflectionException
 	 */
 	private function getClassDocComment(): array
@@ -645,7 +646,7 @@ class Structure
 	}
 	
 	/**
-	 * @return string[][]|string[][][]|int[][]|int[][][]
+	 * @return array<array<string>>|array<array<array<string>>>|array<array<int>>|array<array<array<int>>>
 	 * @throws \ReflectionException
 	 */
 	private function getPropertiesDocComments(): array
@@ -682,7 +683,7 @@ class Structure
 	
 	/**
 	 * @param string $name
-	 * @param string[] $parsedDocComment
+	 * @param array<string> $parsedDocComment
 	 */
 	private function loadColumn(string $name, array $parsedDocComment): Column
 	{
@@ -734,7 +735,7 @@ class Structure
 	
 	/**
 	 * @param string $name
-	 * @param string[] $parsedDocComment
+	 * @param array<string> $parsedDocComment
 	 * @param string $sourceTable
 	 * @param \StORM\Meta\Column $sourcePk
 	 * @throws \ReflectionException
@@ -773,8 +774,8 @@ class Structure
 					$relation->setSourceKey($sourcePk->getName());
 					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
 					$relation->setVia($sourceTable . RelationNxN::TABLE_NAME_GLUE . $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getTable()->getName());
-					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
-					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($target))->getShortName()));
+					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
+					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($target))->getShortName()));
 					$relation->setSourceKeyType($sourcePk->getPropertyType());
 					$relation->setTargetKeyType($this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
 				} elseif ($relation->isKeyHolder()) {
@@ -783,8 +784,8 @@ class Structure
 					$relation->setKeyType($target === $class ? $sourcePk->getPropertyType() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
 				} else {
 					$relation->setSourceKey($sourcePk->getName());
-					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
-					$relation->setKeyType($json['key'] ?? Column::FOREIGN_KEY_PREFIX . \strtolower((new \ReflectionClass($class))->getShortName()));
+					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
+					$relation->setKeyType($json['key'] ?? Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
 				}
 			}
 		}
@@ -840,7 +841,7 @@ class Structure
 	
 	/**
 	 * @param string $string
-	 * @return string[]|null
+	 * @return array<string>|null
 	 */
 	private function parseJson(string $string): ?array
 	{

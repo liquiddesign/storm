@@ -14,8 +14,8 @@ class NotFoundException extends \Exception implements IContextException
 	/**
 	 * NotFoundException constructor.
 	 * @param \StORM\IDumper|null $context
-	 * @param string[] $conditions
-	 * @param string|string[] $source
+	 * @param array<string> $conditions
+	 * @param string|array<string> $source
 	 * @param \Throwable|null $previous
 	 */
 	public function __construct(?IDumper $context, array $conditions = [], $source = null, ?Throwable $previous = null)

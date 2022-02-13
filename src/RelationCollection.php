@@ -40,7 +40,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	/**
 	 * Relate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
-	 * @param string[]|int[]|string[][]|int[][] $primaryKeys
+	 * @param array<string>|array<int>|array<array<string>>|array<array<int>> $primaryKeys
 	 * @param bool $checkKeys
 	 * @param string|null $primaryKeyName You can specify column name and method will generate primary keys for that columns
 	 * @throws \StORM\Exception\NotFoundException
@@ -100,7 +100,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	/**
 	 * Unrelate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
-	 * @param string[]|int[] $primaryKeys
+	 * @param array<string>|array<int> $primaryKeys
 	 */
 	public function unrelate(array $primaryKeys): int
 	{
@@ -150,8 +150,8 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	
 	/**
 	 * @override reset skip select length
-	 * @param string[] $select
-	 * @param mixed[] $values
+	 * @param array<string> $select
+	 * @param array<mixed> $values
 	 * @param bool $keepIndex
 	 * @return static
 	 */

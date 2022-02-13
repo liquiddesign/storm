@@ -9,7 +9,7 @@ class LogItem
 	private int $amount = 1;
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	private array $vars;
 	
@@ -22,7 +22,7 @@ class LogItem
 	/**
 	 * LogItem constructor.
 	 * @param string $sql
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 */
 	public function __construct(string $sql, array $vars = [])
 	{
@@ -40,7 +40,7 @@ class LogItem
 	
 	/**
 	 * Get bindend variables
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function getVars(): array
 	{
@@ -82,7 +82,7 @@ class LogItem
 	
 	/**
 	 * Set binded vars
-	 * @param mixed[] $vars
+	 * @param array<mixed> $vars
 	 */
 	public function setVars(array $vars): void
 	{

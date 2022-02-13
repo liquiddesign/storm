@@ -13,12 +13,12 @@ class DIConnection extends \StORM\Connection
 	private string $mutation;
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	private array $availableMutations = [];
 	
 	/**
-	 * @var string[]
+	 * @var array<string>
 	 */
 	private array $fallbackMutations = [];
 	
@@ -29,7 +29,7 @@ class DIConnection extends \StORM\Connection
 	 * @param string $dsn
 	 * @param string $user
 	 * @param string $password
-	 * @param int[] $attributes
+	 * @param array<int> $attributes
 	 */
 	public function __construct(Container $container, string $name, string $dsn, string $user, string $password, array $attributes = [])
 	{
@@ -75,7 +75,7 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * Get all defined repositories names in container
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function findAllRepositories(): array
 	{
@@ -94,7 +94,7 @@ class DIConnection extends \StORM\Connection
 	}
 	
 	/**
-	 * @param string[] $fallbackMutations
+	 * @param array<string> $fallbackMutations
 	 */
 	public function setFallbackMutations(array $fallbackMutations): void
 	{
@@ -102,7 +102,7 @@ class DIConnection extends \StORM\Connection
 	}
 	
 	/**
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getFallbackMutations(): array
 	{
@@ -140,7 +140,7 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * Get available mutations codes
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getAvailableMutations(): array
 	{
@@ -149,7 +149,7 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * Set avalailable mutation codes => suffix
-	 * @param string[] $mutations
+	 * @param array<string> $mutations
 	 */
 	public function setAvailableMutations(array $mutations): void
 	{

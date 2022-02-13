@@ -6,6 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
+use Nette\Utils\Strings;
 
 class Relation extends AnnotationProperty
 {
@@ -94,7 +95,7 @@ class Relation extends AnnotationProperty
 		$found = false;
 		
 		foreach ($types as $str) {
-			$typeLower = \strtolower($str);
+			$typeLower = Strings::lower($str);
 			
 			if ($typeLower === 'null') {
 				$this->nullable = true;
@@ -102,15 +103,15 @@ class Relation extends AnnotationProperty
 				continue;
 			}
 			
-			$offset = \strpos($str, '[]');
-			$target = $offset === false ? $str : \substr($str, 0, $offset);
+			$offset = Strings::indexOf($str, '[]');
+			$target = $offset === null ? $str : Strings::substring($str, 0, $offset);
 			
 			if (!Structure::isEntityClass($target)) {
 				continue;
 			}
 
-			$this->target = \substr($target, 0, 1) === '\\' ? \substr($target, 1) : $target;
-			$this->isKeyHolder = $offset === false;
+			$this->target = Strings::substring($target, 0, 1) === '\\' ? Strings::substring($target, 1) : $target;
+			$this->isKeyHolder = $offset === null;
 			$found = true;
 		}
 		

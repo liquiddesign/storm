@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace StORM;
 
 use Nette\Utils\Arrays;
+use Nette\Utils\Strings;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
@@ -27,17 +28,17 @@ abstract class Repository implements IEntityParent
 	public const RELATION_SEPARATOR = '_';
 	
 	/**
-	 * @var callable[] Occurs when entity in repository is deleted
+	 * @var array<callable> Occurs when entity in repository is deleted
 	 */
 	public array $onDelete = [];
 	
 	/**
-	 * @var callable[] Occurs when entity in repository is created
+	 * @var array<callable> Occurs when entity in repository is created
 	 */
 	public array $onCreate = [];
 	
 	/**
-	 * @var callable[] Occurs when entity in repository is updated
+	 * @var array<callable> Occurs when entity in repository is updated
 	 */
 	public array $onUpdate = [];
 	
@@ -48,7 +49,7 @@ abstract class Repository implements IEntityParent
 	protected \StORM\SchemaManager $schemaManager;
 	
 	/**
-	 * @var mixed[]
+	 * @var array<mixed>
 	 */
 	private array $injectedArguments = [];
 	
@@ -80,7 +81,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * @param \StORM\IEntityParent $parent
 	 * @param string|null $mutation
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	final public function getEntityArguments(IEntityParent $parent, ?string $mutation = null): array
 	{
@@ -132,9 +133,9 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Create new collection
 	 * @param string|null $mutation
-	 * @param string[]|null $fallbackColumns
+	 * @param array<string>|null $fallbackColumns
 	 * @phpstan-return \StORM\Collection<T>
-	 * @return \StORM\Collection|T[]
+	 * @return \StORM\Collection|array<T>
 	 */
 	final public function many(?string $mutation = null, ?array $fallbackColumns = null): Collection
 	{
@@ -144,9 +145,9 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get entity object by condition
-	 * @param string[]|string|int $condition
+	 * @param array<string>|string|int $condition
 	 * @param bool $needed
-	 * @param string[]|null $select
+	 * @param array<string>|null $select
 	 * @param string|null $mutation
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T|null
@@ -196,11 +197,11 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Create entity row = insert row into table
-	 * @param mixed[]|object $values
+	 * @param array<mixed>|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
-	 * @param mixed[] $checkKeys
-	 * @param mixed[] $primaryKeyNames
+	 * @param array<mixed> $checkKeys
+	 * @param array<mixed> $primaryKeyNames
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
@@ -221,12 +222,12 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Synchronize entity row by unique index, if $columnsToUpdate is null all columns are updated
-	 * @param mixed[]|object $values
-	 * @param string[]|\StORM\Literal[]|null $updateProps
+	 * @param array<mixed>|object $values
+	 * @param array<string>|array<\StORM\Literal>|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool|null $ignore
-	 * @param mixed[] $checkKeys
-	 * @param mixed[] $primaryKeyNames
+	 * @param array<mixed> $checkKeys
+	 * @param array<mixed> $primaryKeyNames
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
@@ -337,7 +338,7 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Create multiple entity rows at once
-	 * @param mixed[][]|object[] $manyValues
+	 * @param array<array<mixed>>|array<object> $manyValues
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
@@ -351,8 +352,8 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Synchronize entity rows by unique index, if $columnsToUpdate is null all columns are updated
-	 * @param mixed[][]|object[] $manyValues
-	 * @param string[]|\StORM\Literal[]|null $updateProps
+	 * @param array<array<mixed>>|array<object> $manyValues
+	 * @param array<string>|array<\StORM\Literal>|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
 	 * @param int $chunkSize
@@ -377,7 +378,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		/** @var mixed[]|object $values */
+		/** @var array<mixed>|object $values */
 		foreach (\array_chunk($manyValues, $chunkSize) as $values) {
 			$insert = [];
 			
@@ -453,9 +454,9 @@ abstract class Repository implements IEntityParent
 	}
 	
 	/**
-	 * @param mixed[][] $manyInserts
-	 * @param mixed[] $vars
-	 * @param string[]|null $onDuplicateUpdate
+	 * @param array<array<mixed>> $manyInserts
+	 * @param array<mixed> $vars
+	 * @param array<string>|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
@@ -466,8 +467,8 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Get default SELECT modifier array for new collection
 	 * @param string|null $mutation
-	 * @param string[]|null $fallbackColumns
-	 * @return string[]
+	 * @param array<string>|null $fallbackColumns
+	 * @return array<string>
 	 */
 	public function getDefaultSelect(?string $mutation = null, ?array $fallbackColumns = null): array
 	{
@@ -477,7 +478,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Get select for relation
 	 * @param string $relation
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getRelationSelect(string $relation): array
 	{
@@ -494,7 +495,7 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get default FROM modifier array for new collection
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public function getDefaultFrom(): array
 	{
@@ -504,7 +505,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Call user filters on collection
 	 * @param \StORM\Collection $collection
-	 * @param mixed[][] $filters
+	 * @param array<array<mixed>> $filters
 	 * @param bool $silent
 	 * @phpstan-return \StORM\Collection<T>
 	 */
@@ -515,7 +516,7 @@ abstract class Repository implements IEntityParent
 				continue;
 			}
 			
-			$realName = Repository::FILTER_PREFIX . \ucfirst($name);
+			$realName = Repository::FILTER_PREFIX . Strings::firstUpper($name);
 			
 			if (\method_exists($this, $realName)) {
 				\call_user_func_array([$this, $realName], [$value, $collection]);
@@ -543,9 +544,9 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Convert properties to columns
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @param bool $skipArrays
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public function propertiesToColumns(array $values, bool $skipArrays = false): array
 	{
@@ -571,9 +572,9 @@ abstract class Repository implements IEntityParent
 	}
 	
 	/**
-	 * @param mixed[] $values
+	 * @param array<mixed> $values
 	 * @param bool $sync
-	 * @return int[][]|string[][]
+	 * @return array<array<int>>|array<array<string>>
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	private function createRelations(array &$values, bool $sync): array
@@ -600,7 +601,7 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Sleep
-	 * @return string[]
+	 * @return array<string>
 	 * @throws \StORM\Exception\GeneralException
 	 */
 	public function __sleep(): array

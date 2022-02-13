@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
+use Nette\Utils\Strings;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
 
@@ -15,7 +16,7 @@ class Helpers
 	/**
 	 * Get model properties
 	 * @param \StORM\Entity $object
-	 * @return string[]
+	 * @return array<string>
 	 */
 	public static function getModelVars(Entity $object): array
 	{
@@ -33,7 +34,7 @@ class Helpers
 	
 	/**
 	 * Tells if is associative array
-	 * @param mixed[] $array
+	 * @param array<mixed> $array
 	 */
 	public static function isAssociative(array $array): bool
 	{
@@ -43,7 +44,7 @@ class Helpers
 	/**
 	 * Parse doc comment
 	 * @param string $s
-	 * @return string[][]|string[]|int[][]|int[]
+	 * @return array<array<string>>|array<string>|array<array<int>>|array<int>
 	 */
 	public static function parseDocComment(string $s): array
 	{
@@ -54,20 +55,20 @@ class Helpers
 		}
 		
 		if (\preg_match('#^[ \t*]*+([^\s@].*)#mi', $content[1], $matches)) {
-			$options[0] = \trim($matches[1]);
+			$options[0] = Strings::trim($matches[1]);
 		}
 		
 		\preg_match_all('#^[ \t*]*@(\w+)([^\w\r\n].*)?#mi', $content[1], $matches, \PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
-			$ref = &$options[\strtolower($match[1])];
+			$ref = &$options[Strings::lower($match[1])];
 			
 			if (isset($ref)) {
 				$ref = (array) $ref;
 				$ref = &$ref[];
 			}
 			
-			$ref = isset($match[2]) ? \trim($match[2]) : '';
+			$ref = isset($match[2]) ? Strings::trim($match[2]) : '';
 		}
 		
 		return $options;
@@ -75,12 +76,12 @@ class Helpers
 	
 	/**
 	 * @param string $value
-	 * @param string[] $possibilities
+	 * @param array<string> $possibilities
 	 */
 	public static function getBestSimilarString(string $value, array $possibilities): ?string
 	{
 		$best = null;
-		$min = (\strlen($value) / 4 + 1) * 10 + .1;
+		$min = (Strings::length($value) / 4 + 1) * 10 + .1;
 		
 		foreach (\array_unique($possibilities, \SORT_REGULAR) as $item) {
 			if ($item !== $value && (
@@ -98,11 +99,11 @@ class Helpers
 	 * Converts to web safe characters [a-z0-9] and trim @ and ' '
 	 * @param string $s
 	 * @param bool $lower
-	 * @return string|string[]|null
+	 * @return string|array<string>|null
 	 */
 	public static function fancyString(string $s, bool $lower = true)
 	{
-		return \preg_replace('#[^a-z0-9]+#i', '_', \trim(($lower ? \strtolower($s) : $s), ' @'));
+		return \preg_replace('#[^a-z0-9]+#i', '_', Strings::trim(($lower ? Strings::lower($s) : $s), ' @'));
 	}
 	
 	/**
@@ -117,7 +118,7 @@ class Helpers
 	/**
 	 * Create SQL clause string
 	 * @param string $prefix
-	 * @param string[]|\StORM\ICollection[]|null $fragments
+	 * @param array<string>|array<\StORM\ICollection>|null $fragments
 	 * @param string $glue
 	 * @param string $assocGlue
 	 * @param bool $brackets
@@ -152,17 +153,17 @@ class Helpers
 	/**
 	 * @param string $property
 	 * @param mixed $rawValue
-	 * @param mixed[] $values
-	 * @param mixed[] $binds
+	 * @param array<mixed> $values
+	 * @param array<mixed> $binds
 	 * @param string $varPrefix
 	 * @param string $varPostfix
-	 * @param array $mutations
+	 * @param array<string, string> $mutations
 	 * @param string $prefix
 	 */
 	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations, string $prefix = ''): void
 	{
 		// cannot bind character "."
-		$column = \str_replace('.', '_', $property);
+		$column = Strings::replace($property, '.', '_');
 		
 		if (\is_array($rawValue)) {
 			foreach ($rawValue as $mutation => $value) {
@@ -170,7 +171,7 @@ class Helpers
 					throw new \InvalidArgumentException("Language $mutation is not in available languages");
 				}
 				
-				$realProperty = $column . $mutations[$mutation] ?? '';
+				$realProperty = $column . ($mutations[$mutation] ?? '');
 				$values["$varPrefix$realProperty$varPostfix"] = \is_bool($value) ? (int) $value : $value;
 				$binds[":$varPrefix$realProperty$varPostfix"] = $prefix . $realProperty;
 			}
@@ -211,10 +212,10 @@ class Helpers
 	}
 	
 	/**
-	 * @param mixed[] $values
-	 * @param string[] $columns
+	 * @param array<mixed> $values
+	 * @param array<string> $columns
 	 * @param bool $silent
-	 * @return mixed[]
+	 * @return array<mixed>
 	 */
 	public static function filterInputArray(array $values, array $columns, bool $silent = true): array
 	{
