@@ -62,7 +62,7 @@ class Connection
 		$this->name = $name;
 		$parsedDsn = \explode(':', $dsn, 2);
 		$this->driver = $parsedDsn[0];
-		\parse_str(Strings::replace($parsedDsn[1], ';', '&'), $matches);
+		\parse_str(Strings::replace($parsedDsn[1], '/;/', '&'), $matches);
 		$this->user = $user;
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
@@ -519,7 +519,7 @@ class Connection
 			return \md5($namespace . '!._.!' . $string);
 		}
 		
-		return Strings::replace(\uniqid('', true) . \rand(10, 99), '.', '');
+		return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./', '');
 	}
 	
 	/**

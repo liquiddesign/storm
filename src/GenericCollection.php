@@ -1433,7 +1433,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	{
 		foreach ($vars as $name => $value) {
 			if ($value instanceof Literal) {
-				$sql = Strings::replace($sql, ":$name", (string) $value);
+				$sql = Strings::replace($sql, "/\:$name/", (string) $value);
 			}
 		}
 		

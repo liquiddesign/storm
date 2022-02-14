@@ -163,7 +163,7 @@ class Helpers
 	public static function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, array $mutations, string $prefix = ''): void
 	{
 		// cannot bind character "."
-		$column = Strings::replace($property, '.', '_');
+		$column = Strings::replace($property, '/\./', '_');
 		
 		if (\is_array($rawValue)) {
 			foreach ($rawValue as $mutation => $value) {

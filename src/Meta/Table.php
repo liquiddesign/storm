@@ -72,8 +72,12 @@ class Table extends AnnotationClass
 	
 	private function getTableNameFromClass(string $model): string
 	{
-		$replace = self::STRIP_NAMESPACES;
+		$replaces = [];
 		
-		return Strings::lower(Strings::replace(Strings::replace($model, $replace, ''), '\\', '_'));
+		foreach (self::STRIP_NAMESPACES as $namespace) {
+			$replaces["/$namespace/"] = '';
+		}
+		
+		return Strings::lower(Strings::replace(Strings::replace($model, $replaces), '/\\/', '_'));
 	}
 }
