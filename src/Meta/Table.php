@@ -75,7 +75,7 @@ class Table extends AnnotationClass
 		$replaces = [];
 		
 		foreach (self::STRIP_NAMESPACES as $namespace) {
-			$replaces['/'.\preg_quote($namespace).'/'] = '';
+			$replaces['/' . \preg_quote($namespace) . '/'] = '';
 		}
 		
 		return Strings::lower(Strings::replace(Strings::replace($model, $replaces), '/\\/', '_'));
