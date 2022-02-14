@@ -78,6 +78,6 @@ class Table extends AnnotationClass
 			$replaces['/' . \preg_quote($namespace) . '/'] = '';
 		}
 		
-		return Strings::lower(Strings::replace(Strings::replace($model, $replaces), '/\\/', '_'));
+		return Strings::lower(Strings::replace(Strings::replace($model, $replaces), '/\\\\/', '_'));
 	}
 }
