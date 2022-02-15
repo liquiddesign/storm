@@ -338,7 +338,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$this->load();
 		}
 		
-		if ($this->isLoaded()) {
+		if ($this->isLoaded() && $columnName === null) {
 			return Arrays::first($this->items);
 		}
 		
