@@ -159,21 +159,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	{
 		return parent::setSelect($select, $values, $keepIndex);
 	}
-	
-	/**
-	 * @param bool $needed
-	 * @throws \StORM\Exception\NotFoundException
-	 */
-	public function first(bool $needed = false): ?Entity
-	{
-		return parent::first($needed);
-	}
-	
-	public function fetch(): ?Entity
-	{
-		return parent::fetch();
-	}
-	
+
 	protected function init(): void
 	{
 		parent::init();

@@ -58,16 +58,18 @@ interface ICollection
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
+	 * @param bool $load
 	 * @phpstan-return T|null
 	 */
-	public function first(bool $needed = false): ?object;
+	public function first(bool $needed = false, bool $load = false): ?object;
 	
 	/**
 	 * @param string|null $columnName
 	 * @param bool $needed
+	 * @param bool $load
 	 * @return T|null
 	 */
-	public function last(?string $columnName = null, bool $needed = false): ?object;
+	public function last(?string $columnName = null, bool $needed = false, bool $load = false): ?object;
 	
 	/**
 	 * Fetch object and move cursor

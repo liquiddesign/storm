@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace StORM;
 
+use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\Exception\AlreadyExistsException;
 use StORM\Exception\InvalidStateException;
@@ -285,9 +286,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$this->setTake(1);
-		
-		return $this->getValue($property, $needed);
+		return $this->getValue($property, $needed, function (ICollection $collection): void {
+			$collection->setTake(1);
+		});
 	}
 	
 	/**
@@ -306,73 +307,61 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		if (!$columnName) {
 			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
 		}
-		
-		$this->setTake(1);
-		$this->setOrderBy([$columnName => 'DESC']);
-		
-		return $this->getValue($property, $needed);
+	
+		return $this->getValue($property, $needed, function (ICollection $collection) use ($columnName): void {
+			$collection->setOrderBy([$columnName => 'DESC']);
+			$collection->setTake(1);
+		});
 	}
 	
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
+	 * @param bool $load
 	 * @phpstan-return T|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function first(bool $needed = false): ?object
+	public function first(bool $needed = false, bool $load = false): ?object
 	{
+		if ($load) {
+			$this->load();
+		}
+		
 		if ($this->isLoaded()) {
-			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
+			return Arrays::first($this->items);
 		}
 		
-		$this->setTake(1);
-		
-		$sth = $this->getPDOStatement();
-		$sth->setFetchMode(...$this->getFetchParameters());
-		/** @var mixed $object */
-		$object = $sth->fetch();
-		
-		$sth->closeCursor();
-		
-		if ($object === false && $needed) {
-			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
-		}
-		
-		return \Nette\Utils\Helpers::falseToNull($object);
+		return $this->fetchCloned($needed, function (ICollection $collection): void {
+			$collection->setTake(1);
+		});
 	}
 	
 	/**
+	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param string|null $columnName
 	 * @param bool $needed
+	 * @param bool $load
 	 * @return T|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function last(?string $columnName = null, bool $needed = false): ?object
+	public function last(?string $columnName = null, bool $needed = false, bool $load = false): ?object
 	{
-		if ($this->isLoaded()) {
-			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
+		if ($load) {
+			$this->load();
+		}
+		
+		if ($this->isLoaded() && $columnName === null) {
+			return Arrays::last($this->items);
 		}
 		
 		if (!$columnName) {
 			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
 		}
 		
-		$this->setOrderBy([$columnName => 'DESC']);
-		$this->setTake(1);
-		
-		$sth = $this->getPDOStatement();
-		$sth->setFetchMode(...$this->getFetchParameters());
-		
-		/** @var mixed $object */
-		$object = $sth->fetch();
-		
-		$sth->closeCursor();
-		
-		if ($object === false && $needed) {
-			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
-		}
-		
-		return \Nette\Utils\Helpers::falseToNull($object);
+		return $this->fetchCloned($needed, function (ICollection $collection) use ($columnName): void {
+			$collection->setOrderBy([$columnName => 'DESC']);
+			$collection->setTake(1);
+		});
 	}
 	
 	/**
@@ -385,9 +374,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		$object = $this->getPDOStatement()->fetch();
-		
-		return \Nette\Utils\Helpers::falseToNull($object);
+		return \Nette\Utils\Helpers::falseToNull($this->getPDOStatement()->fetch());
 	}
 	
 	/**
@@ -1399,6 +1386,34 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * Fetch and close cursor, if property is not null fetch the property
+	 * @param bool $needed
+	 * @param callable|null $callback
+	 * @phpstan-return T|null
+	 * @throws \StORM\Exception\NotFoundException
+	 */
+	protected function fetchCloned(bool $needed, ?callable $callback = null): ?object
+	{
+		$collection = clone $this;
+		
+		if ($callback) {
+			\call_user_func($callback, $collection);
+		}
+		
+		$sth = $collection->getPDOStatement();
+		
+		$object = $sth->fetch();
+		
+		$sth->closeCursor();
+		
+		if ($object === false && $needed) {
+			throw new NotFoundException($this, $this->modifiers[self::MODIFIER_WHERE], \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM]);
+		}
+		
+		return \Nette\Utils\Helpers::falseToNull($object);
+	}
+	
+	/**
 	 * @param array<mixed> $vars
 	 * @return array<mixed>
 	 */
@@ -1625,13 +1640,19 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @return null|string|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	private function getValue(?string $property, bool $needed)
+	private function getValue(?string $property, bool $needed, ?callable $callback = null)
 	{
+		$collection = clone $this;
+		
 		if ($property !== null) {
-			isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $this->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $this->setSelect([$property]);
+			isset($this->modifiers[self::MODIFIER_SELECT][$property]) ? $collection->setSelect([$property => $this->modifiers[self::MODIFIER_SELECT][$property]]) : $collection->setSelect([$property]);
 		}
 		
-		$sth = $this->getPDOStatement();
+		if ($callback) {
+			\call_user_func($callback, $collection);
+		}
+		
+		$sth = $collection->getPDOStatement();
 		$result = $sth->fetchColumn();
 		$sth->closeCursor();
 		

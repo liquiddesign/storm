@@ -114,25 +114,27 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * @param bool $needed
+	 * @param bool $load
 	 * @throws \StORM\Exception\NotFoundException
 	 * @return T|null
 	 */
-	public function first(bool $needed = false): ?Entity
+	public function first(bool $needed = false, bool $load = false): ?Entity
 	{
-		return parent::first($needed);
+		return parent::first($needed, $load);
 	}
 	
 	/**
 	 * @param string|null $columnName
 	 * @param bool $needed
+	 * @param bool $load
 	 * @return T|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function last(?string $columnName = null, bool $needed = false): ?Entity
+	public function last(?string $columnName = null, bool $needed = false, bool $load = false): ?Entity
 	{
 		$orderByColumn = $columnName ?: $this->getRepository()->getStructure()->getPK()->getName();
 		
-		return parent::last($orderByColumn, $needed);
+		return parent::last($orderByColumn, $needed, $load);
 	}
 	
 	/**
