@@ -300,12 +300,9 @@ abstract class Repository implements IEntityParent
 			$values[$pk->getPropertyName()] = $this->getPrimaryKeyNextValue();
 		}
 		
-		$hasMutations = $this->getStructure()->hasMutations();
-		
-		
 		/** @var \StORM\Entity $object */
 		/** @phpstan-var T $object */
-		$object = new $class($values, $this, $hasMutations ? $this->connection->getAvailableMutations() : [], $hasMutations ? $this->connection->getMutation() : null);
+		$object = new $class(...[$values] + $this->getEntityArguments($this));
 		
 		if ($rowCount !== InsertResult::INSERT_AFFECTED_COUNT) {
 			$collection = $this->many()->where($this->getStructure()->getPK()->getName(), $object->getPk());

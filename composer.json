@@ -28,7 +28,8 @@
 		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
 		"phpcs": "phpcs --standard=ruleset.xml src",
 		"phpcsfix": "phpcbf --standard=ruleset.xml src",
-		"phpcheck": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 8.1",
+		"phpcheck7": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 7.4",
+		"phpcheck8": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 8.1",
 		"tester": "tester tests/*.phpt -c tests/php.ini --setup tests/setup.php"
 	},
 	"config": {
