@@ -8,7 +8,6 @@ use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
-use StORM\Exception\NotFoundException;
 use StORM\Meta\Structure;
 
 /**
