@@ -165,13 +165,13 @@ abstract class Repository implements IEntityParent
 			$collection->setSelect($select, [], true);
 		}
 		
-		if (\is_array($condition)) {
-			$collection->whereMatch($condition, self::DEFAULT_ALIAS . '.');
-		} else {
-			$collection->setWhere(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
+		if (!\is_array($condition)) {
+			$condition = [$this->getStructure()->getPK()->getName() => $condition];
 		}
 		
-		return $collection->first($needed);
+		return $collection
+			->whereMatch($condition, self::DEFAULT_ALIAS . '.')
+			->first($needed);
 	}
 	
 	final public function getRepository(): Repository
