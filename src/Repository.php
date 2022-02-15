@@ -160,7 +160,6 @@ abstract class Repository implements IEntityParent
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
 		}
 		
-		/** @var \StORM\Collection $collection */
 		$collection = $this->many($mutation)->setOptimization(false);
 		
 		if ($select !== null) {
@@ -173,21 +172,7 @@ abstract class Repository implements IEntityParent
 			$collection->setWhere(self::DEFAULT_ALIAS . '.' . $this->getStructure()->getPK()->getName(), $condition);
 		}
 		
-		/**
-		 * @phpstan-var T|null|false $object
-		 * @var \StORM\Entity|null|false $object
-		 */
-		$object = $collection->first();
-		
-		if (!$object && $needed) {
-			throw new NotFoundException($collection, \is_scalar($condition) ? [$this->getStructure()->getPK()->getName() => $condition] : $condition, static::class);
-		}
-		
-		if (!$object) {
-			return null;
-		}
-		
-		return $object;
+		return $collection->first($needed);
 	}
 	
 	final public function getRepository(): Repository
