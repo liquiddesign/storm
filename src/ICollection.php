@@ -51,17 +51,19 @@ interface ICollection
 	 * Take 1, fetch column name or first column if null
 	 * @param string|null $property
 	 * @param bool $needed
+	 * @param string|null $columnName
 	 * @return null|string|bool
 	 */
-	public function firstValue(?string $property = null, bool $needed = false);
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null);
 	
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
+	 * @param string|null $columnName
 	 * @param bool $load
 	 * @phpstan-return T|null
 	 */
-	public function first(bool $needed = false, bool $load = false): ?object;
+	public function first(bool $needed = false, ?string $columnName = null, bool $load = false): ?object;
 	
 	/**
 	 * @param string|null $columnName

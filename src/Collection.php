@@ -114,13 +114,14 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * @param bool $needed
+	 * @param string|null $columnName
 	 * @param bool $load
 	 * @throws \StORM\Exception\NotFoundException
 	 * @return T|null
 	 */
-	public function first(bool $needed = false, bool $load = false): ?Entity
+	public function first(bool $needed = false, ?string $columnName = null, bool $load = false): ?Entity
 	{
-		return parent::first($needed, $load);
+		return parent::first($needed, $columnName, $load);
 	}
 	
 	/**

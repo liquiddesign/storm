@@ -62,6 +62,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
+	protected const ORDER_ASC = 'ASC';
+	
 	protected const ORDER_DESC = 'DESC';
 	
 	/**
@@ -282,14 +284,20 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @return null|string|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function firstValue(?string $property = null, bool $needed = false)
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null)
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		return $this->getValue($property, $needed, function (ICollection $collection): void {
+		return $this->getValue($property, $needed, function (ICollection $collection) use ($columnName): void {
 			$collection->setTake(1);
+			
+			if (!$columnName) {
+				return;
+			}
+
+			$collection->setOrderBy([$columnName => self::ORDER_ASC]);
 		});
 	}
 	
@@ -319,11 +327,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
+	 * @param string|null $columnName
 	 * @param bool $load
 	 * @phpstan-return T|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function first(bool $needed = false, bool $load = false): ?object
+	public function first(bool $needed = false, ?string $columnName = null, bool $load = false): ?object
 	{
 		if ($load) {
 			$this->load();
@@ -333,8 +342,14 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			return Arrays::first($this->items);
 		}
 		
-		return $this->fetchCloned($needed, function (ICollection $collection): void {
+		return $this->fetchCloned($needed, function (ICollection $collection) use ($columnName): void {
 			$collection->setTake(1);
+			
+			if (!$columnName) {
+				return;
+			}
+
+			$collection->setOrderBy([$columnName => self::ORDER_ASC]);
 		});
 	}
 	
