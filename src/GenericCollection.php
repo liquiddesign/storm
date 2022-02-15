@@ -62,6 +62,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	protected const ITERATOR_WILDCARD = '__iterator';
 	
+	protected const ORDER_DESC = 'DESC';
+	
 	/**
 	 * @phpstan-var array<T>|null
 	 * @var array<object>|null
@@ -309,7 +311,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 	
 		return $this->getValue($property, $needed, function (ICollection $collection) use ($columnName): void {
-			$collection->setOrderBy([$columnName => 'DESC']);
+			$collection->setOrderBy([$columnName => self::ORDER_DESC]);
 			$collection->setTake(1);
 		});
 	}
@@ -359,7 +361,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		return $this->fetchCloned($needed, function (ICollection $collection) use ($columnName): void {
-			$collection->setOrderBy([$columnName => 'DESC']);
+			$collection->setOrderBy([$columnName => self::ORDER_DESC]);
 			$collection->setTake(1);
 		});
 	}
