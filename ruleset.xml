@@ -8,5 +8,10 @@
             </property>
         </properties>
     </rule>
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <property name="newlinesCountBetweenOpenTagAndDeclare" type="int" value="2"/>
+        </properties>
+    </rule>
 
 </ruleset>

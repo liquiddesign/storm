@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace StORM;
 
@@ -232,7 +232,7 @@ abstract class Repository implements IEntityParent
 		$joinRelations = $this->createRelations($values, $updateProps === null);
 		
 		if ($filterByColumns !== null) {
-			$values = Helpers::filterInputArray($values, \array_keys($columns), (bool)$filterByColumns);
+			$values = Helpers::filterInputArray($values, \array_keys($columns), (bool) $filterByColumns);
 		}
 		
 		$insert = $this->propertiesToColumns($values);
@@ -416,7 +416,7 @@ abstract class Repository implements IEntityParent
 			$affected += $sth->rowCount();
 			$sth->closeCursor();
 			
-			if (!$ignore && $updateProps === array() && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue()))) {
+			if (!$ignore && $updateProps === [] && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue()))) {
 				$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
 			}
 			

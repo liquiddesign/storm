@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace StORM;
 
@@ -193,7 +193,7 @@ class Helpers
 		}
 		
 		if ($rawValue instanceof ICollection) {
-			$binds[(string)$rawValue] = $prefix . $property;
+			$binds[(string) $rawValue] = $prefix . $property;
 			$values += $rawValue->getVars();
 			
 			return;

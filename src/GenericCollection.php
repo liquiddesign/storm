@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace StORM;
 
@@ -1444,7 +1444,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			}
 			
 			if ($value instanceof Entity) {
-				$vars[$name] = (string)$value;
+				$vars[$name] = (string) $value;
 				
 				continue;
 			}
