@@ -94,7 +94,6 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	 * Offset to retrieve
 	 * @param mixed $offset
 	 * @return \StORM\Entity
-	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function offsetGet($offset): object
 	{

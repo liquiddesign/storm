@@ -64,6 +64,7 @@ class Structure
 	 * @param \StORM\SchemaManager $schemaManager
 	 * @param \Nette\Caching\Cache $cache
 	 * @param \StORM\Meta\Column|null $defaultPK
+	 * @throws \Throwable
 	 * @internal
 	 */
 	public function __construct(string $class, SchemaManager $schemaManager, Cache $cache, ?Column $defaultPK = null)
@@ -492,19 +493,19 @@ class Structure
 				$this->customClassAnnotations[$annotationName] = $this->parseJson($classDocComment[$annotationName]);
 			}
 			
-			if ($annotationType === self::ANNOTATION_TYPE_PROPERTY) {
-				foreach ($propertiesDocComments as $property => $propertyDocComment) {
-					if (isset($propertyDocComment[$annotationName])) {
-						if (!isset($this->customPropertyAnnotations[$annotationName])) {
-							$this->customPropertyAnnotations[$annotationName] = [];
-						}
-						
-						$this->customPropertyAnnotations[$annotationName][$property] = $this->parseJson($propertyDocComment[$annotationName]);
+			if ($annotationType !== self::ANNOTATION_TYPE_PROPERTY) {
+				continue;
+			}
+
+			foreach ($propertiesDocComments as $property => $propertyDocComment) {
+				if (isset($propertyDocComment[$annotationName])) {
+					if (!isset($this->customPropertyAnnotations[$annotationName])) {
+						$this->customPropertyAnnotations[$annotationName] = [];
 					}
+					
+					$this->customPropertyAnnotations[$annotationName][$property] = $this->parseJson($propertyDocComment[$annotationName]);
 				}
 			}
-			
-			continue;
 		}
 	}
 	
@@ -808,6 +809,9 @@ class Structure
 		return $this->relations !== null && $this->columns !== null;
 	}
 	
+	/**
+	 * @throws \ReflectionException
+	 */
 	private function init(): void
 	{
 		$class = $this->entityClass;

@@ -232,7 +232,7 @@ abstract class Repository implements IEntityParent
 		$joinRelations = $this->createRelations($values, $updateProps === null);
 		
 		if ($filterByColumns !== null) {
-			$values = Helpers::filterInputArray($values, \array_keys($columns), (bool) $filterByColumns);
+			$values = Helpers::filterInputArray($values, \array_keys($columns), $filterByColumns);
 		}
 		
 		$insert = $this->propertiesToColumns($values);
@@ -416,11 +416,11 @@ abstract class Repository implements IEntityParent
 			$affected += $sth->rowCount();
 			$sth->closeCursor();
 			
-			if (!$ignore && $updateProps === [] && ($pk->isAutoincrement() || ($pk->isAutoincrement() === null && $beforeId !== $this->getPrimaryKeyNextValue()))) {
-				$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
+			if ($ignore || $updateProps !== [] || (!$pk->isAutoincrement() && ($pk->isAutoincrement() !== null || $beforeId === $this->getPrimaryKeyNextValue()))) {
+				continue;
 			}
-			
-			continue;
+
+			$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
 		}
 		
 		/** @var \StORM\Collection $collection */

@@ -25,7 +25,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 				'password' => Expect::string('')->required(),
 				'charset' => Expect::string('utf8'),
 				'collate' => Expect::string('utf8_general_ci'),
-				'primaryKeyGenerator' => Expect::string(null),
+				'primaryKeyGenerator' => Expect::string(),
 				'mutations' => Expect::arrayOf('string')->default([self::DEFAULT_MUTATION => ''])->min(1)->mergeDefaults(false),
 			]))->min(1),
 			'schema' => Expect::structure([
@@ -58,7 +58,6 @@ class StormDI extends \Nette\DI\CompilerExtension
 			$first = false;
 		}
 		
-		/** @var \Nette\DI\ContainerBuilder $builder */
 		$builder = $this->getContainerBuilder();
 		$schemaManager = $builder->addDefinition($this->prefix('schemaManager'))->setType(SchemaManager::class)->setAutowired(true);
 		
@@ -79,22 +78,22 @@ class StormDI extends \Nette\DI\CompilerExtension
 			});
 		}
 		
-		if ($configuration->events && $builder->hasDefinition('application.application')) {
-			/** @var \Nette\DI\Definitions\ServiceDefinition $app */
-			$app = $builder->getDefinition('application.application');
-			
-			foreach ($configuration->events as $eventConfiguration) {
-				foreach ($eventConfiguration->repositories as $repository) {
-					foreach ($eventConfiguration->events as $event) {
-						$app->addSetup("@$repository::$$event" . '[]', [
-							$eventConfiguration->callback,
-						]);
-					}
+		if (!$configuration->events || !$builder->hasDefinition('application.application')) {
+			return;
+		}
+
+		/** @var \Nette\DI\Definitions\ServiceDefinition $app */
+		$app = $builder->getDefinition('application.application');
+		
+		foreach ($configuration->events as $eventConfiguration) {
+			foreach ($eventConfiguration->repositories as $repository) {
+				foreach ($eventConfiguration->events as $event) {
+					$app->addSetup("@$repository::$$event" . '[]', [
+						$eventConfiguration->callback,
+					]);
 				}
 			}
 		}
-		
-		return;
 	}
 	
 	/**
@@ -117,7 +116,6 @@ class StormDI extends \Nette\DI\CompilerExtension
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 		];
 		
-		/** @var \Nette\DI\ContainerBuilder $builder */
 		$builder = $this->getContainerBuilder();
 		$attributes = ['@container', $name, $dsn, $config['user'], $config['password'], $attributes];
 		$connection = $builder->addDefinition($this->prefix($name))->setFactory(DIConnection::class, $attributes)->setAutowired($config['autowired'])
@@ -133,10 +131,10 @@ class StormDI extends \Nette\DI\CompilerExtension
 			$connection->addSetup('setPrimaryKeyGenerator', [$config['primaryKeyGenerator']]);
 		}
 		
-		if ($config['mutations']) {
-			$connection->addSetup('setAvailableMutations', [$config['mutations']]);
+		if (!$config['mutations']) {
+			return;
 		}
-		
-		return;
+
+		$connection->addSetup('setAvailableMutations', [$config['mutations']]);
 	}
 }

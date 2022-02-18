@@ -14,6 +14,9 @@ use StORM\Exception\NotFoundException;
 /**
  * Class Collection
  * @template T of object
+ * @implements \ArrayAccess<string|int, T>
+ * @implements \Iterator<string|int, T>
+ * @implements \StORM\ICollection<T>
  */
 class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
@@ -73,7 +76,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected ?array $items = null;
 	
 	/**
-	 * @var array<string>
+	 * @var array<string|int>
 	 */
 	protected array $keys;
 	
@@ -231,12 +234,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set last affected number
-	 * @param int|null $affected
+	 * @param int|null $affectedNumber
 	 * @internal
 	 */
-	public function setAffectedNumber(?int $affected): void
+	public function setAffectedNumber(?int $affectedNumber): void
 	{
-		$this->affectedNumber = $affected;
+		$this->affectedNumber = $affectedNumber;
 	}
 	
 	/**
@@ -454,13 +457,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$this->modifiers[self::MODIFIER_SELECT][0] = $this->getPrefix() . $this->modifiers[self::MODIFIER_SELECT][0];
 		}
 		
-		$sql = '';
-		$sql .= $this->createSqlPrefix(true, true, true, $this->prefixIndex ? $indexSelect : []);
+		$sql = $this->createSqlPrefix(true, true, $this->prefixIndex ? $indexSelect : []);
 		$sql .= $this->createSqlSuffix(true, true);
 		
-		$sql = $this->replaceLiterals($sql, $this->vars);
-		
-		return $sql;
+		return $this->replaceLiterals($sql, $this->vars);
 	}
 	
 	/**
@@ -479,12 +479,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$alias = $this->getPrefix(false);
 		
 		$sql = "DELETE $alias ";
-		$sql .= $this->createSqlPrefix(false, true, true);
+		$sql .= $this->createSqlPrefix(false, true);
 		$sql .= $this->createSqlSuffix(false, false);
 		
-		$sql = $this->replaceLiterals($sql, $this->vars);
-		
-		return $sql;
+		return $this->replaceLiterals($sql, $this->vars);
 	}
 	
 	/**
@@ -509,15 +507,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$updates = $values;
 		$flags = $ignore ? ' IGNORE' : '';
 		
-		$sql = '';
-		$sql .= Helpers::createSqlClauseString("UPDATE$flags", $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
-		$sql .= $this->createSqlPrefix(false, false, true);
+		$sql = Helpers::createSqlClauseString("UPDATE$flags", $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
+		$sql .= $this->createSqlPrefix(false, false);
 		$sql .= Helpers::createSqlClauseString(' SET', $binds, ',', '=') . ' ';
 		$sql .= $this->createSqlSuffix(false, true);
 		
-		$sql = $this->replaceLiterals($sql, $updates + $this->vars);
-		
-		return $sql;
+		return $this->replaceLiterals($sql, $updates + $this->vars);
 	}
 	
 	/**
@@ -701,7 +696,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set WHERE condition and replace previous
-	 * @param string $expression
+	 * @param string|null $expression
 	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
@@ -1135,7 +1130,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set JOIN clause and replace previous
 	 * @param array<string> $from
-	 * @param string $condition
+	 * @param string|null $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
 	 * @return static
@@ -1303,7 +1298,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Return the key of the current element
-	 * @return string|int|null
+	 * @return string|int
 	 */
 	public function key()
 	{
@@ -1529,8 +1524,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		} else {
 			$this->varsFlags[$name] = $modifierFlag;
 		}
-		
-		return;
 	}
 	
 	protected function removeVars(int $flagToRemove): void
@@ -1549,7 +1542,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	private function generateBinder(): string
 	{
-		$binder = $this->binderName . (string) $this->binderCounter;
+		$binder = $this->binderName . $this->binderCounter;
 		$this->binderCounter++;
 		
 		return $binder;
@@ -1649,8 +1642,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 				}
 			}
 		}
-		
-		return;
 	}
 	
 	/**
@@ -1680,7 +1671,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		return $result;
 	}
 	
-	private function createSqlPrefix(bool $select, bool $from, bool $join, array $indexSelect = []): string
+	private function createSqlPrefix(bool $select, bool $from, array $indexSelect = []): string
 	{
 		$sql = '';
 		
@@ -1692,11 +1683,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			$sql .= Helpers::createSqlClauseString(($select ? ' ' : '') . self::MODIFIER_FROM, $this->modifiers[self::MODIFIER_FROM], ',', ' AS ');
 		}
 		
-		if ($join) {
-			foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
-				[$type, $aliases, $condition] = $join;
-				$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ') . ' ON (' . $condition . ')';
-			}
+		foreach ($this->modifiers[self::MODIFIER_JOIN] as $join) {
+			[$type, $aliases, $condition] = $join;
+			$sql .= Helpers::createSqlClauseString(' ' . $type . ' ' . self::MODIFIER_JOIN, $aliases, ',', ' AS ') . ' ON (' . $condition . ')';
 		}
 		
 		return $sql;
@@ -1704,9 +1693,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	private function createSqlSuffix(bool $having, bool $orderBy): string
 	{
-		$sql = '';
-		
-		$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
+		$sql = Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
 	
 		if ($having) {
 			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_GROUP_BY, $this->modifiers[self::MODIFIER_GROUP_BY], ',');

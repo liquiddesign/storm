@@ -98,7 +98,7 @@ class Connection
 	 */
 	public function getDatabaseName(): ?string
 	{
-		return $this->query('SELECT DATABASE()', [], [], null, false)->fetchColumn(0);
+		return $this->query('SELECT DATABASE()', [], [], null, false)->fetchColumn();
 	}
 	
 	/**
@@ -483,8 +483,6 @@ class Connection
 	public function setPrimaryKeyGenerator(?callable $callback): void
 	{
 		$this->primaryKeyGenerator = $callback;
-		
-		return;
 	}
 	
 	/**
@@ -509,8 +507,6 @@ class Connection
 	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, [], $prefix);
-		
-		return;
 	}
 	
 	public static function generateUuid(?string $namespace = null, ?string $string = null): string
@@ -519,7 +515,7 @@ class Connection
 			return \md5($namespace . '!._.!' . $string);
 		}
 		
-		return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./', '');
+		return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./');
 	}
 	
 	/**

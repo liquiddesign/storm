@@ -217,7 +217,7 @@ interface ICollection
 	
 	/**
 	 * Set WHERE condition and replace previous
-	 * @param string $expression
+	 * @param string|null $expression
 	 * @param array<mixed>|null|mixed $values
 	 * @return static
 	 */
@@ -361,7 +361,7 @@ interface ICollection
 	/**
 	 * Set JOIN clause and replace previous
 	 * @param array<string> $from
-	 * @param string $condition
+	 * @param string|null $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
 	 * @return static

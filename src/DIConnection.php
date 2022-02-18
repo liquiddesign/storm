@@ -69,10 +69,8 @@ class DIConnection extends \StORM\Connection
 		$repositoryClass = Structure::getRepositoryClassFromEntityClass($entityClass);
 		$interface = Structure::getInterfaceFromRepositoryClass($repositoryClass);
 		
-		/** @var \StORM\Repository $repository */
-		$repository = $this->container->getByType(\interface_exists($interface) ? $interface : $repositoryClass);
-		
-		return $repository;
+		/** @return \StORM\Repository */
+		return $this->container->getByType(\interface_exists($interface) ? $interface : $repositoryClass);
 	}
 	
 	/**
@@ -86,9 +84,10 @@ class DIConnection extends \StORM\Connection
 	
 	public function findRepositoryByName(string $name): Repository
 	{
+		/** @var \StORM\Repository|object $repository */
 		$repository = $this->container->getByName($name);
 		
-		if ($repository instanceof Repository === false) {
+		if (!$repository instanceof Repository) {
 			throw new MissingServiceException("Missing repository '$name'");
 		}
 		
@@ -118,8 +117,6 @@ class DIConnection extends \StORM\Connection
 		}
 		
 		$this->mutation = $mutation;
-		
-		return;
 	}
 	
 	public function getMutation(): string
@@ -162,7 +159,5 @@ class DIConnection extends \StORM\Connection
 	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, $this->getAvailableMutations(), $prefix);
-		
-		return;
 	}
 }

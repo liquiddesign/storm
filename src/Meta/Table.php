@@ -28,10 +28,10 @@ class Table extends AnnotationClass
 	public function getSchema(): Schema
 	{
 		return Expect::structure([
-			'name' => Expect::string(null),
-			'engine' => Expect::string(null),
-			'collate' => Expect::string(null),
-			'comment' => Expect::string(null),
+			'name' => Expect::string(),
+			'engine' => Expect::string(),
+			'collate' => Expect::string(),
+			'comment' => Expect::string(),
 		]);
 	}
 	

@@ -27,8 +27,6 @@ class StormTracy implements \Tracy\IBarPanel
 	{
 		$this->name = $name;
 		$this->db = $db;
-		
-		return;
 	}
 	
 	public function getTotalTime(): float
@@ -61,8 +59,6 @@ class StormTracy implements \Tracy\IBarPanel
 	{
 		return self::capture(function (): void { // @codingStandardsIgnoreLine
 			require __DIR__ . '/templates/Storm.panel.tab.phtml';
-			
-			return;
 		});
 	}
 	
@@ -74,8 +70,6 @@ class StormTracy implements \Tracy\IBarPanel
 	{
 		return self::capture(function (): void {  // @codingStandardsIgnoreLine
 			require __DIR__ . '/templates/Storm.panel.phtml';
-			
-			return;
 		});
 	}
 	

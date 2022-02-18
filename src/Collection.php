@@ -14,6 +14,7 @@ use StORM\Meta\RelationNxN;
 /**
  * Class Collection
  * @template T of \StORM\Entity
+ * @extends \StORM\GenericCollection<T>
  */
 class Collection extends GenericCollection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
@@ -196,6 +197,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		throw new GeneralException('Cannot set connection to CollectionEntity, setRepository() instead.');
 	}
 	
+	/**
+	 * @throws \StORM\Exception\NotFoundException
+	 */
 	public function update($values, bool $ignore = false, ?string $alias = null): int
 	{
 		if (\is_object($values)) {
@@ -237,7 +241,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$pkName = $this->getRepository()->getStructure()->getPK()->getName();
 		$clone = clone $this;
 		
-		foreach ($clone->clear(false)->setSelect([$pkName])->toArrayOf($pkName) as $id) {
+		foreach ($clone->clear()->setSelect([$pkName])->toArrayOf($pkName) as $id) {
 			foreach ($relations as $aux) {
 				[$relation, $value] = $aux;
 				
@@ -415,14 +419,12 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$this->parseExpression($this->modifiers[self::MODIFIER_SELECT][$k]);
 		}
 		
-		foreach ([self::MODIFIER_ORDER_BY] as $modifierName) {
-			foreach (\array_keys($this->modifiers[$modifierName]) as $k) {
-				if (!\is_string($k)) {
-					continue;
-				}
-				
-				$this->parseExpression($k);
+		foreach (\array_keys($this->modifiers[self::MODIFIER_ORDER_BY]) as $k) {
+			if (!\is_string($k)) {
+				continue;
 			}
+			
+			$this->parseExpression($k);
 		}
 		
 		foreach ([self::MODIFIER_WHERE, self::MODIFIER_GROUP_BY] as $modifierName) {
@@ -434,8 +436,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 				$this->parseExpression($this->modifiers[$modifierName][$k]);
 			}
 		}
-		
-		return;
 	}
 	
 	private function parseExpression(string &$expression): void

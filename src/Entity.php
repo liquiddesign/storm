@@ -74,8 +74,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	public function removeParent(): void
 	{
 		$this->parent = null;
-		
-		return;
 	}
 	
 	/**
@@ -176,8 +174,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 	public function loadFromEntity(Entity $object): void
 	{
 		$this->loadFromArray($object->toArray(), true, false);
-		
-		return;
 	}
 	
 	/**
@@ -242,8 +238,6 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		$this->properties[$property] = $value;
-		
-		return;
 	}
 	
 	/**
@@ -281,6 +275,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $existsProperty ? Helpers::castScalar($this->properties[$property], \gettype($vars[$auxProperty])) : $this->properties[$property];
 	}
 	
+	/**
+	 * @throws \StORM\Exception\NotFoundException
+	 */
 	public function syncRelated(string $related, $values): Entity
 	{
 		if (\is_object($values)) {
@@ -310,6 +307,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param array<mixed>|array<array<mixed>>|object $values
 	 * @param bool|null $filterByColumns
 	 * @param bool $includePrimaryKey
+	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function update($values, ?bool $filterByColumns = true, bool $includePrimaryKey = true): int
 	{
@@ -331,7 +329,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		$values = $this->getParent()->getRepository()->propertiesToColumns($values, true);
 		
-		return $this->findMe()->update($values, false);
+		return $this->findMe()->update($values);
 	}
 	
 	/**
@@ -340,7 +338,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 */
 	public function updateAll(?array $propertiesToUpdate = null): int
 	{
-		$vars = $this->getVars(false);
+		$vars = $this->getVars();
 		
 		if ($propertiesToUpdate !== null) {
 			$vars = \array_intersect_key($vars, \array_flip($propertiesToUpdate));
@@ -348,7 +346,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		$vars = $this->getParent()->getRepository()->propertiesToColumns($vars, true);
 		
-		return $this->findMe()->update($vars, false);
+		return $this->findMe()->update($vars);
 	}
 	
 	/**
@@ -590,9 +588,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Isset property
 	 * @param string $name
-	 * @return mixed
 	 */
-	public function __isset(string $name)
+	public function __isset(string $name): bool
 	{
 		return \array_key_exists($name, $this->properties) || isset($this->foreignKeys[$name]);
 	}
@@ -621,16 +618,13 @@ abstract class Entity implements \JsonSerializable, IDumper
 		} else {
 			$this->properties[$name] = $value;
 		}
-		
-		return;
 	}
 	
 	/**
 	 * @param mixed $name
 	 * @param mixed $arguments
-	 * @return mixed
 	 */
-	public function __call($name, $arguments)
+	public function __call($name, $arguments): \StORM\IRelation
 	{
 		$property = Strings::firstLower(Strings::substring($name, 3));
 		$relation = $this->getStructure()->getRelation($property);
