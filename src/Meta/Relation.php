@@ -103,15 +103,26 @@ class Relation extends AnnotationProperty
 				continue;
 			}
 			
-			$offset = Strings::indexOf($str, '[]');
-			$target = $offset === null ? $str : Strings::substring($str, 0, $offset);
+			if ($found) {
+				continue;
+			}
+			
+			foreach (['/\<(.+)\>/', '/(.+)\[\]/'] as $reg) {
+				if ($target = Strings::match($str, $reg)[1] ?? null) {
+					break;
+				}
+			}
+			
+			$keyHolder = !$target;
+			$target ??= $str;
 			
 			if (!Structure::isEntityClass($target)) {
 				continue;
 			}
-
+			
 			$this->target = Strings::substring($target, 0, 1) === '\\' ? Strings::substring($target, 1) : $target;
-			$this->isKeyHolder = $offset === null;
+			$this->isKeyHolder = $keyHolder;
+			
 			$found = true;
 		}
 		
@@ -121,11 +132,11 @@ class Relation extends AnnotationProperty
 	public function getSchema(): Schema
 	{
 		return Expect::structure([
-			'name' => Expect::string(null),
-			'source' => Expect::string(null),
-			'target' => Expect::string(null),
-			'sourceKey' => Expect::string(null),
-			'targetKey' => Expect::string(null),
+			'name' => Expect::string(),
+			'source' => Expect::string(),
+			'target' => Expect::string(),
+			'sourceKey' => Expect::string(),
+			'targetKey' => Expect::string(),
 		]);
 	}
 	
