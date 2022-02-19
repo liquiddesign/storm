@@ -799,7 +799,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string|int|float|null $to
 	 * @param bool $fromEquals
 	 * @param bool $toEquals
-	 * @return $this
+	 * @return static
 	 */
 	public function whereBetween(string $expression, $from = null, $to = null, bool $fromEquals = true, bool $toEquals = true): self
 	{
