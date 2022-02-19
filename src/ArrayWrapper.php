@@ -6,7 +6,9 @@ namespace StORM;
 
 /**
  * Class ArrayWrapper
- * @template T of object
+ * @template T of \StORM\Entity
+ * @implements \ArrayAccess<string|int, T>
+ * @implements \Iterator<string|int, T>
  */
 class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 {
@@ -15,10 +17,13 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	 */
 	private array $source;
 	
+	/**
+	 * @var \StORM\IEntityParent<T>
+	 */
 	private IEntityParent $parent;
 	
 	/**
-	 * @var array<\StORM\IEntityParent>
+	 * @var array<\StORM\IEntityParent<T>>
 	 */
 	private array $childParents;
 	
@@ -27,8 +32,8 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	/**
 	 * ArrayWrapper constructor.
 	 * @param array<object> $source
-	 * @param \StORM\IEntityParent $parent
-	 * @param array<\StORM\IEntityParent> $childParents
+	 * @param \StORM\IEntityParent<T> $parent
+	 * @param array<\StORM\IEntityParent<T>> $childParents
 	 * @param bool $passRecursive
 	 */
 	public function __construct(array $source, IEntityParent $parent, array $childParents = [], bool $passRecursive = false)

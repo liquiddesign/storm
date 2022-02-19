@@ -12,13 +12,16 @@ class AlreadyExistsException extends \DomainException implements IContextExcepti
 	public const ALIAS = 1;
 	
 	/**
-	 * @var \StORM\ICollection|\StORM\Entity|null
+	 * @template T of object
+	 * phpcs:ignore
+	 * @var \StORM\ICollection<T>|\StORM\Entity|null
 	 */
 	private $context;
 	
 	/**
 	 * AlreadyExistsException constructor.
-	 * @param \StORM\ICollection|\StORM\Entity|null $context
+	 * @template T of object
+	 * @param \StORM\ICollection<T>|\StORM\Entity|null $context
 	 * @param int $errorCode
 	 * @param string $value
 	 */

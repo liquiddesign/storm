@@ -13,6 +13,7 @@ use StORM\Meta\Structure;
 /**
  * Class Repository
  * @template T of \StORM\Entity
+ * @implements \StORM\IEntityParent<T>
  */
 abstract class Repository implements IEntityParent
 {
@@ -72,13 +73,16 @@ abstract class Repository implements IEntityParent
 		return $this->getStructure()->getEntityClass();
 	}
 	
+	/**
+	 * @param mixed ...$arguments
+	 */
 	final public function injectEntityArguments(...$arguments): void
 	{
 		$this->injectedArguments = $arguments;
 	}
 	
 	/**
-	 * @param \StORM\IEntityParent $parent
+	 * @param \StORM\IEntityParent<T> $parent
 	 * @param string|null $mutation
 	 * @return array<mixed>
 	 */
@@ -138,7 +142,6 @@ abstract class Repository implements IEntityParent
 	 */
 	final public function many(?string $mutation = null, ?array $fallbackColumns = null): Collection
 	{
-		/** @phpstan-ignore-next-line */
 		return new Collection($this, $mutation, $fallbackColumns);
 	}
 	
@@ -174,7 +177,10 @@ abstract class Repository implements IEntityParent
 			->first($needed);
 	}
 	
-	final public function getRepository(): Repository
+	/**
+	 * @return static
+	 */
+	final public function getRepository(): self
 	{
 		return $this;
 	}
@@ -422,8 +428,7 @@ abstract class Repository implements IEntityParent
 
 			$primaryKeys = \range($this->getPrimaryKeyNextValue() - $affected, $this->getPrimaryKeyNextValue() - 1);
 		}
-		
-		/** @var \StORM\Collection $collection */
+
 		$collection = $primaryKeys ? $this->many()->setWhere(self::DEFAULT_ALIAS . '.' . $pk->getName(), $primaryKeys) : $this->many()->setWhere('1=0');
 		$collection->setAffectedNumber($affected);
 		
@@ -485,10 +490,10 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Call user filters on collection
-	 * @param \StORM\Collection $collection
+	 * @param \StORM\Collection<T> $collection
 	 * @param array<array<mixed>> $filters
 	 * @param bool $silent
-	 * @phpstan-return \StORM\Collection<T>
+	 * @return \StORM\Collection<T>
 	 */
 	public function filter(Collection $collection, array $filters, bool $silent = false): Collection
 	{

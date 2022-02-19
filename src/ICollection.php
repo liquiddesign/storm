@@ -26,6 +26,7 @@ interface ICollection
 	 * Set fetch class or class parameters
 	 * @param string|null $class
 	 * @param array<mixed>|null $params
+	 * @return static
 	 */
 	public function setFetchClass(?string $class, ?array $params = []): self;
 	
@@ -167,8 +168,9 @@ interface ICollection
 	 * Set collection index of internal array
 	 * @param string|null $index
 	 * @param bool $prefixIndex
+	 * @return static
 	 */
-	public function setIndex(?string $index, bool $prefixIndex = true): ICollection;
+	public function setIndex(?string $index, bool $prefixIndex = true): self;
 	
 	/**
 	 * Count internal array if loaded, otherwise call enum()
@@ -267,7 +269,7 @@ interface ICollection
 	
 	/**
 	 * Set FROM clause and remove previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -275,7 +277,7 @@ interface ICollection
 	
 	/**
 	 * Add FROM clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -297,7 +299,7 @@ interface ICollection
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $select
+	 * @param array<string>|array<\StORM\ICollection<T>> $select
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -370,7 +372,7 @@ interface ICollection
 	
 	/**
 	 * Add JOIN clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param string $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type

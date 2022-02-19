@@ -24,21 +24,33 @@ class Relation extends AnnotationProperty
 	
 	protected bool $nullable = false;
 	
+	/**
+	 * @phpstan-return class-string
+	 */
 	public function getSource(): string
 	{
 		return $this->source;
 	}
 	
+	/**
+	 * @phpstan-param class-string $source
+	 */
 	public function setSource(string $source): void
 	{
 		$this->source = $source;
 	}
 	
+	/**
+	 * @phpstan-return class-string
+	 */
 	public function getTarget(): string
 	{
 		return $this->target;
 	}
 	
+	/**
+	 * @phpstan-param class-string $target
+	 */
 	public function setTarget(string $target): void
 	{
 		$this->target = $target;

@@ -118,8 +118,9 @@ class Helpers
 	
 	/**
 	 * Create SQL clause string
+	 * @template T of object
 	 * @param string $prefix
-	 * @param array<string>|array<\StORM\ICollection>|null $fragments
+	 * @param array<string>|array<\StORM\ICollection<T>>|null $fragments
 	 * @param string $glue
 	 * @param string $assocGlue
 	 * @param bool $brackets
@@ -242,9 +243,10 @@ class Helpers
 	
 	/**
 	 * @param mixed $scalar
+	 * @param string $type
 	 * @return mixed
 	 */
-	public static function castScalar($scalar, $type)
+	public static function castScalar($scalar, string $type)
 	{
 		if ($type === 'boolean') {
 			return \boolval($scalar);

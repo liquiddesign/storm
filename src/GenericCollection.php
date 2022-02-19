@@ -132,7 +132,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @var array<int>
 	 */
 	protected array $varsFlags = [];
-	
+
 	protected ?\StORM\Connection $connection;
 	
 	protected ?int $affectedNumber = null;
@@ -148,6 +148,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Rows constructor.
+	 * @phpstan-param class-string<T> $class
 	 * @param \StORM\Connection $connection
 	 * @param array<string> $from
 	 * @param array<string> $select
@@ -180,7 +181,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		return $this->connection;
 	}
-
+	
 	public function setConnection(Connection $connection): void
 	{
 		$this->connection = $connection;
@@ -195,6 +196,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		return $this->modifiers;
 	}
 	
+	/**
+	 * @param bool|null $bufferedQuery
+	 * @return static
+	 */
 	public function setBufferedQuery(?bool $bufferedQuery): self
 	{
 		$this->bufferedQuery = $bufferedQuery;
@@ -206,6 +211,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Set fetch class or class parameters
 	 * @param string|null $class
 	 * @param array<mixed>|null $params
+	 * @return static
 	 */
 	public function setFetchClass(?string $class, ?array $params = []): self
 	{
@@ -332,8 +338,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param bool $needed
 	 * @param string|null $columnName
 	 * @param bool $load
-	 * @phpstan-return T|null
 	 * @throws \StORM\Exception\NotFoundException
+	 * @return T|null
 	 */
 	public function first(bool $needed = false, ?string $columnName = null, bool $load = false): ?object
 	{
@@ -386,7 +392,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Fetch object and move cursor
-	 * @phpstan-return T|null
+	 * @return T|null
 	 */
 	public function fetch(): ?object
 	{
@@ -604,8 +610,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Set collection index of internal array
 	 * @param string|null $index
 	 * @param bool $prefixIndex
+	 * @return static
 	 */
-	public function setIndex(?string $index, bool $prefixIndex = true): ICollection
+	public function setIndex(?string $index, bool $prefixIndex = true): self
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -824,7 +831,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add FROM clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -847,7 +854,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set FROM clause and remove previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -918,7 +925,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $select
+	 * @param array<string>|array<\StORM\ICollection<T>> $select
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -1162,7 +1169,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add JOIN clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection> $from
+	 * @param array<string>|array<\StORM\ICollection<T>> $from
 	 * @param string $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
@@ -1671,6 +1678,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		return $result;
 	}
 	
+	/**
+	 * @param bool $select
+	 * @param bool $from
+	 * @param array<string> $indexSelect
+	 */
 	private function createSqlPrefix(bool $select, bool $from, array $indexSelect = []): string
 	{
 		$sql = '';
@@ -1716,7 +1728,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @param array<string>|array<\StORM\ICollection> $aliases
+	 * @param array<string>|array<\StORM\ICollection<T>> $aliases
 	 * @param string $modifier
 	 */
 	private function addAlias(array $aliases, string $modifier): void

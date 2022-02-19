@@ -4,25 +4,19 @@ declare(strict_types = 1);
 
 namespace StORM\Bridges;
 
+/**
+ * @template T of object
+ */
 class StormTracy implements \Tracy\IBarPanel
 {
 	use \Nette\SmartObject;
-	
-	/**
-	 * Stm service
-	 */
 	protected \StORM\Connection $db;
 	
 	/**
 	 * Name of connection
 	 */
 	protected string $name;
-	
-	/**
-	 * Construct new panel
-	 * @param \StORM\Connection $db
-	 * @param string $name
-	 */
+
 	public function __construct(\StORM\Connection $db, string $name)
 	{
 		$this->name = $name;

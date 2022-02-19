@@ -42,8 +42,10 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * @deprecated Use find repository instead
-	 * @phpstan-param class-string $entityClass
+	 * @template T of \StORM\Entity
+	 * @phpstan-param class-string<T> $entityClass
 	 * @param string $entityClass
+	 * @return \StORM\Repository<T>
 	 */
 	public function getRepository(string $entityClass): Repository
 	{
@@ -52,9 +54,10 @@ class DIConnection extends \StORM\Connection
 	
 	/**
 	 * Return repository by entity class
-	 * @phpstan-param class-string $entityClass
-	 * @param string $entityClass
+	 * @template T of \StORM\Entity
+	 * @phpstan-param class-string<T> $entityClass
 	 * @throws \Nette\DI\MissingServiceException
+	 * @return \StORM\Repository<T>
 	 */
 	public function findRepository(string $entityClass): Repository
 	{
@@ -69,7 +72,7 @@ class DIConnection extends \StORM\Connection
 		$repositoryClass = Structure::getRepositoryClassFromEntityClass($entityClass);
 		$interface = Structure::getInterfaceFromRepositoryClass($repositoryClass);
 		
-		/** @return \StORM\Repository */
+		/** @phpstan-ignore-next-line */
 		return $this->container->getByType(\interface_exists($interface) ? $interface : $repositoryClass);
 	}
 	
@@ -82,6 +85,11 @@ class DIConnection extends \StORM\Connection
 		return $this->container->findByType(Repository::class);
 	}
 	
+	/**
+	 * @template T of \StORM\Entity
+	 * @phpstan-param class-string<T> $name
+	 * @return \StORM\Repository<T>
+	 */
 	public function findRepositoryByName(string $name): Repository
 	{
 		/** @var \StORM\Repository|object $repository */
@@ -156,6 +164,15 @@ class DIConnection extends \StORM\Connection
 		$this->mutation = (string) \key($mutations);
 	}
 	
+	/**
+	 * @param string $property
+	 * @param mixed $rawValue
+	 * @param array<mixed> $values
+	 * @param array<mixed> $binds
+	 * @param string $varPrefix
+	 * @param string $varPostfix
+	 * @param string $prefix
+	 */
 	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, $this->getAvailableMutations(), $prefix);

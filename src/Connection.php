@@ -194,11 +194,14 @@ class Connection
 	
 	/**
 	 * Get collection of rows
+	 * @template T of object
+	 * @phpstan-param class-string<T> $class
 	 * @param array<string>|null $from
 	 * @param array<string> $select
 	 * @param string $class
 	 * @param array<mixed> $classParameters
 	 * @param string|null $index
+	 * @return \StORM\GenericCollection<T>
 	 */
 	public function rows(?array $from = null, array $select = ['*'], string $class = \stdClass::class, array $classParameters = [], ?string $index = null): GenericCollection
 	{
@@ -504,6 +507,15 @@ class Connection
 		$this->debug = $debug;
 	}
 	
+	/**
+	 * @param string $property
+	 * @param mixed $rawValue
+	 * @param array<mixed> $values
+	 * @param array<mixed> $binds
+	 * @param string $varPrefix
+	 * @param string $varPostfix
+	 * @param string $prefix
+	 */
 	public function bindVariables(string $property, $rawValue, array &$values, array &$binds, string $varPrefix, string $varPostfix, string $prefix = ''): void
 	{
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, [], $prefix);

@@ -27,10 +27,16 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected array $foreignKeys = [];
 	
 	/**
-	 * @var array<\StORM\Entity>|array<\StORM\RelationCollection>|array<null>
+	 * @template T of \StORM\Entity
+	 * phpcs:ignore
+	 * @var array<\StORM\Entity>|array<\StORM\RelationCollection<T>>|array<null>
 	 */
 	protected array $relations = [];
 	
+	/**
+	 * @template T of \StORM\Entity
+	 * @var \StORM\IEntityParent<static>|null
+	 */
 	protected ?\StORM\IEntityParent $parent = null;
 	
 	protected ?string $activeMutation;
@@ -43,7 +49,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Entity constructor.
 	 * @param array<mixed> $vars
-	 * @param \StORM\IEntityParent|null $parent
+	 * @param \StORM\IEntityParent<self>|null $parent
 	 * @param array<string> $mutations
 	 * @param string|null $mutation
 	 */
@@ -85,6 +91,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return (bool) $this->parent;
 	}
 	
+	/**
+	 * @return \StORM\IEntityParent<static>
+	 */
 	public function getParent(): IEntityParent
 	{
 		if (!isset($this->parent)) {
@@ -94,6 +103,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->parent;
 	}
 	
+	/**
+	 * @param \StORM\IEntityParent<static> $parent
+	 * @param bool $recursive
+	 */
 	public function setParent(IEntityParent $parent, bool $recursive = true): void
 	{
 		if (isset($this->parent) && $this->parent === $parent) {
@@ -276,6 +289,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
+	 * @param string $related
+	 * @param array<mixed>|object $values
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function syncRelated(string $related, $values): Entity
@@ -437,9 +452,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 	}
 	
 	/**
-	 * Get relation from relation
+	 * Get relation from relation\
 	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\RelationCollection|\StORM\Entity|null
+	 * @return \StORM\RelationCollection<static>|\StORM\Entity|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	protected function getRelation(Relation $relation)
@@ -481,13 +496,16 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->getParent()->getRepository()->getStructure();
 	}
 	
+	/**
+	 * @return \StORM\Repository<static>
+	 */
 	protected function getRepository(): Repository
 	{
 		return $this->getParent()->getRepository();
 	}
 	
 	/**
-	 * Create new collection with condition by entities PK
+	 * @return \StORM\Collection<static>
 	 */
 	protected function findMe(): Collection
 	{

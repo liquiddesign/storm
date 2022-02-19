@@ -13,6 +13,9 @@ use StORM\Meta\RelationNxN;
  * Class CollectionRelation
  * @template T of \StORM\Entity
  * @extends \StORM\Collection<T>
+ * @implements \ArrayAccess<string|int, T>
+ * @implements \Iterator<string|int, T>
+ * @implements \StORM\ICollection<T>
  */
 class RelationCollection extends Collection implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
@@ -22,7 +25,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	
 	/**
 	 * CollectionRelation constructor.
-	 * @param \StORM\Repository $repository
+	 * @param \StORM\Repository<T> $repository
 	 * @param \StORM\Meta\Relation $relation
 	 * @param string|int $keyValue
 	 */
@@ -35,6 +38,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 			throw new InvalidStateException($this, InvalidStateException::KEY_HOLDER_NOT_ALLOWED);
 		}
 		
+		// @phpstan-ignore-next-line
 		parent::__construct($repository->getConnection()->findRepository($relation->getTarget()));
 	}
 	
@@ -79,10 +83,10 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		}
 		
 		// RelationNx1
+
 		$class = $this->relation->getTarget();
 		$targetKey = $this->relation->getTargetKey();
-		
-		/** @var \StORM\ICollection $collection */
+	
 		$collection = $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere('this.uuid', \array_values($primaryKeys));
 
 		if ($checkKeys) {

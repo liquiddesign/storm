@@ -102,7 +102,11 @@ class InsertResult
 		return $this->primaryKeys;
 	}
 	
-	public function getRows(string $primaryKeyName): ICollection
+	/**
+	 * @param string $primaryKeyName
+	 * @return \StORM\GenericCollection<\stdClass>
+	 */
+	public function getRows(string $primaryKeyName): GenericCollection
 	{
 		return $this->connection->rows([$this->tableName])->setWhere($primaryKeyName, $this->getPrimaryKeys());
 	}

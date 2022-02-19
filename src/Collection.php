@@ -15,6 +15,10 @@ use StORM\Meta\RelationNxN;
  * Class Collection
  * @template T of \StORM\Entity
  * @extends \StORM\GenericCollection<T>
+ * @implements \ArrayAccess<string|int, T>
+ * @implements \Iterator<string|int, T>
+ * @implements \StORM\ICollection<T>
+ * @implements \StORM\IEntityParent<T>
  */
 class Collection extends GenericCollection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
@@ -32,18 +36,24 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	protected ?string $mutation;
 	
+	/**
+	 * @phpstan-var class-string<T>
+	 */
 	protected string $entityClass;
 	
+	/**
+	 * @var \StORM\Repository<T>|null
+	 */
 	private ?\StORM\Repository $repository;
 	
 	/**
-	 * @var array<\StORM\Collection>
+	 * @var array<string, \StORM\Collection<T>>
 	 */
 	private array $cache;
 	
 	/**
 	 * Collection constructor.
-	 * @param \StORM\Repository $repository
+	 * @param \StORM\Repository<T> $repository
 	 * @param string|null $mutation
 	 * @param array<string>|null $fallbackColumns
 	 */
@@ -70,7 +80,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
-	 * Get collection repository
+	 * @return \StORM\Repository<T>
 	 */
 	public function getRepository(): Repository
 	{
@@ -81,6 +91,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this->repository;
 	}
 	
+	/**
+	 * @param \StORM\Repository<T> $repository
+	 */
 	public function setRepository(Repository $repository): void
 	{
 		$this->repository = $repository;
@@ -106,6 +119,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		return $this;
 	}
 	
+	/**
+	 * @param bool $enableOptimization
+	 * @return static
+	 */
 	public function setOptimization(bool $enableOptimization): self
 	{
 		$this->enableOptimization = $enableOptimization;
@@ -185,11 +202,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		return $this->enableOptimization;
 	}
-	
-	/**
-	 * @param \StORM\Connection $connection
-	 * @throws \StORM\Exception\GeneralException
-	 */
+
 	public function setConnection(Connection $connection): void
 	{
 		unset($connection);
@@ -279,6 +292,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
+			
 			$targetRepository = $this->repository->getConnection()->findRepository($relation->getTarget());
 			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
@@ -293,6 +307,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 				$keys[] = $fkValue;
 			}
 			
+			/** @phpstan-ignore-next-line */
 			$this->cache[$cacheId] = $targetRepository->many()->setWhere("$prefix.$pkName", $keys);
 		}
 		
