@@ -155,7 +155,7 @@ abstract class Repository implements IEntityParent
 	{
 		$conditionValidTypes = ['array', 'string', 'integer'];
 		
-		if (!\in_array(\gettype($condition), $conditionValidTypes)) {
+		if (!Arrays::contains($conditionValidTypes, \gettype($condition))) {
 			throw new \InvalidArgumentException('Invalid argument type "' . \gettype($condition) . '", valid types: ' . \implode(', ', $conditionValidTypes));
 		}
 		

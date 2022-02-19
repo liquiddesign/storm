@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace StORM;
 
+use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
@@ -222,7 +223,7 @@ class Helpers
 		$mess = [];
 		
 		foreach ($values as $name => $value) {
-			if (\in_array($name, $columns)) {
+			if (Arrays::contains($columns, $name)) {
 				continue;
 			}
 			

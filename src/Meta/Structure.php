@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace StORM\Meta;
 
 use Nette\Caching\Cache;
+use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\Exception\AnnotationException;
 use StORM\Exception\NotExistsException;
@@ -179,7 +180,7 @@ class Structure
 			if ($column->hasMutations()) {
 				$rawName = $expressionPrefix . $column->getName();
 				
-				$condition = $fallbackMutationSuffix && ($fallbackColumns === null || \in_array($column->getPropertyName(), $fallbackColumns));
+				$condition = $fallbackMutationSuffix && ($fallbackColumns === null || Arrays::contains($fallbackColumns, $column->getPropertyName()));
 				$select[$aliasPrefix . $column->getPropertyName()] = $condition ? "COALESCE($rawName$mutationSuffix,$rawName$fallbackMutationSuffix)" : "$rawName$mutationSuffix";
 				
 				$locales[] = $column;

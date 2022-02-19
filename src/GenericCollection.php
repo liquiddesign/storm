@@ -1113,7 +1113,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		$groups = $this->modifiers[self::MODIFIER_SELECT];
 		
-		if (\in_array('*', $groups)) {
+		if (Arrays::contains($groups, '*')) {
 			throw new InvalidStateException($this, InvalidStateException::FULL_GROUP_BY_WITH_STAR);
 		}
 		

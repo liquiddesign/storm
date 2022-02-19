@@ -6,6 +6,7 @@ namespace StORM\Meta;
 
 use Nette\Schema\Expect;
 use Nette\Schema\Schema;
+use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\SchemaManager;
 
@@ -99,7 +100,7 @@ class Constraint extends AnnotationProperty
 	
 	public function setDefaultsFromRelationNxN(SchemaManager $schemaManager, RelationNxN $relation, string $type): void
 	{
-		if (!\in_array($type, ['source', 'target'])) {
+		if (!Arrays::contains(['source', 'target'], $type)) {
 			throw new \InvalidArgumentException("Type can be 'source' or 'target', '$type' given.");
 		}
 		
