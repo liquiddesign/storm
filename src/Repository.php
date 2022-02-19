@@ -144,7 +144,7 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get entity object by condition
-	 * @param array<string>|string|int $condition
+	 * @param array<string|int|float>|string|int $condition
 	 * @param bool $needed
 	 * @param array<string>|null $select
 	 * @param string|null $mutation
