@@ -16,9 +16,9 @@ class Constraint extends AnnotationProperty
 	public const ACTION_SET_NULL = 'SET NULL';
 	public const ACTION_CASCADE = 'CASCADE';
 	public const ACTION_RESTRICT = 'RESTRICT';
-	
+
 	protected string $source;
-	
+
 	protected string $target;
 	
 	protected string $sourceKey;
@@ -28,34 +28,22 @@ class Constraint extends AnnotationProperty
 	protected ?string $onDelete = null;
 	
 	protected ?string $onUpdate = null;
-	
-	/**
-	 * @phpstan-return class-string<\StORM\Entity>
-	 */
+
 	public function getSource(): string
 	{
 		return $this->source;
 	}
-	
-	/**
-	 * @phpstan-param class-string<\StORM\Entity> $source
-	 */
+
 	public function setSource(string $source): void
 	{
 		$this->source = $source;
 	}
-	
-	/**
-	 * @phpstan-return class-string<\StORM\Entity>
-	 */
+
 	public function getTarget(): string
 	{
 		return $this->target;
 	}
-	
-	/**
-	 * @phpstan-param class-string<\StORM\Entity> $target
-	 */
+
 	public function setTarget(string $target): void
 	{
 		$this->target = $target;

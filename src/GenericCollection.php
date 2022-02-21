@@ -208,7 +208,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set fetch class or class parameters
-	 * @param class-string<object>|null $class
+	 * @deprecated use fetchArray() instead
+	 * @template X of object
+	 * @param class-string<X>|null $class
 	 * @param array<mixed>|null $params
 	 * @return static
 	 */
@@ -296,7 +298,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * Take 1, fetch fetch the column and close cursor
+	 * Take 1, fetch the column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
 	 * @return null|string|int|bool
@@ -320,7 +322,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * Take 1, fetch fetch the last column and close cursor
+	 * Take 1, fetch the last column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
 	 * @return null|string|int|bool
@@ -572,12 +574,61 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		} else {
 			$return = [];
 			
-			foreach ($this->getItems() as $index => $value) {
-				$return[$index] = $value->$columnOrExpression;
+			if (\property_exists($this->class, $columnOrExpression)) {
+				foreach ($this->getItems() as $index => $value) {
+					$return[$index] = $value->$columnOrExpression;
+				}
 			}
 		}
 		
 		return $toArrayValues ? \array_values($return) : $return;
+	}
+	
+	/**
+	 * Fetch columns into array
+	 * @return array<string>
+	 */
+	public function fetchColumns(string $column, bool $toArrayValues = false): array
+	{
+		return $this->fetchAllCloned(\PDO::FETCH_COLUMN, null, null, function (ICollection $collection) use ($column, $toArrayValues): void {
+			$collection->setSelect([$column], [], true);
+			
+			if (!$toArrayValues) {
+				return;
+			}
+
+			$collection->setIndex(null);
+		});
+	}
+	
+	/**
+	 * Fetch as array of class types $class
+	 * @template X
+	 * @param class-string<X> $class
+	 * @param array<mixed> $classArgs
+	 * @param bool $toArrayValues
+	 * @return array<X>
+	 */
+	public function fetchArray(string $class, array $classArgs = [], bool $toArrayValues = false): array
+	{
+		return $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $class, $classArgs, function (ICollection $collection) use ($toArrayValues): void {
+			if ($toArrayValues) {
+				$collection->setIndex(null);
+			}
+		});
+	}
+	
+	/**
+	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
+	 * @param string $property
+	 * @phpstan-return array<array<T>>
+	 * @return array<array<object>>
+	 */
+	public function fetchGroups(string $property): array
+	{
+		return $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, null, null, function (ICollection $collection) use ($property): void {
+			$collection->setIndex($property);
+		});
 	}
 	
 	/**
@@ -589,27 +640,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	public function map(callable $callback, bool $toArrayValues = false): array
 	{
 		return \array_map($callback, $this->toArray($toArrayValues));
-	}
-	
-	/**
-	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
-	 * @param string $property
-	 * @phpstan-return array<array<T>>
-	 * @return array<array<object>>
-	 */
-	public function getGroups(string $property): array
-	{
-		$collection = clone $this;
-		$collection->setIndex($property);
-		$sth = $this->getConnection()->query($collection->getSql(), $collection->getVars(), [], $this->bufferedQuery);
-		
-		$result = \Nette\Utils\Helpers::falseToNull($sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classArguments));
-		
-		if ($result === null) {
-			throw new GeneralException('Fetch collection failed:' . \implode(':', $this->getConnection()->getLink()->errorInfo()));
-		}
-		
-		return $result;
 	}
 	
 	/**
@@ -1395,6 +1425,33 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * @param int $fetchMode
+	 * @param string|null $fetchClass
+	 * @param array<mixed>|null $fetchArguments
+	 * @param callable|null $callback
+	 * @return array<mixed>
+	 * @throws \StORM\Exception\GeneralException
+	 */
+	protected function fetchAllCloned(int $fetchMode, ?string $fetchClass = null, ?array $fetchArguments = null, ?callable $callback = null): array
+	{
+		$collection = clone $this;
+		
+		if ($callback) {
+			\call_user_func($callback, $collection);
+		}
+		
+		$sth = $this->getConnection()->query($collection->getSql(), $collection->getVars(), [], $this->bufferedQuery);
+		
+		$result = \Nette\Utils\Helpers::falseToNull($sth->fetchAll(...$this->getFetchParameters($fetchMode, $fetchClass, $fetchArguments)));
+		
+		if ($result === null) {
+			throw new GeneralException('Fetch collection failed:' . \implode(':', $this->getConnection()->getLink()->errorInfo()));
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * Fetch and close cursor, if property is not null fetch the property
 	 * @param bool $needed
 	 * @param callable|null $callback
@@ -1465,17 +1522,18 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * @param int $mode
+	 * @param string|null $class
+	 * @param array<mixed>|null $classArguments
 	 * @return array<mixed>
 	 */
-	protected function getFetchParameters(): array
+	protected function getFetchParameters(int $mode = \PDO::FETCH_CLASS, ?string $class = null, ?array $classArguments = null): array
 	{
-		$mode = \PDO::FETCH_CLASS;
-		
 		if ($this->index !== null) {
 			$mode |= \PDO::FETCH_UNIQUE;
 		}
 		
-		return [$mode, $this->class, $this->classArguments];
+		return $mode & \PDO::FETCH_CLASS ? [$mode, $class ?: $this->class, $classArguments ?? $this->classArguments] : [$mode];
 	}
 	
 	protected function init(): void

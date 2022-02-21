@@ -18,6 +18,10 @@ class Table extends AnnotationClass
 	
 	protected string $comment = '';
 	
+	/**
+	 * @template T of \StORM\Entity
+	 * @param class-string<T> $class
+	 */
 	public function __construct(string $class)
 	{
 		parent::__construct($class);

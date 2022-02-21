@@ -10,17 +10,26 @@ use Nette\Utils\Strings;
 
 abstract class Annotation implements \JsonSerializable
 {
+	/**
+	 * @var class-string<\StORM\Entity>
+	 */
 	protected ?string $class;
 	
 	abstract public static function getAnnotationName(): string;
 	
 	abstract public function getSchema(): Schema;
 	
+	/**
+	 * @param class-string<\StORM\Entity>|null $class
+	 */
 	public function __construct(?string $class)
 	{
 		$this->class = $class;
 	}
 	
+	/**
+	 * @return class-string<\StORM\Entity>|null
+	 */
 	public function getEntityClass(): ?string
 	{
 		return $this->class;

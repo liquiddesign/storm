@@ -23,14 +23,6 @@ interface ICollection
 	public function getModifiers(): array;
 	
 	/**
-	 * Set fetch class or class parameters
-	 * @param class-string<object>|null $class
-	 * @param array<mixed>|null $params
-	 * @return static
-	 */
-	public function setFetchClass(?string $class, ?array $params = []): self;
-	
-	/**
 	 * Get fetch class
 	 * @param array<mixed> $params
 	 * @phpstan-return class-string<T>
@@ -162,7 +154,23 @@ interface ICollection
 	 * @phpstan-return array<array<T>>
 	 * @return array<array<object>>
 	 */
-	public function getGroups(string $property): array;
+	public function fetchGroups(string $property): array;
+	
+	/**
+	 * Fetch as array of class types $class
+	 * @template X
+	 * @param class-string<X> $class
+	 * @param array<mixed> $classArgs
+	 * @param bool $toArrayValues
+	 * @return array<X>
+	 */
+	public function fetchArray(string $class, array $classArgs = [], bool $toArrayValues = false): array;
+	
+	/**
+	 * Fetch columns into array
+	 * @return array<string>
+	 */
+	public function fetchColumns(string $column, bool $toArrayValues = false): array;
 	
 	/**
 	 * Set collection index of internal array

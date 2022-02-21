@@ -148,7 +148,10 @@ class Structure
 	{
 		return $this->customPropertyAnnotations[Strings::lower($annotationName)][$property] ?? null;
 	}
-
+	
+	/**
+	 * @return class-string<T>
+	 */
 	public function getEntityClass(): string
 	{
 		return $this->entityClass;
@@ -425,7 +428,10 @@ class Structure
 			
 			$object = new Constraint($class, $relation->getPropertyName());
 			$object->setDefaultsFromRelation($relation);
+			//@TODO: vyresit jestli constraint je class nebo table
+			//@phpstan-ignore-next-line
 			$object->setSource($this->schemaManager->getStructure($object->getSource(), $this->cache, $this->defaultPK)->getTable()->getName());
+			//@phpstan-ignore-next-line
 			$object->setTarget($this->schemaManager->getStructure($object->getTarget(), $this->cache, $this->defaultPK)->getTable()->getName());
 			$object->setName($this->setPrefix($name));
 			$object->loadFromArray($json);

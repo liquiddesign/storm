@@ -25,6 +25,10 @@ class Index extends AnnotationClass
 	 */
 	protected bool $mutations = false;
 	
+	/**
+	 * @template T of \StORM\Entity
+	 * @param class-string<T> $class
+	 */
 	public function __construct(string $class)
 	{
 		parent::__construct($class);

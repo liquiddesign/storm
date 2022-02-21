@@ -36,11 +36,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	protected ?string $mutation;
 	
 	/**
-	 * @phpstan-var class-string<T>
-	 */
-	protected string $entityClass;
-	
-	/**
 	 * @var \StORM\Repository<T>|null
 	 */
 	private ?\StORM\Repository $repository;
@@ -60,8 +55,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		$this->repository = $repository;
 		$this->mutation = $mutation;
-		$this->entityClass = $repository->getEntityClass();
-		$this->classArguments = $repository->getEntityArguments($this, $mutation);
 		
 		$index = $repository::DEFAULT_ALIAS . '.' . $repository->getStructure()->getPK()->getName();
 		
@@ -73,7 +66,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			$repository->getDefaultFrom(),
 			$repository->getDefaultSelect($mutation, $fallbackColumns),
 			$repository->getEntityClass(),
-			$this->classArguments,
+			$repository->getEntityArguments($this, $mutation),
 			$index,
 		);
 	}
@@ -98,24 +91,16 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		$this->repository = $repository;
 		$this->connection = $repository->getConnection();
 		$this->classArguments = $repository->getEntityArguments($this);
-		$this->setFetchClass(null, $this->classArguments);
 	}
 	
 	/**
-	 * @template X
 	 * @param bool $enableSmartJoin
-	 * @param string|null $entityClass
-	 * @phpstan-param class-string<X>|null $entityClass
 	 * @return static
 	 */
-	public function setSmartJoin(bool $enableSmartJoin, ?string $entityClass = null): self
+	public function setSmartJoin(bool $enableSmartJoin): self
 	{
 		$this->enableSmartJoin = $enableSmartJoin;
-		
-		if ($entityClass && \is_subclass_of($entityClass, Entity::class)) {
-			$this->entityClass = $entityClass;
-		}
-		
+
 		return $this;
 	}
 	
@@ -449,7 +434,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 				continue;
 			}
 			
-			$relationClass = $this->entityClass;
+			$relationClass = $this->class;
 			$aliasesList = \explode('.', $aliases);
 			
 			if (\count($aliasesList) > 1) {
@@ -504,7 +489,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	public function __sleep(): array
 	{
 		$this->clear();
-		$this->setFetchClass(null, []);
+		$this->classArguments = [];
 		
 		$vars = \get_object_vars($this);
 		unset($vars['connection'], $vars['sth'], $vars['repository']);
