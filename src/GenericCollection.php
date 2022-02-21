@@ -208,7 +208,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set fetch class or class parameters
-	 * @param class-string<T>|null $class
+	 * @param class-string<object>|null $class
 	 * @param array<mixed>|null $params
 	 * @return static
 	 */

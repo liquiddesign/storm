@@ -24,7 +24,7 @@ interface ICollection
 	
 	/**
 	 * Set fetch class or class parameters
-	 * @param string|null $class
+	 * @param class-string<object>|null $class
 	 * @param array<mixed>|null $params
 	 * @return static
 	 */
