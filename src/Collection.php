@@ -102,9 +102,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
+	 * @template X
 	 * @param bool $enableSmartJoin
 	 * @param string|null $entityClass
-	 * @phpstan-param class-string<T>|null $entityClass
+	 * @phpstan-param class-string<X>|null $entityClass
 	 * @return static
 	 */
 	public function setSmartJoin(bool $enableSmartJoin, ?string $entityClass = null): self
