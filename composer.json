@@ -26,6 +26,7 @@
 	},
 	"scripts": {
 		"phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
+		"phpstan-clear": "phpstan clear-result-cache",
 		"phpcs": "phpcs --standard=ruleset.xml src",
 		"phpcsfix": "phpcbf --standard=ruleset.xml src",
 		"phpcheck7": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 7.4",

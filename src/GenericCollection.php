@@ -903,7 +903,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set SELECT clause and replace previous
-	 * @param array<string> $select
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $select
 	 * @param array<mixed> $values
 	 * @param bool $keepIndex
 	 * @return static
@@ -931,7 +932,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection<object>> $select
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $select
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -1142,7 +1144,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set JOIN clause and replace previous
-	 * @param array<string> $from
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $from
 	 * @param string|null $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
@@ -1175,7 +1178,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add JOIN clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection<T>> $from
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $from
 	 * @param string $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type

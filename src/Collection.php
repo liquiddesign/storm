@@ -336,7 +336,8 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	
 	/**
 	 * @override reset skip select length
-	 * @param array<string> $select
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $select
 	 * @param array<mixed> $values
 	 * @param bool $keepIndex
 	 * @return static

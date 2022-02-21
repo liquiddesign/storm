@@ -508,10 +508,11 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Call user filters on collection
-	 * @param \StORM\Collection<T> $collection
+	 * @template X of \StORM\Entity
+	 * @param \StORM\Collection<X> $collection
 	 * @param array<array<mixed>> $filters
 	 * @param bool $silent
-	 * @return \StORM\Collection<T>
+	 * @return \StORM\Collection<X>
 	 */
 	public function filter(Collection $collection, array $filters, bool $silent = false): Collection
 	{
