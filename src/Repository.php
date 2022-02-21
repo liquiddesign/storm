@@ -87,15 +87,16 @@ abstract class Repository implements IEntityParent
 	/**
 	 * @param \StORM\IEntityParent<T> $parent
 	 * @param string|null $mutation
+	 * @param array<int|string|float|null|bool> $vars
 	 * @return array<mixed>
 	 */
-	final public function getEntityArguments(IEntityParent $parent, ?string $mutation = null): array
+	final public function getEntityArguments(IEntityParent $parent, ?string $mutation = null, array $vars = []): array
 	{
 		$connection = $this->getConnection();
 		$hasMutations = $this->getStructure()->hasMutations();
 		$mutation = $mutation ?: $this->getConnection()->getMutation();
 		
-		return \array_merge([[]], $this->injectedArguments, [$parent, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $mutation : null]);
+		return \array_merge([$vars], $this->injectedArguments, [$parent, $hasMutations ? $connection->getAvailableMutations() : [], $hasMutations ? $mutation : null]);
 	}
 	
 	/**
@@ -149,6 +150,18 @@ abstract class Repository implements IEntityParent
 	final public function many(?string $mutation = null, ?array $fallbackColumns = null): Collection
 	{
 		return new Collection($this, $mutation, $fallbackColumns);
+	}
+	
+	/**
+	 * @param array<int|string|float|null|bool> $vars
+	 * @return T
+	 */
+	final public function createEntityInstance(array $vars): Entity
+	{
+		$class = $this->getEntityClass();
+		$args = $this->getEntityArguments($this, null, $vars);
+		
+		return new $class(...$args);
 	}
 	
 	/**
