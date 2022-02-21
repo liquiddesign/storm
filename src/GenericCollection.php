@@ -574,10 +574,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		} else {
 			$return = [];
 			
-			if (\property_exists($this->class, $columnOrExpression)) {
-				foreach ($this->getItems() as $index => $value) {
-					$return[$index] = $value->$columnOrExpression;
-				}
+			foreach ($this->getItems() as $index => $value) {
+				$return[$index] = $value->$columnOrExpression;
 			}
 		}
 		
