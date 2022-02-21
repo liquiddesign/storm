@@ -588,15 +588,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function fetchColumns(string $column, bool $toArrayValues = false): array
 	{
-		return $this->fetchAllCloned(\PDO::FETCH_COLUMN, null, null, function (ICollection $collection) use ($column, $toArrayValues): void {
+		$return = $this->fetchAllCloned(\PDO::FETCH_COLUMN, null, null, function (ICollection $collection) use ($column): void {
 			$collection->setSelect([$column], [], true);
-			
-			if (!$toArrayValues) {
-				return;
-			}
-
-			$collection->setIndex(null);
 		});
+		
+		return $toArrayValues ? \array_values($return) : $return;
 	}
 	
 	/**
@@ -609,11 +605,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function fetchArray(string $class, array $classArgs = [], bool $toArrayValues = false): array
 	{
-		return $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $class, $classArgs, function (ICollection $collection) use ($toArrayValues): void {
-			if ($toArrayValues) {
-				$collection->setIndex(null);
-			}
-		});
+		$return = $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $class, $classArgs);
+		
+		return $toArrayValues ? \array_values($return) : $return;
 	}
 	
 	/**
@@ -1527,7 +1521,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	protected function getFetchParameters(int $mode = \PDO::FETCH_CLASS, ?string $class = null, ?array $classArguments = null): array
 	{
-		if ($this->index !== null) {
+		if ($this->index !== null && !($mode & \PDO::FETCH_GROUP)) {
 			$mode |= \PDO::FETCH_UNIQUE;
 		}
 		
