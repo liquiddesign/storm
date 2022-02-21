@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace StORM;
 
 use Nette\Utils\Arrays;
+use Nette\Utils\Json;
 use Nette\Utils\Strings;
 use StORM\Exception\InvalidStateException;
 use StORM\Exception\NotExistsException;
@@ -30,7 +31,7 @@ class Helpers
 	 */
 	public static function toArrayRecursive($input)
 	{
-		return \json_decode(\json_encode($input), true);
+		return Json::decode(Json::encode($input), Json::FORCE_ARRAY);
 	}
 	
 	/**
@@ -45,7 +46,7 @@ class Helpers
 	/**
 	 * Parse doc comment
 	 * @param string $s
-	 * @return array<array<string>>|array<string>|array<array<int>>|array<int>
+	 * @return array<int|string|array<string|int>>
 	 */
 	public static function parseDocComment(string $s): array
 	{
@@ -120,7 +121,7 @@ class Helpers
 	 * Create SQL clause string
 	 * @template T of object
 	 * @param string $prefix
-	 * @param array<string>|array<\StORM\ICollection<T>>|null $fragments
+	 * @param array<string|int>|array<\StORM\ICollection<T>>|null $fragments
 	 * @param string $glue
 	 * @param string $assocGlue
 	 * @param bool $brackets

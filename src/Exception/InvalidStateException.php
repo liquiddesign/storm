@@ -56,7 +56,7 @@ class InvalidStateException extends \LogicException implements IContextException
 		$message = $message ?: $extraMessage;
 		$this->context = $context;
 		
-		parent::__construct($message, $errorCode);
+		parent::__construct((string) $message, $errorCode);
 	}
 	
 	public function getContext(): ?IDumper

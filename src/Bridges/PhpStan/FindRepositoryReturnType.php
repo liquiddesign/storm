@@ -34,7 +34,7 @@ class FindRepositoryReturnType implements \PHPStan\Type\DynamicMethodReturnTypeE
 			return new \PHPStan\Type\ObjectType(Repository::class);
 		}
 		
-		$entityClass = $paramNeedType->getValue();
+		$entityClass = (string) $paramNeedType->getValue();
 		
 		$repositoryClass = Structure::getRepositoryClassFromEntityClass($entityClass);
 		$interface = Structure::getInterfaceFromRepositoryClass($repositoryClass);

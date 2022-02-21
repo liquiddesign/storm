@@ -6,7 +6,7 @@ namespace StORM\Meta;
 
 abstract class AnnotationProperty extends Annotation
 {
-	protected ?string $name;
+	protected string $name;
 	
 	/**
 	 * Name of the column
@@ -25,7 +25,7 @@ abstract class AnnotationProperty extends Annotation
 		$this->name = $name;
 	}
 	
-	public function getName(): ?string
+	public function getName(): string
 	{
 		return $this->name;
 	}

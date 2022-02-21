@@ -11,21 +11,9 @@ class AlreadyExistsException extends \DomainException implements IContextExcepti
 	public const BIND_VAR = 0;
 	public const ALIAS = 1;
 	
-	/**
-	 * @template T of object
-	 * phpcs:ignore
-	 * @var \StORM\ICollection<T>|\StORM\Entity|null
-	 */
-	private $context;
-	
-	/**
-	 * AlreadyExistsException constructor.
-	 * @template T of object
-	 * @param \StORM\ICollection<T>|\StORM\Entity|null $context
-	 * @param int $errorCode
-	 * @param string $value
-	 */
-	public function __construct($context, int $errorCode, string $value)
+	private ?IDumper $context;
+
+	public function __construct(?IDumper $context, int $errorCode, string $value)
 	{
 		if ($errorCode === self::BIND_VAR) {
 			$message = "Binded variable $value is already defined in collection.";

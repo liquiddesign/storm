@@ -79,7 +79,7 @@ class StormTracy implements \Tracy\IBarPanel
 		try {
 			$func();
 			
-			return \ob_get_clean();
+			return (string) \ob_get_clean();
 		} catch (\Throwable $e) {
 			\ob_end_clean();
 			

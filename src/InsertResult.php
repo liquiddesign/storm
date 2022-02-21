@@ -23,7 +23,7 @@ class InsertResult
 	 */
 	public const NONE_AFFECTED_COUNT = 0;
 	
-	private ?\StORM\Connection $connection;
+	private \StORM\Connection $connection;
 	
 	private int $rowCount;
 	

@@ -10,8 +10,14 @@ use Nette\Utils\Strings;
 
 class Relation extends AnnotationProperty
 {
+	/**
+	 * @var class-string<\StORM\Entity>
+	 */
 	protected string $source;
 	
+	/**
+	 * @var class-string<\StORM\Entity>
+	 */
 	protected string $target;
 	
 	protected string $sourceKey;
@@ -25,7 +31,7 @@ class Relation extends AnnotationProperty
 	protected bool $nullable = false;
 	
 	/**
-	 * @phpstan-return class-string
+	 * @phpstan-return class-string<\StORM\Entity>
 	 */
 	public function getSource(): string
 	{
@@ -33,7 +39,7 @@ class Relation extends AnnotationProperty
 	}
 	
 	/**
-	 * @phpstan-param class-string $source
+	 * @phpstan-param class-string<\StORM\Entity> $source
 	 */
 	public function setSource(string $source): void
 	{
@@ -41,7 +47,7 @@ class Relation extends AnnotationProperty
 	}
 	
 	/**
-	 * @phpstan-return class-string
+	 * @phpstan-return class-string<\StORM\Entity>
 	 */
 	public function getTarget(): string
 	{
@@ -49,7 +55,7 @@ class Relation extends AnnotationProperty
 	}
 	
 	/**
-	 * @phpstan-param class-string $target
+	 * @phpstan-param class-string<\StORM\Entity> $target
 	 */
 	public function setTarget(string $target): void
 	{

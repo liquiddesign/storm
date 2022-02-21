@@ -13,6 +13,9 @@ use StORM\Helpers;
 use StORM\Repository;
 use StORM\SchemaManager;
 
+/**
+ * @template T of \StORM\Entity
+ */
 class Structure
 {
 	public const NAME_SEPARATOR = '_';
@@ -25,6 +28,9 @@ class Structure
 	
 	private const ANNOTATION_TYPE_PROPERTY = 'property';
 	
+	/**
+	 * @var class-string<T>
+	 */
 	private string $entityClass;
 	
 	private \StORM\Meta\Column $pk;
@@ -60,8 +66,13 @@ class Structure
 	private ?Column $defaultPK;
 	
 	/**
+	 * @var array<mixed>
+	 */
+	private array $classDocComment;
+	
+	/**
 	 * Table constructor.
-	 * @param string $class
+	 * @param class-string<T> $class
 	 * @param \StORM\SchemaManager $schemaManager
 	 * @param \Nette\Caching\Cache $cache
 	 * @param \StORM\Meta\Column|null $defaultPK
@@ -137,8 +148,8 @@ class Structure
 	{
 		return $this->customPropertyAnnotations[Strings::lower($annotationName)][$property] ?? null;
 	}
-	
-	public function getEntityClass(): ?string
+
+	public function getEntityClass(): string
 	{
 		return $this->entityClass;
 	}
@@ -246,6 +257,10 @@ class Structure
 	
 	public function hasColumn(string $name): bool
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return isset($this->columns[$name]);
 	}
 	
@@ -260,6 +275,10 @@ class Structure
 	
 	public function hasRelation(string $name): bool
 	{
+		if (!$this->isInited()) {
+			$this->init();
+		}
+		
 		return isset($this->relations[$name]);
 	}
 	
@@ -465,16 +484,28 @@ class Structure
 		return $entityClass . (new \ReflectionClass(Repository::class))->getShortName();
 	}
 	
+	/**
+	 * @param string $repositoryClass
+	 * @return class-string<T>
+	 */
 	public static function getEntityClassFromInterface(string $repositoryClass): string
 	{
 		return Strings::substring($repositoryClass, Strings::length(self::INTERFACE_PREFIX));
 	}
 	
+	/**
+	 * @param string $repositoryClass
+	 * @return class-string<T>
+	 */
 	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
 	{
 		return self::INTERFACE_PREFIX . $repositoryClass;
 	}
 	
+	/**
+	 * @param string $repositoryClass
+	 * @return class-string<T>
+	 */
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
 	{
 		return Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
@@ -639,12 +670,22 @@ class Structure
 	}
 	
 	/**
-	 * @return array<array<string>>|array<string>|array<array<int>>|array<int>
+	 * @return array<int|string|array<string|int>>
 	 * @throws \ReflectionException
 	 */
 	private function getClassDocComment(): array
 	{
-		return Helpers::parseDocComment((new \ReflectionClass($this->entityClass))->getDocComment());
+		if (isset($this->classDocComment)) {
+			return $this->classDocComment;
+		}
+		
+		$docComment = (new \ReflectionClass($this->entityClass))->getDocComment();
+		
+		if ($docComment === false) {
+			return [];
+		}
+		
+		return $this->classDocComment = Helpers::parseDocComment($docComment);
 	}
 	
 	/**

@@ -13,7 +13,7 @@ namespace StORM;
 class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 {
 	/**
-	 * @var array<object>
+	 * @var array<\StORM\Entity>
 	 */
 	private array $source;
 	
@@ -31,7 +31,7 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	
 	/**
 	 * ArrayWrapper constructor.
-	 * @param array<object> $source
+	 * @param array<\StORM\Entity> $source
 	 * @param \StORM\IEntityParent<T> $parent
 	 * @param array<\StORM\IEntityParent<T>> $childParents
 	 * @param bool $passRecursive
@@ -46,11 +46,12 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	
 	/**
 	 * Return the current element
-	 * @return \StORM\Entity|null
 	 */
-	public function current(): ?object
+	public function current(): ?\StORM\Entity
 	{
-		return $this->loadParent(\current($this->source));
+		$current = \current($this->source);
+		
+		return $current ? $this->loadParent($current) : null;
 	}
 	
 	/**
@@ -129,9 +130,9 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 		return \count($this->source);
 	}
 	
-	private function loadParent(object $value): object
+	private function loadParent(\StORM\Entity $value): \StORM\Entity
 	{
-		if ($value instanceof Entity && !$value->hasParent()) {
+		if (!$value->hasParent()) {
 			$value->setParent($this->parent);
 			
 			foreach ($this->childParents as $property => $parent) {

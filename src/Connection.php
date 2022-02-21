@@ -96,9 +96,15 @@ class Connection
 	/**
 	 * Get database name of current connection
 	 */
-	public function getDatabaseName(): ?string
+	public function getDatabaseName(): string
 	{
-		return $this->query('SELECT DATABASE()', [], [], null, false)->fetchColumn();
+		$database = (string) $this->query('SELECT DATABASE()', [], [], null, false)->fetchColumn();
+		
+		if (!$database) {
+			throw new GeneralException('No database is selected');
+		}
+		
+		return $database;
 	}
 	
 	/**
@@ -189,6 +195,10 @@ class Connection
 			$item->setError(false);
 		}
 		
+		if (!$sth instanceof \PDOStatement) {
+			throw new GeneralException('Query failed:' . \implode(':', $this->getLink()->errorInfo()));
+		}
+		
 		return $sth;
 	}
 	
@@ -248,6 +258,8 @@ class Connection
 	 * @param array<array<mixed>>|array<object> $manyValues
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
+	 * @phpcs:ignore
+	 * @phpstan-param int<1,max> $chunkSize
 	 * @param int $chunkSize
 	 */
 	public function createRows(string $table, array $manyValues, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
@@ -303,6 +315,8 @@ class Connection
 	 * @param array<string>|array<\StORM\Literal>|null $columnsToUpdate
 	 * @param bool $ignore
 	 * @param string|null $nonAutoincrementPK
+	 * @phpcs:ignore
+	 * @phpstan-param int<1, max> $chunkSize
 	 * @param int $chunkSize
 	 */
 	public function syncRows(string $table, array $manyValues, ?array $columnsToUpdate = null, bool $ignore = false, ?string $nonAutoincrementPK = null, int $chunkSize = 100): InsertResult
@@ -440,6 +454,10 @@ class Connection
 			$item->setError(false);
 		}
 		
+		if ($return === false) {
+			throw new GeneralException('Exec failed:' . \implode(':', $this->getLink()->errorInfo()));
+		}
+		
 		return $return;
 	}
 	
@@ -467,7 +485,7 @@ class Connection
 	 */
 	public function getLastLogItem(): ?LogItem
 	{
-		return \end($this->log);
+		return \Nette\Utils\Helpers::falseToNull(\end($this->log));
 	}
 	
 	/**

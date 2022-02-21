@@ -29,21 +29,33 @@ class Constraint extends AnnotationProperty
 	
 	protected ?string $onUpdate = null;
 	
+	/**
+	 * @phpstan-return class-string<\StORM\Entity>
+	 */
 	public function getSource(): string
 	{
 		return $this->source;
 	}
 	
+	/**
+	 * @phpstan-param class-string<\StORM\Entity> $source
+	 */
 	public function setSource(string $source): void
 	{
 		$this->source = $source;
 	}
 	
+	/**
+	 * @phpstan-return class-string<\StORM\Entity>
+	 */
 	public function getTarget(): string
 	{
 		return $this->target;
 	}
 	
+	/**
+	 * @phpstan-param class-string<\StORM\Entity> $target
+	 */
 	public function setTarget(string $target): void
 	{
 		$this->target = $target;
@@ -105,11 +117,23 @@ class Constraint extends AnnotationProperty
 		}
 		
 		$glue = Strings::firstUpper($type);
+		$viaCallback = [$relation, 'get' . $glue . 'ViaKey'];
+		$callback = [$relation, 'get' . $glue];
+		
+		if (!\is_callable($viaCallback) || !\is_callable($callback)) {
+			throw new \InvalidArgumentException('Type cannot be mapped to method.');
+		}
+		
 		$this->name = $relation->getVia() . \StORM\Meta\Structure::NAME_SEPARATOR . $type;
 		$this->source = $relation->getVia();
-		$this->sourceKey = \call_user_func([$relation, 'get' . $glue . 'ViaKey']);
-		$this->target = $schemaManager->getStructure((string) \call_user_func([$relation, 'get' . $glue]))->getTable()->getName();
-		$this->targetKey = \call_user_func([$relation, 'get' . $glue . 'Key']);
+		$this->sourceKey = \call_user_func($viaCallback);
+		
+		// @phpcs:ignore
+		/** @var class-string<\StORM\Entity> $target */
+		$target = (string) \call_user_func($callback);
+		
+		$this->target = $schemaManager->getStructure($target)->getTable()->getName();
+		$this->targetKey = $target;
 	}
 	
 	public function getSchema(): Schema

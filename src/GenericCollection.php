@@ -7,8 +7,8 @@ namespace StORM;
 use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
 use StORM\Exception\AlreadyExistsException;
+use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
-use StORM\Exception\NotExistsException;
 use StORM\Exception\NotFoundException;
 
 /**
@@ -70,8 +70,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected const ORDER_DESC = 'DESC';
 	
 	/**
-	 * @phpstan-var array<T>|null
-	 * @var array<object>|null
+	 * @var array<T>|null
 	 */
 	protected ?array $items = null;
 	
@@ -81,7 +80,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	protected array $keys;
 	
 	/**
-	 * @phpstan-var class-string<T>
+	 * @var class-string<T>
 	 */
 	protected string $class;
 	
@@ -209,7 +208,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Set fetch class or class parameters
-	 * @param string|null $class
+	 * @param class-string<T>|null $class
 	 * @param array<mixed>|null $params
 	 * @return static
 	 */
@@ -268,10 +267,20 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Load all items and fill keys
+	 * @return static
 	 */
-	public function load(): ICollection
+	public function load(bool $forceLoad = true): self
 	{
-		$this->items = $this->getPDOStatement()->fetchAll(...$this->getFetchParameters());
+		if (!$forceLoad && $this->isLoaded()) {
+			return $this;
+		}
+		
+		$this->items = \Nette\Utils\Helpers::falseToNull($this->getPDOStatement()->fetchAll(...$this->getFetchParameters()));
+		
+		if ($this->items === null) {
+			throw new GeneralException('Load collection failed:' . \implode(':', $this->getConnection()->getLink()->errorInfo()));
+		}
+		
 		$this->keys = \array_keys($this->items);
 		$this->affectedNumber = null;
 		
@@ -290,7 +299,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Take 1, fetch fetch the column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
-	 * @return null|string|bool
+	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null)
@@ -314,7 +323,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Take 1, fetch fetch the last column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
-	 * @return null|string|bool
+	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
@@ -324,7 +333,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		if (!$columnName) {
-			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
+			throw new \InvalidArgumentException('Column cannot be empty');
 		}
 	
 		return $this->getValue($property, $needed, function (ICollection $collection) use ($columnName): void {
@@ -344,11 +353,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	public function first(bool $needed = false, ?string $columnName = null, bool $load = false): ?object
 	{
 		if ($load) {
-			$this->load();
+			$this->load(false);
 		}
 		
 		if ($this->isLoaded() && $columnName === null) {
-			return Arrays::first($this->items);
+			return Arrays::first($this->getItems());
 		}
 		
 		return $this->fetchCloned($needed, function (ICollection $collection) use ($columnName): void {
@@ -373,15 +382,15 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	public function last(?string $columnName = null, bool $needed = false, bool $load = false): ?object
 	{
 		if ($load) {
-			$this->load();
+			$this->load(false);
 		}
 		
 		if ($this->isLoaded() && $columnName === null) {
-			return Arrays::last($this->items);
+			return Arrays::last($this->getItems());
 		}
 		
 		if (!$columnName) {
-			throw new NotExistsException($this, NotExistsException::PROPERTY, $columnName);
+			throw new \InvalidArgumentException('Column name is empty and collection is not loaded. Pass 3rd argument "true"');
 		}
 		
 		return $this->fetchCloned($needed, function (ICollection $collection) use ($columnName): void {
@@ -546,11 +555,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function toArray(bool $toArrayValues = false): array
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-		
-		return $toArrayValues ? \array_values($this->items) : $this->items;
+		return $toArrayValues ? \array_values($this->getItems()) : $this->getItems();
 	}
 	
 	/**
@@ -558,21 +563,16 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string $columnOrExpression
 	 * @param array<string>|array<callable> $callbacks or $columns
 	 * @param bool $toArrayValues
-	 * @phpstan-return array<mixed>
 	 * @return array<mixed>
 	 */
 	public function toArrayOf(string $columnOrExpression, array $callbacks = [], bool $toArrayValues = false): array
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-	
 		if (Strings::contains($columnOrExpression, '%')) {
 			$return = $this->format($columnOrExpression, $callbacks);
 		} else {
 			$return = [];
 			
-			foreach ($this->items as $index => $value) {
+			foreach ($this->getItems() as $index => $value) {
 				$return[$index] = $value->$columnOrExpression;
 			}
 		}
@@ -603,7 +603,13 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$collection->setIndex($property);
 		$sth = $this->getConnection()->query($collection->getSql(), $collection->getVars(), [], $this->bufferedQuery);
 		
-		return $sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classArguments);
+		$result = \Nette\Utils\Helpers::falseToNull($sth->fetchAll(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $this->class, $this->classArguments));
+		
+		if ($result === null) {
+			throw new GeneralException('Fetch collection failed:' . \implode(':', $this->getConnection()->getLink()->errorInfo()));
+		}
+		
+		return $result;
 	}
 	
 	/**
@@ -629,7 +635,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function count(): int
 	{
-		return $this->isLoaded() ? \count($this->items) : $this->enum();
+		return \count($this->getItems());
 	}
 	
 	/**
@@ -925,7 +931,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Add SELECT clause and merge with previous
-	 * @param array<string>|array<\StORM\ICollection<T>> $select
+	 * @param array<string>|array<\StORM\ICollection<object>> $select
 	 * @param array<mixed> $values
 	 * @return static
 	 */
@@ -1280,15 +1286,13 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Return the current element
-	 * @return \StORM\Entity|null
+	 * @return T|null
 	 */
 	public function current(): ?object
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
-		return $this->items[\current($this->keys)];
+		return $this->items[\current($this->keys)] ?? null;
 	}
 	
 	/**
@@ -1296,22 +1300,18 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function next(): void
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		\next($this->keys);
 	}
 	
 	/**
 	 * Return the key of the current element
-	 * @return string|int
+	 * @return string|int|false
 	 */
 	public function key()
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		return \current($this->keys);
 	}
@@ -1321,9 +1321,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function valid(): bool
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		return \current($this->keys) !== false;
 	}
@@ -1333,11 +1331,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function rewind(): void
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-		
-		$this->keys = \array_keys($this->items);
+		$this->keys = \array_keys($this->getItems());
 		\reset($this->keys);
 	}
 	
@@ -1347,24 +1341,20 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function offsetExists($offset): bool
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		return isset($this->items[$offset]);
 	}
 	
 	/**
 	 * Offset to retrieve
-	 * @param mixed $offset
-	 * @return \StORM\Entity
+	 * @param string|int $offset
+	 * @return T
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function offsetGet($offset): object
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		if (!isset($this->items[$offset])) {
 			$source = \is_subclass_of($this->class, Entity::class) ? $this->class : $this->modifiers[self::MODIFIER_FROM];
@@ -1377,14 +1367,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Offset to set
-	 * @param mixed $offset
-	 * @param mixed $value
+	 * @param string|int $offset
+	 * @param T $value
 	 */
 	public function offsetSet($offset, $value): void
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		$this->keys[] = $offset;
 		$this->items[$offset] = $value;
@@ -1392,13 +1380,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Offset to unset
-	 * @param mixed $offset
+	 * @param string|int $offset
 	 */
 	public function offsetUnset($offset): void
 	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+		$this->load(false);
 		
 		unset($this->keys[\array_search($offset, $this->keys)]);
 		unset($this->items[$offset]);
@@ -1547,6 +1533,22 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 	}
 	
+	/**
+	 * @return array<T>
+	 * @throws \StORM\Exception\GeneralException
+	 */
+	protected function getItems(): array
+	{
+		if ($this->items !== null) {
+			return $this->items;
+		}
+		
+		$this->load();
+
+		/** @phpstan-ignore-next-line */
+		return $this->items;
+	}
+
 	private function generateBinder(): string
 	{
 		$binder = $this->binderName . $this->binderCounter;
@@ -1652,7 +1654,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @return null|string|bool
+	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	private function getValue(?string $property, bool $needed, ?callable $callback = null)
@@ -1768,7 +1770,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * Convert collection to array of sprintf formated strings
 	 * Return sprintf formated array
 	 * @param string $format
-	 * @param array<string> $callbacks or $columns
+	 * @param array<string>|array<callable> $callbacks or $columns
 	 * @return array<string>
 	 */
 	private function format(string $format, array $callbacks = []): array
@@ -1776,7 +1778,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$return = [];
 		$i = 1;
 		
-		foreach ($this->items as $index => $value) {
+		foreach ($this->getItems() as $index => $value) {
 			$args = [];
 			
 			foreach ($callbacks as $cb) {

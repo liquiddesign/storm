@@ -45,7 +45,7 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 	/**
 	 * Relate records by primary key lists and return affected rows
 	 * Collection will be cleared before relate
-	 * @param array<string>|array<int>|array<array<string>>|array<array<int>> $primaryKeys
+	 * @param array<string|int>|array<array<string|int>> $primaryKeys
 	 * @param bool $checkKeys
 	 * @param string|null $primaryKeyName You can specify column name and method will generate primary keys for that columns
 	 * @throws \StORM\Exception\NotFoundException
@@ -92,9 +92,18 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		if ($checkKeys) {
 			$pkName = $this->getRepository()->getConnection()->findRepository($class)->getStructure()->getPK()->getName();
 			$resultArray = (clone $collection)->toArrayOf($pkName);
+			
+			foreach ($primaryKeys as $value) {
+				if (\is_Array($value)) {
+					throw new \InvalidArgumentException('Cannot pass multidimensional array if relation is not NxN');
+				}
+			}
+			
+			// @phpcs:ignore
+			/** @var array<string|int> $primaryKeys */
 			$desiredArray = \array_combine(\array_values($primaryKeys), \array_values($primaryKeys));
 			
-			if ($diff = \array_diff_key($desiredArray, $resultArray)) {
+			if ($desiredArray !== false && $diff = \array_diff_key($desiredArray, $resultArray)) {
 				throw new NotFoundException($this, $diff, $desiredArray);
 			}
 		}
@@ -151,18 +160,6 @@ class RelationCollection extends Collection implements IRelation, ICollection, \
 		$targetKey = $this->relation->getTargetKey();
 		
 		return $this->getRepository()->getConnection()->findRepository($class)->many()->setWhere("this.$sourceKey", $this->keyValue)->update([$targetKey => null]);
-	}
-	
-	/**
-	 * @override reset skip select length
-	 * @param array<string> $select
-	 * @param array<mixed> $values
-	 * @param bool $keepIndex
-	 * @return static
-	 */
-	public function setSelect(array $select, array $values = [], bool $keepIndex = false): self
-	{
-		return parent::setSelect($select, $values, $keepIndex);
 	}
 
 	protected function init(): void

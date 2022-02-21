@@ -39,7 +39,13 @@ abstract class Annotation implements \JsonSerializable
 				continue;
 			}
 			
-			\call_user_func_array([$this, 'set' . Strings::firstUpper($attribute)], [$value]);
+			$callback = [$this, 'set' . Strings::firstUpper($attribute)];
+			
+			if (!\is_callable($callback)) {
+				continue;
+			}
+
+			\call_user_func_array($callback, [$value]);
 		}
 	}
 	

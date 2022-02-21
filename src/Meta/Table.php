@@ -18,7 +18,7 @@ class Table extends AnnotationClass
 	
 	protected string $comment = '';
 	
-	public function __construct(?string $class)
+	public function __construct(string $class)
 	{
 		parent::__construct($class);
 		

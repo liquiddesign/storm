@@ -42,6 +42,9 @@ abstract class Repository implements IEntityParent
 	 */
 	public array $onUpdate = [];
 	
+	/**
+	 * @var \StORM\Meta\Structure<T>|null
+	 */
 	protected ?\StORM\Meta\Structure $sqlStructure = null;
 	
 	protected \StORM\DIConnection $connection;
@@ -122,14 +125,17 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get SQL structure object
+	 * @return \StORM\Meta\Structure<T>
 	 */
 	final public function getStructure(): Structure
 	{
 		if (!$this->sqlStructure) {
 			$class = Structure::getEntityClassFromRepositoryClass(static::class);
+			//@phpstan-ignore-next-line
 			$this->sqlStructure = $this->schemaManager->getStructure($class);
 		}
 		
+		//@phpstan-ignore-next-line
 		return $this->sqlStructure;
 	}
 	
@@ -301,7 +307,6 @@ abstract class Repository implements IEntityParent
 		}
 		
 		// update all subject
-		
 		foreach ($joinRelations as $relation => $keys) {
 			if ($object->$relation instanceof IRelation && ($rowCount === InsertResult::INSERT_AFFECTED_COUNT || $updateProps === null || isset($updateRelations[$relation]))) {
 				$object->$relation->unrelateAll();
@@ -328,6 +333,8 @@ abstract class Repository implements IEntityParent
 	 * @param array<array<mixed>>|array<object> $manyValues
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
+	 * @phpcs:ignore
+	 * @phpstan-param int<1,max> $chunkSize
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
 	 * @throws \StORM\Exception\NotFoundException
@@ -343,6 +350,8 @@ abstract class Repository implements IEntityParent
 	 * @param array<string>|array<\StORM\Literal>|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
+	 * @phpcs:ignore
+	 * @phpstan-param int<1,max> $chunkSize
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
 	 * @throws \StORM\Exception\NotFoundException
@@ -357,6 +366,10 @@ abstract class Repository implements IEntityParent
 		
 		if ($updateProps) {
 			foreach ($updateProps as $key => $name) {
+				if ($name instanceof Literal) {
+					continue;
+				}
+				
 				if (!isset($columns[$name])) {
 					throw new NotExistsException(null, NotExistsException::PROPERTY, $name, $this->getEntityClass(), \array_keys($columns));
 				}
@@ -406,6 +419,10 @@ abstract class Repository implements IEntityParent
 						throw new \InvalidArgumentException('Primary key not found for joining relations.');
 					}
 					
+					if (!$this->getStructure()->getRelation($name)) {
+						throw new NotExistsException(null, NotExistsException::RELATION, $name);
+					}
+					
 					$collectionRelation = new RelationCollection($this, $this->getStructure()->getRelation($name), $primaryKey);
 					$collectionRelation->relate($keys);
 				}
@@ -442,7 +459,7 @@ abstract class Repository implements IEntityParent
 	/**
 	 * @param array<array<mixed>> $manyInserts
 	 * @param array<mixed> $vars
-	 * @param array<string>|null $onDuplicateUpdate
+	 * @param array<string|\StORM\Literal>|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
@@ -463,16 +480,17 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Get select for relation
-	 * @param string $relation
+	 * @param string $relationName
 	 * @return array<string>
 	 */
-	public function getRelationSelect(string $relation): array
+	public function getRelationSelect(string $relationName): array
 	{
-		if (!$this->getStructure()->hasRelation($relation)) {
-			throw new NotExistsException(null, NotExistsException::RELATION, $relation, $this->getEntityClass(), \array_keys($this->getStructure()->getRelations()));
+		$relation = $this->getStructure()->getRelation($relationName);
+		
+		if (!$relation) {
+			throw new NotExistsException(null, NotExistsException::RELATION, $relationName, $this->getEntityClass(), \array_keys($this->getStructure()->getRelations()));
 		}
 		
-		$relation = $this->getStructure()->getRelation($relation);
 		$name = $relation->getName();
 		$class = $relation->getTarget();
 		
@@ -503,9 +521,10 @@ abstract class Repository implements IEntityParent
 			}
 			
 			$realName = Repository::FILTER_PREFIX . Strings::firstUpper($name);
+			$callback = [$this, $realName];
 			
-			if (\method_exists($this, $realName)) {
-				\call_user_func_array([$this, $realName], [$value, $collection]);
+			if (\is_callable($callback)) {
+				\call_user_func_array($callback, [$value, $collection]);
 				
 				continue;
 			}
@@ -517,8 +536,9 @@ abstract class Repository implements IEntityParent
 			// throw exception
 			$suggestions = '';
 			$class = static::class;
+			$methods = \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this));
 			
-			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this)))) {
+			if ($methods && $match = Helpers::getBestSimilarString($realName, $methods)) {
 				$suggestions = " Do you mean '$match'?";
 			}
 			

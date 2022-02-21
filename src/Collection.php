@@ -23,8 +23,7 @@ use StORM\Meta\RelationNxN;
 class Collection extends GenericCollection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
-	 * @phpstan-var array<T>|null
-	 * @var array<\StORM\Entity>|null
+	 * @var array<T>|null
 	 */
 	protected ?array $items = null;
 	
@@ -47,7 +46,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	private ?\StORM\Repository $repository;
 	
 	/**
-	 * @var array<string, \StORM\Collection<T>>
+	 * @var array<string, \StORM\Collection<\StORM\Entity>>
 	 */
 	private array $cache;
 	
@@ -106,7 +105,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @param bool $enableSmartJoin
 	 * @param string|null $entityClass
 	 * @phpstan-param class-string<T>|null $entityClass
-	 * @return $this
+	 * @return static
 	 */
 	public function setSmartJoin(bool $enableSmartJoin, ?string $entityClass = null): self
 	{
@@ -160,7 +159,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * @param string|null $property
 	 * @param string|null $columnName
 	 * @param bool $needed
-	 * @return bool|string|null
+	 * @return bool|string|int|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
@@ -169,30 +168,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		
 		return parent::lastValue($property, $orderByColumn, $needed);
 	}
-	
-	/**
-	 * @return T|null
-	 */
-	public function fetch(): ?Entity
-	{
-		return parent::fetch();
-	}
-	
-	/**
-	 * Convert collection to array of object
-	 * @param bool $toArrayValues
-	 * @phpstan-return array<T>
-	 * @return array<object>
-	 */
-	public function toArray(bool $toArrayValues = false): array
-	{
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
-		
-		return $toArrayValues ? \array_values($this->items) : $this->items;
-	}
-	
+
 	public function getConnection(): DIConnection
 	{
 		return $this->getRepository()->getConnection();
@@ -293,11 +269,11 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		if (!isset($this->cache[$cacheId])) {
 			$prefix = Repository::DEFAULT_ALIAS;
 			
-			$targetRepository = $this->repository->getConnection()->findRepository($relation->getTarget());
+			$targetRepository = $this->getConnection()->findRepository($relation->getTarget());
 			$pkName = $targetRepository->getStructure()->getPK()->getName();
 			$keys = [];
 			
-			foreach ($this->items as $item) {
+			foreach ($this->getItems() as $item) {
 				$fkValue = $item->getValue($relation->getName());
 				
 				if ($fkValue === null) {
@@ -307,7 +283,6 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 				$keys[] = $fkValue;
 			}
 			
-			/** @phpstan-ignore-next-line */
 			$this->cache[$cacheId] = $targetRepository->many()->setWhere("$prefix.$pkName", $keys);
 		}
 		
@@ -393,9 +368,10 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	{
 		foreach ($filters as $name => $value) {
 			$realName = Repository::FILTER_PREFIX . Strings::firstUpper($name);
+			$callback = [$this->getRepository(), $realName];
 			
-			if (\method_exists($this->getRepository(), $realName)) {
-				\call_user_func_array([$this->getRepository(), $realName], [$value, $this]);
+			if (\is_callable($callback)) {
+				\call_user_func_array($callback, [$value, $this]);
 				
 				continue;
 			}
@@ -407,8 +383,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 			// throw exception
 			$suggestions = '';
 			$class = \get_class($this->getRepository());
+			$methods = \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this->getRepository()));
 			
-			if ($match = Helpers::getBestSimilarString($realName, \preg_grep('/^' . Repository::FILTER_PREFIX . '/', \get_class_methods($this->getRepository())))) {
+			if ($methods && $match = Helpers::getBestSimilarString($realName, $methods)) {
 				$suggestions = " Do you mean '$match'?";
 			}
 			

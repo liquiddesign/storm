@@ -27,9 +27,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected array $foreignKeys = [];
 	
 	/**
-	 * @template T of \StORM\Entity
-	 * phpcs:ignore
-	 * @var array<\StORM\Entity>|array<\StORM\RelationCollection<T>>|array<null>
+	 * @var array<\StORM\Entity|\StORM\RelationCollection<\StORM\Entity>|null>
 	 */
 	protected array $relations = [];
 	
@@ -166,7 +164,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		foreach ($values as $name => $value) {
-			if (\is_array($value) && $this->getStructure()->getColumn($name)->hasMutations()) {
+			$column = $this->getStructure()->getColumn($name);
+			
+			if (\is_array($value) && $column && $column->hasMutations()) {
 				foreach ($value as $mutation => $mutationValue) {
 					$this->setValue($mutation, $mutationValue);
 				}
@@ -398,7 +398,13 @@ abstract class Entity implements \JsonSerializable, IDumper
 		
 		foreach ($relations as $relationName) {
 			try {
-				$value = $this->getRelation($this->getStructure()->getRelation($relationName));
+				$relation = $this->getStructure()->getRelation($relationName);
+				
+				if ($relation === null) {
+					throw new NotExistsException($this, NotExistsException::RELATION, $relationName);
+				}
+				
+				$value = $this->getRelation($relation);
 				
 				if ($value instanceof RelationCollection) {
 					$array[$relationName] = \array_keys($value->toArray());
@@ -454,7 +460,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Get relation from relation\
 	 * @param \StORM\Meta\Relation $relation
-	 * @return \StORM\RelationCollection<static>|\StORM\Entity|null
+	 * @return \StORM\RelationCollection<\StORM\Entity>|\StORM\Entity|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
 	protected function getRelation(Relation $relation)
@@ -483,6 +489,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 			return $this->getConnection()->findRepository($relation->getTarget())->one($this->foreignKeys[$name], true);
 		}
 		
+		/** @phpstan-ignore-next-line */
 		return new RelationCollection($this->getConnection()->findRepository(static::class), $relation, $this->getPK());
 	}
 	
@@ -491,6 +498,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 		return $this->getParent()->getRepository()->getConnection();
 	}
 	
+	/**
+	 * @return \StORM\Meta\Structure<static>
+	 */
 	protected function getStructure(): Structure
 	{
 		return $this->getParent()->getRepository()->getStructure();
@@ -592,7 +602,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		// init relation
 		$relation = $this->getStructure()->getRelation($name);
 		
-		if (!$relation) {
+		if ($relation === null) {
 			throw new NotExistsException($this, NotExistsException::VALUE, $name, static::class, $this->getHintProperties());
 		}
 		

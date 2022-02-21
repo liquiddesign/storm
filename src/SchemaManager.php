@@ -23,7 +23,9 @@ class SchemaManager
 	private ?\StORM\DIConnection $connection;
 	
 	/**
-	 * @var array<\StORM\Meta\Structure>
+	 * @template T of \StORM\Entity
+	 * @phpcs:ignore
+	 * @var array<\StORM\Meta\Structure<T>>
 	 */
 	private array $dataModels = [];
 	
@@ -40,9 +42,11 @@ class SchemaManager
 	
 	/**
 	 * Get description of Entity in structure structure called DataModel containing properties ect.
-	 * @param string $class
+	 * @template T of \StORM\Entity
+	 * @param class-string<T> $class
 	 * @param \Nette\Caching\Cache|null $cache
 	 * @param \StORM\Meta\Column|null $defaultPK
+	 * @return \StORM\Meta\Structure<T>
 	 */
 	public function getStructure(string $class, ?Cache $cache = null, ?Column $defaultPK = null): Structure
 	{
@@ -67,7 +71,7 @@ class SchemaManager
 	 */
 	public function getPrimaryKeyName(string $tableName): string
 	{
-		$schemaName = $this->connection->getDatabaseName();
+		$schemaName = $this->getConnection()->getDatabaseName();
 		
 		$vars = [
 			'constraint' => 'PRIMARY',
@@ -76,7 +80,7 @@ class SchemaManager
 		];
 		
 		$sql = 'select column_name FROM information_schema.key_column_usage where constraint_name=:constraint AND table_name=:table AND table_schema=:schema';
-		$pkName = (string) $this->connection->query($sql, $vars)->fetchColumn();
+		$pkName = (string) $this->getConnection()->query($sql, $vars)->fetchColumn();
 		
 		if (!$pkName) {
 			throw new SqlSchemaException("Primary key or table '$tableName' in schema '$schemaName'");
@@ -96,12 +100,12 @@ class SchemaManager
 			'extra' => 'auto_increment',
 			'table' => $tableName,
 			'column' => $columnName,
-			'schema' => $this->connection->getDatabaseName(),
+			'schema' => $this->getConnection()->getDatabaseName(),
 		];
 		
 		$sql = 'select IF(column_name = :extra,1,0) FROM information_schema.columns where column_name=:column AND table_name=:table AND table_schema=:schema';
 		
-		return (bool) $this->connection->query($sql, $vars)->fetchColumn();
+		return (bool) $this->getConnection()->query($sql, $vars)->fetchColumn();
 	}
 	
 	/**
