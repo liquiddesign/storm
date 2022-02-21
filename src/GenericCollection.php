@@ -589,7 +589,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	public function fetchColumns(string $column, bool $toArrayValues = false): array
 	{
 		$return = $this->fetchAllCloned(\PDO::FETCH_COLUMN, null, null, function (ICollection $collection) use ($column): void {
-			$collection->setSelect([$column], [], true);
+			if (!isset($this->modifiers[self::MODIFIER_SELECT][$column])) {
+				$collection->setSelect([$column], [], true);
+			}
 		});
 		
 		return $toArrayValues ? \array_values($return) : $return;
