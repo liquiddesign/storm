@@ -762,7 +762,7 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		
 		// 1. COUNT
 		$collection = $storm->rows($from);
-		$collection->count();
+		$collection->enum();
 		Assert::contains(" COUNT(*) ", $storm->getLastLogItem()->getSql());
 		$collection->enum('uuid');
 		
