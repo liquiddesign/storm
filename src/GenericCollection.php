@@ -607,7 +607,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function fetchArray(string $class, array $classArgs = [], bool $toArrayValues = false): array
 	{
-		$return = $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, $class, $classArgs);
+		$return = $this->fetchAllCloned(\PDO::FETCH_CLASS, $class, $classArgs);
 		
 		return $toArrayValues ? \array_values($return) : $return;
 	}

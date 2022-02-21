@@ -25,7 +25,7 @@ class SchemaManager
 	/**
 	 * @template T of \StORM\Entity
 	 * @phpcs:ignore
-	 * @var array<\StORM\Meta\Structure<T>>
+	 * @var array<string,\StORM\Meta\Structure<T>>
 	 */
 	private array $dataModels = [];
 	
