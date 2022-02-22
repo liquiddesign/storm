@@ -674,7 +674,7 @@ class Structure
 		}
 		
 		if (isset($docComment[0]) && \is_string($docComment[0])) {
-			$table->setComment($docComment[0] ?? '');
+			$table->setComment($docComment[0]);
 		}
 		
 		return $table;
