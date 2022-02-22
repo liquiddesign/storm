@@ -518,7 +518,7 @@ class Structure
 		$class = Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
 		
 		if (!\is_a($class, Entity::class)) {
-			throw new GeneralException("Cannot load entity class from repository '$repositoryClass'");
+			throw new GeneralException("Cannot parse $class from repository '$repositoryClass'");
 		}
 		
 		return $class;
