@@ -491,7 +491,7 @@ class Structure
 	
 	/**
 	 * @param string $repositoryClass
-	 * @return class-string<T>
+	 * @return class-string<\StORM\Entity>
 	 */
 	public static function getEntityClassFromInterface(string $repositoryClass): string
 	{
@@ -511,7 +511,7 @@ class Structure
 	
 	/**
 	 * @param string $repositoryClass
-	 * @return class-string<T>
+	 * @return class-string<\StORM\Entity>
 	 */
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
 	{
