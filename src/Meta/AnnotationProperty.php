@@ -13,6 +13,11 @@ abstract class AnnotationProperty extends Annotation
 	 */
 	protected ?string $propertyName;
 	
+	/**
+	 * @template T of \StORM\Entity
+	 * @param class-string<T> $class
+	 * @param string|null $propertyName
+	 */
 	public function __construct(string $class, ?string $propertyName)
 	{
 		parent::__construct($class);

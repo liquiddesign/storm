@@ -25,7 +25,7 @@ class SchemaManager
 	/**
 	 * @template T of \StORM\Entity
 	 * @phpcs:ignore
-	 * @var array<string,\StORM\Meta\Structure<T>>
+	 * @var array<class-string<T>,\StORM\Meta\Structure<T>>
 	 */
 	private array $dataModels = [];
 	
@@ -41,7 +41,7 @@ class SchemaManager
 	}
 	
 	/**
-	 * Get description of Entity in structure structure called DataModel containing properties ect.
+	 * Get description of Entity in structure called DataModel containing properties ect.
 	 * @template T of \StORM\Entity
 	 * @param class-string<T> $class
 	 * @param \Nette\Caching\Cache|null $cache
@@ -59,9 +59,11 @@ class SchemaManager
 				throw new \InvalidArgumentException("$class should be child of Entity class");
 			}
 			
+			// @phpstan-ignore-next-line
 			$this->dataModels[$class] = new \StORM\Meta\Structure($class, $this, $cache ?: $this->cache, $defaultPK);
 		}
 		
+		// @phpstan-ignore-next-line
 		return $this->dataModels[$class];
 	}
 	

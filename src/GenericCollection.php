@@ -209,8 +209,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	/**
 	 * Set fetch class or class parameters
 	 * @deprecated use fetchArray() instead
-	 * @template X of object
-	 * @param class-string<X>|null $class
+	 * @param class-string<T>|null $class
 	 * @param array<mixed>|null $params
 	 * @return static
 	 */
@@ -1786,7 +1785,8 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * @param array<string>|array<\StORM\ICollection<T>> $aliases
+	 * @template X of object
+	 * @param array<string>|array<\StORM\ICollection<X>> $aliases
 	 * @param string $modifier
 	 */
 	private function addAlias(array $aliases, string $modifier): void

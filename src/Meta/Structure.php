@@ -6,8 +6,11 @@ namespace StORM\Meta;
 
 use Nette\Caching\Cache;
 use Nette\Utils\Arrays;
+use Nette\Utils\Json;
 use Nette\Utils\Strings;
+use StORM\Entity;
 use StORM\Exception\AnnotationException;
+use StORM\Exception\GeneralException;
 use StORM\Exception\NotExistsException;
 use StORM\Helpers;
 use StORM\Repository;
@@ -225,6 +228,10 @@ class Structure
 			$this->init();
 		}
 		
+		if ($this->columns === null) {
+			throw new GeneralException('Init structure failed');
+		}
+		
 		if ($includePK && $includeFK) {
 			return $this->columns;
 		}
@@ -241,6 +248,10 @@ class Structure
 	{
 		if (!$this->isInited()) {
 			$this->init();
+		}
+		
+		if ($this->relations === null) {
+			throw new GeneralException('Init structure failed');
 		}
 		
 		return $this->relations;
@@ -308,10 +319,10 @@ class Structure
 		foreach ($columns as $column) {
 			if ($column->isUnique()) {
 				$index = new Index($class);
-				$index->setName($this->setPrefix($column->getPropertyName()));
+				$index->setName($this->setPrefix((string) $column->getPropertyName()));
 				$index->setUnique(true);
 				$index->setMutations($column->hasMutations());
-				$index->setColumns([$column->getPropertyName()]);
+				$index->setColumns([(string) $column->getPropertyName()]);
 				
 				$indexes[$index->getName()] = $index;
 			}
@@ -340,10 +351,6 @@ class Structure
 		
 		foreach ($indexDefinitions as $rawIndexDefinition) {
 			$json = $this->parseJson($rawIndexDefinition);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawIndexDefinition);
-			}
 			
 			$index = new Index($class);
 			$index->loadFromArray($json);
@@ -378,10 +385,6 @@ class Structure
 		foreach ($triggerDefinitions as $rawTriggerDefinition) {
 			$json = $this->parseJson($rawTriggerDefinition);
 			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $rawTriggerDefinition);
-			}
-			
 			$trigger = new Trigger($class);
 			$trigger->loadFromArray($json);
 			$triggers[$trigger->getName()] = $trigger;
@@ -411,11 +414,7 @@ class Structure
 			}
 			
 			$json = $this->parseJson($docComment[Constraint::getAnnotationName()]);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, "$class:$name", $docComment[Constraint::getAnnotationName()]);
-			}
-			
+		
 			$relation = $this->getRelation($name);
 			
 			if (!$relation) {
@@ -496,13 +495,15 @@ class Structure
 	 */
 	public static function getEntityClassFromInterface(string $repositoryClass): string
 	{
-		return Strings::substring($repositoryClass, Strings::length(self::INTERFACE_PREFIX));
+		$class = Strings::substring($repositoryClass, Strings::length(self::INTERFACE_PREFIX));
+		
+		if (!\is_a($class, Entity::class)) {
+			throw new GeneralException("Cannot load entity class from interface '$repositoryClass'");
+		}
+		
+		return $class;
 	}
 	
-	/**
-	 * @param string $repositoryClass
-	 * @return class-string<T>
-	 */
 	public static function getInterfaceFromRepositoryClass(string $repositoryClass): string
 	{
 		return self::INTERFACE_PREFIX . $repositoryClass;
@@ -514,20 +515,26 @@ class Structure
 	 */
 	public static function getEntityClassFromRepositoryClass(string $repositoryClass): string
 	{
-		return Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
+		$class = Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
+		
+		if (!\is_a($class, Entity::class)) {
+			throw new GeneralException("Cannot load entity class from repository '$repositoryClass'");
+		}
+		
+		return $class;
 	}
 	
 	/**
 	 * @param array<string> $customAnnotations
-	 * @param array<string> $classDocComment
-	 * @param array<array<string>> $propertiesDocComments
+	 * @param array<string|int, string|array<string>> $classDocComment
+	 * @param array<array<string|array<string>>> $propertiesDocComments
 	 */
 	protected function loadCustomAnnotations(array $customAnnotations, array $classDocComment, array $propertiesDocComments): void
 	{
 		foreach ($customAnnotations as $annotationName => $annotationType) {
 			$annotationName = Strings::lower($annotationName);
 			
-			if ($annotationType === self::ANNOTATION_TYPE_CLASS && isset($classDocComment[$annotationName])) {
+			if ($annotationType === self::ANNOTATION_TYPE_CLASS && isset($classDocComment[$annotationName]) && \is_string($classDocComment[$annotationName])) {
 				$this->customClassAnnotations[$annotationName] = $this->parseJson($classDocComment[$annotationName]);
 			}
 			
@@ -536,7 +543,7 @@ class Structure
 			}
 
 			foreach ($propertiesDocComments as $property => $propertyDocComment) {
-				if (isset($propertyDocComment[$annotationName])) {
+				if (isset($propertyDocComment[$annotationName]) && \is_string($propertyDocComment[$annotationName])) {
 					if (!isset($this->customPropertyAnnotations[$annotationName])) {
 						$this->customPropertyAnnotations[$annotationName] = [];
 					}
@@ -561,7 +568,7 @@ class Structure
 	}
 	
 	/**
-	 * @param array<array<string>>|array<array<array<string>>> $docComments
+	 * @param array<string, array<int|string, string|array<string>>> $docComments
 	 */
 	protected function loadPK(array $docComments): ?Column
 	{
@@ -617,7 +624,7 @@ class Structure
 	}
 	
 	/**
-	 * @param array<array<string>>|array<array<array<string>>> $docComments
+	 * @param array<string, array<string|int, string|array<string>>> $docComments
 	 * @param string $table
 	 * @param \StORM\Meta\Column $pk
 	 * @return array<\StORM\Meta\Relation>
@@ -648,7 +655,7 @@ class Structure
 	}
 	
 	/**
-	 * @param array<string>|array<array<string>> $docComment
+	 * @param array<string|int, string|array<string>> $docComment
 	 */
 	protected function loadTable(array $docComment): Table
 	{
@@ -662,21 +669,19 @@ class Structure
 			}
 			
 			$json = $this->parseJson($docComment[Table::getAnnotationName()]);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, $class, $docComment[Table::getAnnotationName()]);
-			}
-			
+		
 			$table->loadFromArray($json);
 		}
 		
-		$table->setComment($docComment[0] ?? '');
+		if (\is_string($docComment[0])) {
+			$table->setComment($docComment[0] ?? '');
+		}
 		
 		return $table;
 	}
 	
 	/**
-	 * @return array<int|string|array<string|int>>
+	 * @return array<string|int, string|array<string>>
 	 * @throws \ReflectionException
 	 */
 	private function getClassDocComment(): array
@@ -695,7 +700,7 @@ class Structure
 	}
 	
 	/**
-	 * @return array<array<string>>|array<array<array<string>>>|array<array<int>>|array<array<array<int>>>
+	 * @return array<string, array<string|int, string|array<string>>>
 	 * @throws \ReflectionException
 	 */
 	private function getPropertiesDocComments(): array
@@ -716,13 +721,13 @@ class Structure
 				$properties[$name]['default'] = $defaultValue;
 			}
 			
+			// @phpstan-ignore-next-line
 			if (!$ref->hasType() || (\method_exists($ref->getType(), 'isBuiltin') && $ref->getType()->isBuiltin())) {
 				continue;
 			}
 			
 			$varAnnotation = $properties[$name][self::ANNOTATION_VAR] ?? '';
-			
-			/** @noinspection PhpPossiblePolymorphicInvocationInspection */
+		
 			/** @phpstan-ignore-next-line */
 			$properties[$name][self::ANNOTATION_VAR] = $ref->getType()->getName() . ($varAnnotation ? "|$varAnnotation" : '') . ($ref->getType()->allowsNull() ? '|null' : '');
 		}
@@ -732,21 +737,14 @@ class Structure
 	
 	/**
 	 * @param string $name
-	 * @param array<string> $parsedDocComment
+	 * @param array<string|array<string>> $parsedDocComment
 	 */
 	private function loadColumn(string $name, array $parsedDocComment): Column
 	{
 		$class = $this->entityClass;
 		
-		if (isset($parsedDocComment[Column::getAnnotationName()])) {
-			$json = $this->parseJson($parsedDocComment[Column::getAnnotationName()]);
-			
-			if ($json === null) {
-				throw new AnnotationException(AnnotationException::JSON_PARSE, "$class::$name", $parsedDocComment[Column::getAnnotationName()]);
-			}
-		} else {
-			$json = [];
-		}
+		// @phpcs:ignore
+		$json = isset($parsedDocComment[Column::getAnnotationName()]) && \is_string($parsedDocComment[Column::getAnnotationName()]) ? $this->parseJson($parsedDocComment[Column::getAnnotationName()]) : [];
 		
 		/** @var \ReflectionNamedType|null $realType */
 		$realType = (new \ReflectionProperty($class, $name))->getType();
@@ -758,9 +756,9 @@ class Structure
 			$column->setNullable($realType->allowsNull());
 		}
 		
-		$column->setPropertyType($parsedDocComment[self::ANNOTATION_VAR] ?? ($realType ? $realType->getName() : null));
+		$column->setPropertyType(\is_string($parsedDocComment[self::ANNOTATION_VAR]) ? $parsedDocComment[self::ANNOTATION_VAR] : ($realType ? $realType->getName() : null));
 		$column->loadFromArray($json);
-		$column->setComment($parsedDocComment[0] ?? '');
+		$column->setComment(\is_string($parsedDocComment[0]) ? $parsedDocComment[0] : '');
 		
 		if (isset($parsedDocComment[Column::ANNOTATION_PK])) {
 			$column->setPrimaryKey(true);
@@ -784,7 +782,7 @@ class Structure
 	
 	/**
 	 * @param string $name
-	 * @param array<string> $parsedDocComment
+	 * @param array<string|array<string>> $parsedDocComment
 	 * @param string $sourceTable
 	 * @param \StORM\Meta\Column $sourcePk
 	 * @throws \ReflectionException
@@ -801,11 +799,11 @@ class Structure
 			$relationNxN = false;
 		}
 		
-		$json = $this->parseJson($json);
-		
-		if ($json === null) {
-			throw new AnnotationException(AnnotationException::JSON_PARSE, "$class::$name", $json);
+		if (!\is_string($json)) {
+			throw new AnnotationException(AnnotationException::INVALID_SCHEMA, $name, $sourceTable);
 		}
+		
+		$json = $this->parseJson($json);
 		
 		$jsonType = $parsedDocComment[self::ANNOTATION_VAR] ?? null;
 		
@@ -813,7 +811,7 @@ class Structure
 		$relation->setName($name);
 		$relation->setSource($class);
 		
-		if ($jsonType) {
+		if (\is_string($jsonType)) {
 			$loaded = $relation->loadFromType($jsonType);
 			
 			if ($loaded) {
@@ -840,6 +838,10 @@ class Structure
 		}
 		
 		$relation->loadFromArray($json);
+		
+		if (!$relation->isLoaded()) {
+			throw new AnnotationException(AnnotationException::NOT_DEFINED_RELATION, $name);
+		}
 		
 		if (\interface_exists($relation->getTarget())) {
 			$relation->setTarget(self::getEntityClassFromInterface($relation->getTarget()));
@@ -893,10 +895,10 @@ class Structure
 	
 	/**
 	 * @param string $string
-	 * @return array<string>|null
+	 * @return array<string>
 	 */
-	private function parseJson(string $string): ?array
+	private function parseJson(string $string): array
 	{
-		return $string ? \json_decode($string, true) : [];
+		return $string ? Json::decode($string, Json::FORCE_ARRAY) : [];
 	}
 }

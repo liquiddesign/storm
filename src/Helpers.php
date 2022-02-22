@@ -46,7 +46,7 @@ class Helpers
 	/**
 	 * Parse doc comment
 	 * @param string $s
-	 * @return array<int|string|array<string|int>>
+	 * @return array<int|string, string>
 	 */
 	public static function parseDocComment(string $s): array
 	{

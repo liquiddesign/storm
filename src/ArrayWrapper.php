@@ -13,7 +13,7 @@ namespace StORM;
 class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 {
 	/**
-	 * @var array<\StORM\Entity>
+	 * @var array<T>
 	 */
 	private array $source;
 	
@@ -31,7 +31,7 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	
 	/**
 	 * ArrayWrapper constructor.
-	 * @param array<\StORM\Entity> $source
+	 * @param array<T> $source
 	 * @param \StORM\IEntityParent<T> $parent
 	 * @param array<\StORM\IEntityParent<T>> $childParents
 	 * @param bool $passRecursive
@@ -46,8 +46,9 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	
 	/**
 	 * Return the current element
+	 * @return T|null
 	 */
-	public function current(): ?\StORM\Entity
+	public function current(): ?Entity
 	{
 		$current = \current($this->source);
 		
@@ -99,9 +100,9 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	/**
 	 * Offset to retrieve
 	 * @param mixed $offset
-	 * @return \StORM\Entity
+	 * @return T
 	 */
-	public function offsetGet($offset): object
+	public function offsetGet($offset): Entity
 	{
 		return $this->loadParent($this->source[$offset]);
 	}
@@ -130,7 +131,11 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 		return \count($this->source);
 	}
 	
-	private function loadParent(\StORM\Entity $value): \StORM\Entity
+	/**
+	 * @param T $value
+	 * @return T
+	 */
+	private function loadParent($value): Entity
 	{
 		if (!$value->hasParent()) {
 			$value->setParent($this->parent);

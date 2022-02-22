@@ -30,6 +30,11 @@ class Relation extends AnnotationProperty
 	
 	protected bool $nullable = false;
 	
+	public function isLoaded(): bool
+	{
+		return isset($this->target) && isset($this->source);
+	}
+	
 	/**
 	 * @phpstan-return class-string<\StORM\Entity>
 	 */
