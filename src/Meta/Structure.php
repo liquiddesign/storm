@@ -822,21 +822,22 @@ class Structure
 				$target = $relation->getTarget();
 				
 				if ($relation instanceof RelationNxN) {
+					$targetPk = $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK();
 					$relation->setSourceKey($sourcePk->getName());
-					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $targetPk->getName());
 					$relation->setVia($sourceTable . RelationNxN::TABLE_NAME_GLUE . $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getTable()->getName());
 					$relation->setSourceViaKey(Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
 					$relation->setTargetViaKey(Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($target))->getShortName()));
-					$relation->setSourceKeyType($sourcePk->getPropertyType());
-					$relation->setTargetKeyType($this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
+					$relation->setSourceKeyType($sourcePk->getType() ?: $sourcePk->getPropertyType());
+					$relation->setTargetKeyType($targetPk->getType() ?: $targetPk->getPropertyType());
 				} elseif ($relation->isKeyHolder()) {
+					$targetPk = $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK();
 					$relation->setSourceKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . $name);
-					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getName());
-					$relation->setKeyType($target === $class ? $sourcePk->getPropertyType() : $this->schemaManager->getStructure($target, $this->cache, $this->defaultPK)->getPK()->getPropertyType());
+					$relation->setTargetKey($target === $class ? $sourcePk->getName() : $targetPk->getName());
+					$relation->setKeyType($target === $class ? ($sourcePk->getType() ?: $sourcePk->getPropertyType()) : ($targetPk->getType() ?: $targetPk->getPropertyType()));
 				} else {
 					$relation->setSourceKey($sourcePk->getName());
 					$relation->setTargetKey($json['key'] ?? Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
-					$relation->setKeyType($json['key'] ?? Column::FOREIGN_KEY_PREFIX . Strings::lower((new \ReflectionClass($class))->getShortName()));
 				}
 			}
 		}

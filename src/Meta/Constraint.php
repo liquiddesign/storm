@@ -28,7 +28,7 @@ class Constraint extends AnnotationProperty
 	protected ?string $onDelete = null;
 	
 	protected ?string $onUpdate = null;
-
+	
 	public function getSource(): string
 	{
 		return $this->source;
