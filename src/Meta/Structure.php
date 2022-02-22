@@ -673,7 +673,7 @@ class Structure
 			$table->loadFromArray($json);
 		}
 		
-		if (\is_string($docComment[0])) {
+		if (isset($docComment[0]) && \is_string($docComment[0])) {
 			$table->setComment($docComment[0] ?? '');
 		}
 		
@@ -758,7 +758,10 @@ class Structure
 		
 		$column->setPropertyType(\is_string($parsedDocComment[self::ANNOTATION_VAR]) ? $parsedDocComment[self::ANNOTATION_VAR] : ($realType ? $realType->getName() : null));
 		$column->loadFromArray($json);
-		$column->setComment(\is_string($parsedDocComment[0]) ? $parsedDocComment[0] : '');
+		
+		if (isset($parsedDocComment[0]) && \is_string($parsedDocComment[0])) {
+			$column->setComment($parsedDocComment[0]);
+		}
 		
 		if (isset($parsedDocComment[Column::ANNOTATION_PK])) {
 			$column->setPrimaryKey(true);
