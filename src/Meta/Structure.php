@@ -497,7 +497,7 @@ class Structure
 	{
 		$class = Strings::substring($repositoryClass, Strings::length(self::INTERFACE_PREFIX));
 		
-		if (!\is_a($class, Entity::class)) {
+		if (!\is_a($class, Entity::class, true)) {
 			throw new GeneralException("Cannot load entity class from interface '$repositoryClass'");
 		}
 		
@@ -517,7 +517,7 @@ class Structure
 	{
 		$class = Strings::substring($repositoryClass, 0, Strings::indexOf($repositoryClass, (new \ReflectionClass(Repository::class))->getShortName(), -1));
 		
-		if (!\is_a($class, Entity::class)) {
+		if (!\is_a($class, Entity::class, true)) {
 			throw new GeneralException("Cannot parse $class from repository '$repositoryClass'");
 		}
 		
