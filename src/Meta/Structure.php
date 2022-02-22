@@ -756,7 +756,8 @@ class Structure
 			$column->setNullable($realType->allowsNull());
 		}
 		
-		$column->setPropertyType(\is_string($parsedDocComment[self::ANNOTATION_VAR]) ? $parsedDocComment[self::ANNOTATION_VAR] : ($realType ? $realType->getName() : null));
+		// @phpcs:ignore
+		$column->setPropertyType(isset($parsedDocComment[self::ANNOTATION_VAR]) && \is_string($parsedDocComment[self::ANNOTATION_VAR]) ? $parsedDocComment[self::ANNOTATION_VAR] : ($realType ? $realType->getName() : null));
 		$column->loadFromArray($json);
 		
 		if (isset($parsedDocComment[0]) && \is_string($parsedDocComment[0])) {
