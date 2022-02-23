@@ -1236,6 +1236,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * which is a value of any type other than a resource.
 	 * @since 5.4.0
 	 */
+	#[\ReturnTypeWillChange]
 	public function jsonSerialize()
 	{
 		$array = $this->toArray();
@@ -1334,8 +1335,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Return the key of the current element
-	 * @return string|int|false
+	 * @return mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function key()
 	{
 		$this->load(false);
