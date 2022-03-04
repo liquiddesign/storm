@@ -106,22 +106,22 @@ class Constraint extends AnnotationProperty
 		
 		$glue = Strings::firstUpper($type);
 		$viaCallback = [$relation, 'get' . $glue . 'ViaKey'];
+		$keyCallback = [$relation, 'get' . $glue . 'Key'];
 		$callback = [$relation, 'get' . $glue];
 		
-		if (!\is_callable($viaCallback) || !\is_callable($callback)) {
+		if (!\is_callable($viaCallback) || !\is_callable($keyCallback) || !\is_callable($callback)) {
 			throw new \InvalidArgumentException('Type cannot be mapped to method.');
 		}
+		
+		/** @var class-string<\StORM\Entity> $class */
+		$class = (string) \call_user_func($callback);
 		
 		$this->name = $relation->getVia() . \StORM\Meta\Structure::NAME_SEPARATOR . $type;
 		$this->source = $relation->getVia();
 		$this->sourceKey = \call_user_func($viaCallback);
 		
-		// @phpcs:ignore
-		/** @var class-string<\StORM\Entity> $target */
-		$target = (string) \call_user_func($callback);
-		
-		$this->target = $schemaManager->getStructure($target)->getTable()->getName();
-		$this->targetKey = $target;
+		$this->target = $schemaManager->getStructure($class)->getTable()->getName();
+		$this->targetKey = \call_user_func($keyCallback);
 	}
 	
 	public function getSchema(): Schema

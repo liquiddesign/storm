@@ -24,6 +24,7 @@ class SchemaManager
 	
 	/**
 	 * @template T of \StORM\Entity
+	 * @phpstan-ignore-next-line
 	 * @phpcs:ignore
 	 * @var array<class-string<T>,\StORM\Meta\Structure<T>>
 	 */
