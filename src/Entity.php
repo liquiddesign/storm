@@ -379,7 +379,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param bool $includeNonColumns
 	 * @return array<mixed>
 	 */
-	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false): array
+	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false, bool $includePK = true): array
 	{
 		$array = [$this->getStructure()->getPK()->getPropertyName() => $this->getPK()] + $this->getVars($includeNonColumns);
 		
@@ -414,6 +414,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 			} catch (NotFoundException $x) {
 				unset($x);
 			}
+		}
+		
+		if (!$includePK) {
+			unset($array[$this->getStructure()->getPK()->getName()]);
 		}
 		
 		return $array;
