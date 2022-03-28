@@ -246,9 +246,9 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	 * Get object by relations, all collection will be prefetched
 	 * @internal
 	 * @param \StORM\Meta\Relation $relation
-	 * @param string $pk
+	 * @param string|int $pk
 	 */
-	public function getRelatedObject(Relation $relation, string $pk): ?Entity
+	public function getRelatedObject(Relation $relation, $pk): ?Entity
 	{
 		$cacheId = $relation->getEntityClass() . $relation->getName();
 		

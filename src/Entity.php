@@ -22,7 +22,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	protected array $properties = [];
 	
 	/**
-	 * @var array<string>|array<null>
+	 * @var array<string|int|null>
 	 */
 	protected array $foreignKeys = [];
 	
