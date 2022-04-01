@@ -59,7 +59,11 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
-    
+
+
+    - name: mysql
+      run: mysql -h 127.0.0.1 -u root
+
     - name: Run phpstan
       run: composer phpstan
     
