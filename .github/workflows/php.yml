@@ -48,7 +48,7 @@ jobs:
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
     - name: Sql import
-      run: mysql -h 127.0.0.1 -u root _test_storm < _test_storm.sql
+      run: mysql -h 127.0.0.1 -P 3306:3306 -u root _test_storm < _test_storm.sql
 
     - name: Validate composer.json and composer.lock
       run: composer validate
