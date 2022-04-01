@@ -62,7 +62,7 @@ jobs:
 
 
     - name: mysql
-      run: mysql -h 127.0.0.1 -u root
+      run: mysql -h 127.0.0.1 -u root _test_storm
 
     - name: Run phpstan
       run: composer phpstan
