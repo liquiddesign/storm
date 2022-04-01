@@ -51,7 +51,11 @@ jobs:
       run: sudo service mysql start
 
     - name: Sql import
-      run: mysql -h localhost -P 3306 -u root _test_storm
+      run: | 
+        apt-get install -y mysql-client
+        mysql -h localhost -P 3306 -u root _test_storm
+
+
 
     - name: Validate composer.json and composer.lock
       run: composer validate
