@@ -44,7 +44,7 @@ jobs:
       run: curl https://www.e-luma.cz/aplikace/_test_storm.sql -o _test_storm.sql
 
     - name: Check PHP locate
-      run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
+      run: cat /etc/my.cnf
 
     - name: Sql import
       run: mysql -h 127.0.0.1 -u root _test_storm
