@@ -17,7 +17,7 @@ jobs:
           MYSQL_ALLOW_EMPTY_PASSWORD: true
           MYSQL_DATABASE: _test_storm
         ports:
-          - 3306:3306
+          - 3306/tcp
     steps:
     - name: CRLF
       run: |
@@ -48,7 +48,7 @@ jobs:
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
     - name: Sql import
-      run: mysql -h localhost -P 3306 -u root _test_storm
+      run: mysql -h 127.0.0.1 -u root _test_storm
 
     - name: Validate composer.json and composer.lock
       run: composer validate
