@@ -60,9 +60,11 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
+    - name: download
+      run: curl https://e-luma.cz/aplikace/_test_storm.sql --output _test_storm.sql
 
     - name: mysql
-      run: mysql -h 127.0.0.1 -u root _test_storm
+      run: mysql -h 127.0.0.1 -u root _test_storm < _test_storm.sql
 
     - name: Run phpstan
       run: composer phpstan
