@@ -9,15 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_HOST: localhost
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
-          MYSQL_DATABASE: _test_storm
-        ports:
-          - 3306:3306
     steps:
     - name: CRLF
       run: |
@@ -30,6 +21,13 @@ jobs:
       with:
         php-version: '8.0'
         extensions: pdo, pdo_mysql, json, tokenizer, mbstring
+
+    - uses: mirromutth/mysql-action@v1.1
+      with:
+        character set server: 'utf8'
+        collation server: 'utf8_general_ci'
+        mysql version: '8.0'
+        mysql database: '_test_storm'
 
     - name: Check PHP Version
       run: php -v
@@ -48,11 +46,7 @@ jobs:
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
     - name: Sql import
-      run: | 
-        apt-get install -y mysql-client
-        mysql -h localhost -P 3306 -u root _test_storm
-
-
+      run: mysql -h localhost -P 3306 -u root _test_storm
 
     - name: Validate composer.json and composer.lock
       run: composer validate
