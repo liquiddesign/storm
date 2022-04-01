@@ -28,6 +28,7 @@ jobs:
         collation server: 'utf8_general_ci'
         mysql version: '8.0'
         mysql database: '_test_storm'
+        mysql root password: 'test'
 
     - name: Check PHP Version
       run: php -v
@@ -46,7 +47,7 @@ jobs:
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
     - name: Sql import
-      run: mysql -h localhost -P 3306 -u root _test_storm
+      run: mysql -h localhost -P 3306 -u root -p test _test_storm
 
     - name: Validate composer.json and composer.lock
       run: composer validate
