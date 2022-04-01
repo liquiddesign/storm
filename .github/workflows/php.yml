@@ -47,9 +47,6 @@ jobs:
     - name: Check PHP locate
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
-    - name: Start sql
-      run: sudo service mysql start
-
     - name: Sql import
       run: | 
         apt-get install -y mysql-client
