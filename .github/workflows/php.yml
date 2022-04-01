@@ -41,9 +41,14 @@ jobs:
     - name: Check PHP info
       run: php -i
 
+    - name: Download File
+      run: curl https://www.e-luma.cz/aplikace/_test_storm.sql -o _test_storm.sql
+
     - name: Check PHP locate
       run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
 
+    - name: Sql import
+      run: mysql -o -uroot _test_storm < _test_storm.sql
 
     - name: Validate composer.json and composer.lock
       run: composer validate
