@@ -321,6 +321,30 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 	}
 	
 	/**
+	 * @param array<int|string, string|class-string<\StORM\Entity>> $aliases
+	 * @param string $selectPrefix
+	 * @return static
+	 */
+	public function selectAliases(array $aliases, string $selectPrefix = Repository::RELATION_SEPARATOR): self
+	{
+		foreach ($aliases as $name => $value) {
+			if (\is_int($name)) {
+				$this->select($this->getRepository()->getRelationSelect($value));
+				
+				continue;
+			}
+			
+			if (!\is_a($value, Entity::class, true)) {
+				throw new \InvalidArgumentException("String '$value' is not valid StORM Entity class");
+			}
+			
+			$this->select($this->getConnection()->findRepository($value)->getStructure()->getColumnsSelect("$name.", $selectPrefix));
+		}
+		
+		return $this;
+	}
+	
+	/**
 	 * @override reset skip select length
 	 * @template X of object
 	 * @param array<string>|array<\StORM\ICollection<X>> $select
