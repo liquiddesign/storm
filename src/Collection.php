@@ -338,7 +338,7 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 				throw new \InvalidArgumentException("String '$value' is not valid StORM Entity class");
 			}
 			
-			$this->select($this->getConnection()->findRepository($value)->getStructure()->getColumnsSelect("$name.", $selectPrefix));
+			$this->select($this->getConnection()->findRepository($value)->getStructure()->getColumnsSelect("$name.", $name.$selectPrefix));
 		}
 		
 		return $this;
