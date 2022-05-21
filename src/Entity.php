@@ -396,8 +396,13 @@ abstract class Entity implements \JsonSerializable, IDumper
 			}
 		}
 		
-		foreach ($relations as $relationName) {
+		foreach ($relations as $key => $relationName) {
 			try {
+				if (\is_string($key)) {
+					$defaultValue = $relationName;
+					$relationName = $key;
+				}
+				
 				$relation = $this->getStructure()->getRelation($relationName);
 				
 				if ($relation === null) {
@@ -407,7 +412,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 				$value = $this->getRelation($relation);
 				
 				if ($value instanceof RelationCollection) {
-					$array[$relationName] = \array_keys($value->toArray());
+					$array[$relationName] = !isset($defaultValue) ? \array_keys($value->toArray()) : \array_fill_keys(\array_keys($value->toArray()), $defaultValue);
 				} elseif ($value instanceof Entity) {
 					$array[$relationName] = $value->toArray();
 				}
