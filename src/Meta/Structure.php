@@ -175,9 +175,10 @@ class Structure
 	 * @param string $aliasPrefix
 	 * @param string|null $mutation
 	 * @param array<string>|null $fallbackColumns
+	 * @param bool $rawKeys
 	 * @return array<string>
 	 */
-	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = '', ?string $mutation = null, ?array $fallbackColumns = null): array
+	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = '', ?string $mutation = null, ?array $fallbackColumns = null, bool $rawKeys = true): array
 	{
 		if (!$this->getColumns()) {
 			return ["$expressionPrefix*"];
@@ -202,7 +203,7 @@ class Structure
 				
 				$locales[] = $column;
 			} else {
-				$select[$aliasPrefix . ($column->isForeignKey() ? $column->getName() : $column->getPropertyName())] = $expressionPrefix . $column->getName();
+				$select[$aliasPrefix . ($column->isForeignKey() && $rawKeys ? $column->getName() : $column->getPropertyName())] = $expressionPrefix . $column->getName();
 			}
 		}
 		

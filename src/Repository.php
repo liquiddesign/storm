@@ -23,7 +23,6 @@ abstract class Repository implements IEntityParent
 	
 	/**
 	 * Relation separator
-	 * @internal
 	 */
 	public const RELATION_SEPARATOR = '_';
 	
@@ -494,9 +493,10 @@ abstract class Repository implements IEntityParent
 	/**
 	 * Get select for relation
 	 * @param string $relationName
+	 * @param bool $rawKeys
 	 * @return array<string>
 	 */
-	public function getRelationSelect(string $relationName): array
+	public function getRelationSelect(string $relationName, bool $rawKeys = true): array
 	{
 		$relation = $this->getStructure()->getRelation($relationName);
 		
@@ -507,7 +507,7 @@ abstract class Repository implements IEntityParent
 		$name = $relation->getName();
 		$class = $relation->getTarget();
 		
-		return $this->getSchemaManager()->getStructure($class)->getColumnsSelect("$name.", $name . self::RELATION_SEPARATOR);
+		return $this->getSchemaManager()->getStructure($class)->getColumnsSelect("$name.", $name . self::RELATION_SEPARATOR, null, null, $rawKeys);
 	}
 	
 	/**
