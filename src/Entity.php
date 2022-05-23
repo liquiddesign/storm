@@ -374,7 +374,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Convert entity to array. You can name relation to load. Collection are converted to array. If $expandRelations is set to null, all relation is loaded.
-	 * @param array<string> $relations
+	 * @param array<string>|array<string, mixed> $relations
 	 * @param bool $groupLocales
 	 * @param bool $includeNonColumns
 	 * @return array<mixed>
