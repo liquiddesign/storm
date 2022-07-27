@@ -399,7 +399,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 		foreach ($relations as $key => $relationName) {
 			try {
 				if (\is_string($key)) {
-					$defaultValue = $relationName;
+					$default = $relationName;
 					$relationName = $key;
 				}
 				
@@ -412,7 +412,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 				$value = $this->getRelation($relation);
 				
 				if ($value instanceof RelationCollection) {
-					$array[$relationName] = !isset($defaultValue) ? \array_keys($value->toArray()) : \array_fill_keys(\array_keys($value->toArray()), $defaultValue);
+					$array[$relationName] = !isset($default) ?
+						\array_keys($value->toArray()) :
+						(\is_callable($default) ? \call_user_func($default, $value) : \array_fill_keys(\array_keys($value->toArray()), $default));
 				} elseif ($value instanceof Entity) {
 					$array[$relationName] = $value->toArray();
 				}
