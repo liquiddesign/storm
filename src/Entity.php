@@ -417,6 +417,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 						(\is_callable($default) ? \call_user_func($default, $value) : \array_fill_keys(\array_keys($value->toArray()), $default));
 				} elseif ($value instanceof Entity) {
 					$array[$relationName] = $value->toArray();
+				} elseif ($value === null) {
+					$array[$relationName] = $default ?? null;
 				}
 			} catch (NotFoundException $x) {
 				unset($x);
