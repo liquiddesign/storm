@@ -377,9 +377,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @param array<string>|array<string, mixed> $relations
 	 * @param bool $groupLocales
 	 * @param bool $includeNonColumns
+	 * @param callable|null $relationCallback
 	 * @return array<mixed>
 	 */
-	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false, bool $includePK = true): array
+	public function toArray(array $relations = [], bool $groupLocales = true, bool $includeNonColumns = false, bool $includePK = true, ?callable $relationCallback = null): array
 	{
 		$array = [$this->getStructure()->getPK()->getPropertyName() => $this->getPK()] + $this->getVars($includeNonColumns);
 		
@@ -420,6 +421,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 				} elseif ($value === null) {
 					$array[$relationName] = $default ?? null;
 				}
+				
+				if ($relationCallback) {
+					$array[$relationName] = \call_user_func_array($relationCallback, [$array[$relationName]]);
+				}
 			} catch (NotFoundException $x) {
 				unset($x);
 			}
@@ -430,6 +435,18 @@ abstract class Entity implements \JsonSerializable, IDumper
 		}
 		
 		return $array;
+	}
+	
+	/**
+	 * Convert entity to array. Empty references and empty array all converted to empty stdClass. JS do not support associative arrays
+	 * @param array<string>|array<string, mixed> $relations
+	 * @return array<mixed>
+	 */
+	public function toJsonArray(array $relations = []): array
+	{
+		return $this->toArray($relations, true, true, true, function ($value) {
+			return (\is_array($value) && !$value) || $value === null ? new \stdClass() : $value;
+		});
 	}
 	
 	/**
