@@ -1300,6 +1300,14 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * Overwrite binder name
+	 */
+	public function setBinderName(string $binderName): void
+	{
+		$this->binderName = $binderName;
+	}
+	
+	/**
 	 * Get PDO statement handle. Ff its not created, it will be
 	 */
 	public function getPDOStatement(): \PDOStatement

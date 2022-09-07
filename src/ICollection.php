@@ -103,6 +103,11 @@ interface ICollection
 	public function getVars(?int $flags = null): array;
 	
 	/**
+	 * Overwrite binder name
+	 */
+	public function setBinderName(string $binderName): void;
+	
+	/**
 	 * Get sql DELETE string
 	 */
 	public function getSqlDelete(): string;

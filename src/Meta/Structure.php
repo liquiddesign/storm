@@ -580,7 +580,7 @@ class Structure
 				continue;
 			}
 			
-			if (isset($docComment[Column::getAnnotationName()]) && \is_array($docComment[Column::getAnnotationName()])) {
+			if (\is_array($docComment[Column::getAnnotationName()])) {
 				throw new AnnotationException(AnnotationException::MULTIPLE_ANNOTATION, "$class::$name", Column::getAnnotationName());
 			}
 			

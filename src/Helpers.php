@@ -174,7 +174,7 @@ class Helpers
 					throw new \InvalidArgumentException("Language $mutation is not in available languages");
 				}
 				
-				$realProperty = $column . ($mutations[$mutation] ?? '');
+				$realProperty = $column . $mutations[$mutation];
 				$values["$varPrefix$realProperty$varPostfix"] = \is_bool($value) ? (int) $value : $value;
 				$binds[":$varPrefix$realProperty$varPostfix"] = $prefix . $realProperty;
 			}
