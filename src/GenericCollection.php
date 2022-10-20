@@ -1206,9 +1206,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @param string $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
+	 * @param bool $prepend
 	 * @return static
 	 */
-	public function join(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN): self
+	public function join(array $from, string $condition, array $values = [], ?string $type = self::DEFAULT_JOIN, bool $prepend = false): self
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -1220,7 +1221,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		
 		$this->addAlias($from, self::MODIFIER_JOIN);
 		
-		$this->modifiers[self::MODIFIER_JOIN][] = [$type, $from, $condition];
+		if ($prepend) {
+			\array_unshift($this->modifiers[self::MODIFIER_JOIN], [$type, $from, $condition]);
+		} else {
+			$this->modifiers[self::MODIFIER_JOIN][] = [$type, $from, $condition];
+		}
 		
 		foreach ($values as $k => $v) {
 			$this->bindVar($k, $v, self::MODIFIER_JOIN_FLAG);

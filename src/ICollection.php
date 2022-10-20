@@ -389,9 +389,10 @@ interface ICollection
 	 * @param string $condition
 	 * @param array<mixed> $values
 	 * @param string|null $type
+	 * @param bool $prepend
 	 * @return static
 	 */
-	public function join(array $from, string $condition, array $values = [], ?string $type = null): self;
+	public function join(array $from, string $condition, array $values = [], ?string $type = null, bool $prepend = false): self;
 	
 	/**
 	 * Get last affected number

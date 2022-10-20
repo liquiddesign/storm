@@ -495,10 +495,11 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 						$via = $relation->getVia();
 						$viaTargetKey = $relation->getTargetViaKey();
 						$viaSourceKey = $relation->getSourceViaKey();
-						$this->join([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey");
-						$this->join([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey");
+						
+						$this->join([$realAliasQuoted => $targetTable], "$via.$viaTargetKey=$realAliasQuoted.$targetKey", [], self::DEFAULT_JOIN, true);
+						$this->join([$via], "$via.$viaSourceKey=$sourceAliasQuoted.$sourceKey", [], self::DEFAULT_JOIN, true);
 					} else {
-						$this->join([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey");
+						$this->join([$realAliasQuoted => $targetTable], "$sourceAliasQuoted.$sourceKey=$realAliasQuoted.$targetKey", [], self::DEFAULT_JOIN, true);
 					}
 					
 					$relationClass = $target;
