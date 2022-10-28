@@ -174,6 +174,10 @@ abstract class Entity implements \JsonSerializable, IDumper
 				continue;
 			}
 			
+			if ($value instanceof Literal) {
+				continue;
+			}
+			
 			$this->$name = $value;
 		}
 		
