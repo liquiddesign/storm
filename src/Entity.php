@@ -444,11 +444,12 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Convert entity to array. Empty references and empty array all converted to empty stdClass. JS do not support associative arrays
 	 * @param array<string>|array<string, mixed> $relations
+	 * @param boolean $includeNonColumns
 	 * @return array<mixed>
 	 */
-	public function toJsonArray(array $relations = []): array
+	public function toJsonArray(array $relations = [], bool $includeNonColumns = true): array
 	{
-		return $this->toArray($relations, true, true, true, function ($value) {
+		return $this->toArray($relations, true, $includeNonColumns, true, function ($value) {
 			return (\is_array($value) && !$value) || $value === null ? new \stdClass() : $value;
 		});
 	}
