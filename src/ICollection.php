@@ -357,6 +357,14 @@ interface ICollection
 	public function orderBy(array $order, array $values = []): self;
 	
 	/**
+	 * Add HAVING clause and merge with previous
+	 * @param string $having
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function having(string $having, array $values = []): self;
+	
+	/**
 	 * Set GROUP BY and HAVING clause and replace previous
 	 * @param array<string> $groups
 	 * @param null|string $having

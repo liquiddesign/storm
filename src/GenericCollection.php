@@ -131,7 +131,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 * @var array<int>
 	 */
 	protected array $varsFlags = [];
-
+	
 	protected ?\StORM\Connection $connection;
 	
 	protected ?int $affectedNumber = null;
@@ -315,7 +315,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			if (!$columnName) {
 				return;
 			}
-
+			
 			$collection->setOrderBy([$columnName => self::ORDER_ASC]);
 		});
 	}
@@ -336,7 +336,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		if (!$columnName) {
 			throw new \InvalidArgumentException('Column cannot be empty');
 		}
-	
+		
 		return $this->getValue($property, $needed, function (ICollection $collection) use ($columnName): void {
 			$collection->setOrderBy([$columnName => self::ORDER_DESC]);
 			$collection->setTake(1);
@@ -367,7 +367,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			if (!$columnName) {
 				return;
 			}
-
+			
 			$collection->setOrderBy([$columnName => self::ORDER_ASC]);
 		});
 	}
@@ -451,7 +451,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$sql = $this->getSqlUpdate($values, $ignore, $alias);
 		
 		$flags = self::MODIFIER_FROM_FLAG | self::MODIFIER_JOIN_FLAG | self::MODIFIER_WHERE_FLAG | self::MODIFIER_ORDER_BY_FLAG;
-	
+		
 		$sth = $this->getConnection()->query($sql, $this->getVars($flags) + $values);
 		$this->affectedNumber = $sth->rowCount();
 		
@@ -1100,6 +1100,23 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
+	 * Add HAVING clause and merge with previous
+	 * @param string $having
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function having(string $having, array $values = []): self
+	{
+		$this->modifiers[self::MODIFIER_HAVING][] = $having;
+		
+		foreach ($values as $k => $v) {
+			$this->bindVar($k, $v, self::MODIFIER_GROUP_BY_FLAG);
+		}
+		
+		return $this;
+	}
+	
+	/**
 	 * Set GROUP BY and HAVING clause and replace previous
 	 * @param array<string> $groups
 	 * @param null|string $having
@@ -1113,7 +1130,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		$this->modifiers[self::MODIFIER_GROUP_BY] = $groups;
-		$this->modifiers[self::MODIFIER_HAVING] = $having;
+		$this->modifiers[self::MODIFIER_HAVING] = $having ? [$having] : [];
 		$this->removeVars(self::MODIFIER_GROUP_BY_FLAG);
 		
 		foreach ($values as $k => $v) {
@@ -1160,7 +1177,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		$this->modifiers[self::MODIFIER_GROUP_BY] = $groups;
-		$this->modifiers[self::MODIFIER_HAVING] = $having;
+		$this->modifiers[self::MODIFIER_HAVING] = $having ? [$having] : [];
 		
 		return $this;
 	}
@@ -1557,7 +1574,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$this->modifiers[self::MODIFIER_JOIN] = [];
 		$this->modifiers[self::MODIFIER_WHERE] = [];
 		$this->modifiers[self::MODIFIER_GROUP_BY] = [];
-		$this->modifiers[self::MODIFIER_HAVING] = null;
+		$this->modifiers[self::MODIFIER_HAVING] = [];
 		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
 		$this->modifiers[self::MODIFIER_LIMIT] = null;
 		$this->modifiers[self::MODIFIER_OFFSET] = null;
@@ -1614,11 +1631,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		$this->load();
-
+		
 		/** @phpstan-ignore-next-line */
 		return $this->items;
 	}
-
+	
 	private function generateBinder(): string
 	{
 		$binder = $this->binderName . $this->binderCounter;
@@ -1778,10 +1795,12 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	private function createSqlSuffix(bool $having, bool $orderBy): string
 	{
 		$sql = Helpers::createSqlClauseString(' ' . self::MODIFIER_WHERE, $this->modifiers[self::MODIFIER_WHERE], ' AND ');
-	
+		
 		if ($having) {
 			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_GROUP_BY, $this->modifiers[self::MODIFIER_GROUP_BY], ',');
-			$sql .= $this->modifiers[self::MODIFIER_HAVING] === null ? '' : ' ' . self::MODIFIER_HAVING . ' ' . $this->modifiers[self::MODIFIER_HAVING];
+			//$sql .= $this->modifiers[self::MODIFIER_HAVING] === null ? '' : ' ' . self::MODIFIER_HAVING . ' ' . $this->modifiers[self::MODIFIER_HAVING];
+			
+			$sql .= Helpers::createSqlClauseString(' ' . self::MODIFIER_HAVING, $this->modifiers[self::MODIFIER_HAVING], ' AND ');
 		}
 		
 		if ($orderBy) {
