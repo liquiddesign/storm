@@ -415,6 +415,16 @@ class Collection extends GenericCollection implements ICollection, IEntityParent
 		
 		$i = 0;
 		
+		$joinModifiers = $this->modifiers[self::MODIFIER_JOIN];
+		
+		foreach ($joinModifiers as $value) {
+			if (!isset($value[2]) || !\is_string($value[2])) {
+				continue;
+			}
+			
+			$this->parseExpression($value[2]);
+		}
+		
 		foreach (\array_keys($this->modifiers[self::MODIFIER_SELECT]) as $k) {
 			if ($i++ < $this->skipSelectLength || !\is_string($this->modifiers[self::MODIFIER_SELECT][$k])) {
 				continue;

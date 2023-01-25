@@ -227,6 +227,16 @@ abstract class Repository implements IEntityParent
 		
 		return $this->syncOne($values, [], $filterByColumns, $ignore, $checkKeys, $primaryKeyNames);
 	}
+
+	/**
+	 * Synchronize entity row by unique index, if $columnsToUpdate is null all columns are updated
+	 * @param array<mixed>|object $values
+	 * @param array<string>|array<\StORM\Literal>|null $updateProps
+	 */
+	final public function syncOneByPk($values, ?array $updateProps = null): Entity
+	{
+		return $this->syncOne($values, $updateProps);
+	}
 	
 	/**
 	 * Synchronize entity row by unique index, if $columnsToUpdate is null all columns are updated
@@ -239,8 +249,16 @@ abstract class Repository implements IEntityParent
 	 * @throws \StORM\Exception\NotFoundException
 	 * @phpstan-return T
 	 */
-	final public function syncOne($values, ?array $updateProps = null, ?bool $filterByColumns = false, ?bool $ignore = null, array $checkKeys = [], array $primaryKeyNames = []): Entity
-	{
+	final public function syncOne(
+		$values,
+		?array $updateProps = null,
+		?bool $filterByColumns = false,
+		?bool $ignore = null,
+		array $checkKeys = [],
+		array $primaryKeyNames = [],
+		?string $checkedKey = null,
+		bool $checkedIgnore = true
+	): Entity {
 		if (\is_object($values)) {
 			$values = Helpers::toArrayRecursive($values);
 		}
@@ -297,7 +315,7 @@ abstract class Repository implements IEntityParent
 			}
 		}
 		
-		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? !$updateProps);
+		$sql = $this->getSqlInsert([$insert], $vars, $updateProps, $ignore ?? !$updateProps, $checkedKey, $checkedIgnore);
 		$beforeId = $this->getPrimaryKeyNextValue();
 		
 		$sth = $this->connection->query($sql, $vars);
@@ -474,9 +492,9 @@ abstract class Repository implements IEntityParent
 	 * @param array<string|\StORM\Literal>|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
-	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
+	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false, ?string $checkedKey = null, bool $checkedIgnore = true): string
 	{
-		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore);
+		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore, $checkedKey, $checkedIgnore);
 	}
 	
 	/**

@@ -346,7 +346,7 @@ class Connection
 	 * @param array<string>|array<\StORM\Literal>|null $onDuplicateUpdate
 	 * @param bool $ignore
 	 */
-	public function getSqlInsert(string $table, array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false): string
+	public function getSqlInsert(string $table, array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false, ?string $checkedKey = null, bool $checkedIgnore = true): string
 	{
 		$sql = '';
 		$i = 0;
@@ -401,7 +401,12 @@ class Connection
 					$name = $value;
 				}
 				
-				$sql .= $name . '=' . ($value instanceof Literal ? (string) $value : 'VALUES(' . $name . ')');
+				if ($checkedKey) {
+					$expression = "IF($checkedKey != VALUES($checkedKey), IF (" . ($checkedIgnore ? '1' : '0') . ", $name, NULL), VALUES($name))";
+					$sql .= $name . '=' . ($value instanceof Literal ? (string) $value : $expression);
+				}
+				
+				$sql .= $name . '=' . ($value instanceof Literal ? (string) $value : "VALUES($name)");
 				$i++;
 			}
 		}
