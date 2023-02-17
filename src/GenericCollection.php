@@ -168,6 +168,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$this->init();
 	}
 	
+	public function __destruct()
+	{
+		$this->sth = null;
+	}
+
 	/**
 	 * Get current connection
 	 * @return \StORM\Connection $connection
@@ -276,7 +281,9 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			return $this;
 		}
 		
-		$this->items = \Nette\Utils\Helpers::falseToNull($this->getPDOStatement()->fetchAll(...$this->getFetchParameters()));
+		$sth = $this->getPDOStatement();
+		$this->items = \Nette\Utils\Helpers::falseToNull($sth->fetchAll(...$this->getFetchParameters()));
+		$sth->closeCursor();
 		
 		if ($this->items === null) {
 			throw new GeneralException('Load collection failed:' . \implode(':', $this->getConnection()->getLink()->errorInfo()));
@@ -410,7 +417,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
-		return \Nette\Utils\Helpers::falseToNull($this->getPDOStatement()->fetch());
+		if (!$this->sth) {
+			$this->sth = $this->getPDOStatement();
+		}
+		
+		return \Nette\Utils\Helpers::falseToNull($this->sth->fetch());
 	}
 	
 	/**
@@ -727,7 +738,11 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		$clone->clear();
 		$clone->setSelect($select);
 		
-		return (string) $clone->getPDOStatement()->fetchColumn();
+		$sth = $clone->getPDOStatement();
+		$result = (string) $sth->fetchColumn();
+		$sth->closeCursor();
+		
+		return $result;
 	}
 	
 	/**
@@ -1334,12 +1349,10 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	 */
 	public function getPDOStatement(): \PDOStatement
 	{
-		if (!$this->sth) {
-			$this->sth = $this->getConnection()->query($this->getSql(), $this->getVars(), [], $this->bufferedQuery);
-			$this->sth->setFetchMode(...$this->getFetchParameters());
-		}
+		$sth = $this->getConnection()->query($this->getSql(), $this->getVars(), [], $this->bufferedQuery);
+		$sth->setFetchMode(...$this->getFetchParameters());
 		
-		return $this->sth;
+		return $sth;
 	}
 	
 	/**
@@ -1492,9 +1505,7 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 		}
 		
 		$sth = $collection->getPDOStatement();
-		
 		$object = $sth->fetch();
-		
 		$sth->closeCursor();
 		
 		if ($object === false && $needed) {
