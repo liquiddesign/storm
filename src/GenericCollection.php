@@ -409,16 +409,25 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	
 	/**
 	 * Fetch object and move cursor
+	 * @param string|null $class
+	 * @param array<mixed>|null $classArguments
 	 * @return T|null
 	 */
-	public function fetch(): ?object
+	public function fetch(?string $class = null, ?array $classArguments = null): ?object
 	{
+		if ($class === \stdClass::class) {
+			$classArguments = [];
+		}
+		
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
 		}
 		
 		if (!$this->sth) {
-			$this->sth = $this->getPDOStatement();
+			$sth = $this->getConnection()->query($this->getSql(), $this->getVars(), [], $this->bufferedQuery);
+			$sth->setFetchMode(...$this->getFetchParameters(\PDO::FETCH_CLASS, $class, $classArguments));
+			
+			$this->sth = $sth;
 		}
 		
 		return \Nette\Utils\Helpers::falseToNull($this->sth->fetch());
