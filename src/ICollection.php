@@ -21,6 +21,16 @@ interface ICollection
 	 * @return array<string>
 	 */
 	public function getModifiers(): array;
+
+	/**
+	 * @return array<string, string>
+	 */
+	public function getAliases(): array;
+
+	/**
+	 * @return array<string, string>
+	 */
+	public function getTableAliases(): array;
 	
 	/**
 	 * Get fetch class

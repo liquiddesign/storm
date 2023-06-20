@@ -5,3 +5,4 @@ tests/output/*
 tests/temp/*
 tests/temp_fixed/*
 .idea/*
+composer.lock

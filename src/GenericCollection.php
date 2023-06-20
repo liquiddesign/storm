@@ -174,6 +174,22 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 
 	/**
+	 * @inheritDoc
+	 */
+	public function getAliases(): array
+	{
+		return $this->aliases;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getTableAliases(): array
+	{
+		return $this->tableAliases;
+	}
+
+	/**
 	 * Get current connection
 	 * @return \StORM\Connection $connection
 	 */
