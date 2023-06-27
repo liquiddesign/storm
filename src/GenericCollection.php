@@ -648,14 +648,15 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	}
 	
 	/**
-	 * Create grouped array indexed by property (using PDO::FETCH_GROUP)
+	 * Create grouped array indexed by property (using PDO::FETCH_GROUP), you can change FETCH mode to FETCH_COLUMN by 2nd. param
 	 * @param string $property
+	 * @param int $fetchMode
 	 * @phpstan-return array<array<T>>
 	 * @return array<array<object>>
 	 */
-	public function fetchGroups(string $property): array
+	public function fetchGroups(string $property, int $fetchMode = \PDO::FETCH_CLASS): array
 	{
-		return $this->fetchAllCloned(\PDO::FETCH_CLASS | \PDO::FETCH_GROUP, null, null, function (ICollection $collection) use ($property): void {
+		return $this->fetchAllCloned($fetchMode | \PDO::FETCH_GROUP, null, null, function (ICollection $collection) use ($property): void {
 			$collection->setIndex($property);
 		});
 	}
