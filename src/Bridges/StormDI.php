@@ -27,6 +27,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 				'collate' => Expect::string('utf8_general_ci'),
 				'primaryKeyGenerator' => Expect::string(),
 				'mutations' => Expect::arrayOf('string')->default([self::DEFAULT_MUTATION => ''])->min(1)->mergeDefaults(false),
+				'attributes' => Expect::array()->default([]),
 			]))->min(1),
 			'schema' => Expect::structure([
 				'customAnnotations' => Expect::arrayOf('string')->default([]),
@@ -98,7 +99,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 	
 	/**
 	 * @param string $name
-	 * @param array<string> $config
+	 * @param array<mixed> $config
 	 * @param bool $debug
 	 */
 	private function setupDatabase(string $name, array $config, bool $debug): void
@@ -115,6 +116,10 @@ class StormDI extends \Nette\DI\CompilerExtension
 			\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES $charset COLLATE $collate",
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 		];
+
+		foreach ($config['attributes'] ?? [] as $attribute => $value) {
+			$attributes[$attribute] = $value;
+		}
 		
 		$builder = $this->getContainerBuilder();
 		$attributes = ['@container', $name, $dsn, $config['user'], $config['password'], $attributes];
