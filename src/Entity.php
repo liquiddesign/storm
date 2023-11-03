@@ -432,6 +432,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 			} catch (NotFoundException $x) {
 				unset($x);
 			}
+			
+			unset($default);
 		}
 		
 		if (!$includePK) {
