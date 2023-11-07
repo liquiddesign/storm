@@ -1864,23 +1864,29 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 	{
 		foreach ($aliases as $alias => $table) {
 			if (\is_int($alias)) {
-				$alias = (string) $table;
+				$alias = (string)$table;
 			}
-			
+
 			if (Strings::substring($alias, 0, 1) === $this->getConnection()->getQuoteIdentifierChar()) {
 				$alias = Strings::substring($alias, 1, -1);
 			}
-			
+
 			if (!Helpers::isValidIdentifier($alias)) {
 				throw new InvalidStateException($this, InvalidStateException::INVALID_IDENTIFIER, $alias);
 			}
-			
+
 			if (isset($this->aliases[$alias])) {
 				throw new AlreadyExistsException($this, AlreadyExistsException::ALIAS, $alias);
 			}
-			
+
 			$this->aliases[$alias] = $modifier;
+
+			if (isset($this->tableAliases[\is_string($table) ? $table : $alias])) {
+				continue;
+			}
+
 			$this->tableAliases[\is_string($table) ? $table : $alias] = $alias;
+
 		}
 	}
 	
