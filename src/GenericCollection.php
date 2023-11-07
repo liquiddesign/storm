@@ -1886,7 +1886,6 @@ class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess
 			}
 
 			$this->tableAliases[\is_string($table) ? $table : $alias] = $alias;
-
 		}
 	}
 	
