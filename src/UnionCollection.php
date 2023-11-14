@@ -87,12 +87,13 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	/**
 	 * @param array<\StORM\ICollection<T>> $collections
 	 */
-	public function __construct(array $collections, Connection $connection, string $class = \stdClass::class)
+	public function __construct(array $collections, Connection $connection, string $index, string $class = \stdClass::class)
 	{
 
 		$this->collections = $collections;
 		$this->connection = $connection;
 		$this->class = $class;
+		$this->index = $index;
 	}
 
 	public function getConnection(): Connection
@@ -384,7 +385,7 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 		$collectionSql = [];
 
 		foreach ($this->collections as $collection) {
-			$collectionSql[] = $collection->getSql();
+			$collectionSql[] = '(' . $collection->getSql() . ')';
 		}
 
 		$sql = \implode(' UNION ', $collectionSql);
@@ -407,6 +408,10 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 			if ($flags === null || $this->varsFlags[$name] & $flags) {
 				$return[$name] = $value;
 			}
+		}
+
+		foreach ($this->collections as $collection) {
+			$return += $collection->getVars();
 		}
 
 		return $this->parseVars($return);
