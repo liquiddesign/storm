@@ -652,14 +652,14 @@ class CollectionTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 		// 2. adding with having
 		$collection = $storm->rows($from)->groupBy([$group], $having);
 		Assert::same([$group], $collection->getModifiers()['GROUP BY']);
-		Assert::same($having, $collection->getModifiers()['HAVING']);
+		Assert::same([$having], $collection->getModifiers()['HAVING']);
 		Assert::contains(" GROUP BY $group HAVING $having", $collection->getSql());
 		$collection->clear()->setWhere('1=0')->load();
 		
 		// 2. adding with binding
 		$baseCollection = $storm->rows($from)->groupBy([$group], $having2, $vars2);
 		Assert::same([$group], $baseCollection->getModifiers()['GROUP BY']);
-		Assert::same($having2, $baseCollection->getModifiers()['HAVING']);
+		Assert::same([$having2], $baseCollection->getModifiers()['HAVING']);
 		Assert::contains(" GROUP BY $group HAVING $having2", $baseCollection->getSql());
 		Assert::same($vars2, $baseCollection->getVars());
 		$testCollection = clone $collection;
