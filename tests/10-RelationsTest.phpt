@@ -147,9 +147,9 @@ class RelationsTest extends \Tester\TestCase // @codingStandardsIgnoreLine
 	{
 		$connection = $container->getByType(Connection::class);
 		$stocks = $connection->getRepository(Stock::class);
-		$collection = $stocks->many()->setWhere("industry.type.sector.uuid = :uuid", ['uuid' => 'energy']);
+		$collection = $stocks->many()->setWhere("industry.fk_type = :uuid", ['uuid' => 'energy']);
 		$collection->load();
-		Assert::count(3, $collection->getModifiers()['JOIN']);
+		Assert::count(1, $collection->getModifiers()['JOIN']);
 	}
 }
 
