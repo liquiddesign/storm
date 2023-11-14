@@ -19,8 +19,9 @@ use StORM\Meta\RelationNxN;
  * @implements \Iterator<string|int, T>
  * @implements \StORM\ICollection<T>
  * @implements \StORM\IEntityParent<T>
+ * @implements \StORM\ISearchableCollection<T>
  */
-class Collection extends GenericCollection implements ICollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+class Collection extends GenericCollection implements ICollection, ISearchableCollection, IEntityParent, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	/**
 	 * @var array<T>|null

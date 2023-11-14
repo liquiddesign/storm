@@ -16,8 +16,9 @@ use StORM\Meta\RelationNxN;
  * @implements \ArrayAccess<string|int, T>
  * @implements \Iterator<string|int, T>
  * @implements \StORM\ICollection<T>
+ * @implements \StORM\ISearchableCollection<T>
  */
-class RelationCollection extends Collection implements IRelation, ICollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+class RelationCollection extends Collection implements IRelation, ICollection, ISearchableCollection, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	protected \StORM\Meta\Relation $relation;
 	

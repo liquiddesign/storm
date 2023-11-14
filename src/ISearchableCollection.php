@@ -11,6 +11,23 @@ namespace StORM;
 interface ISearchableCollection
 {
 	/**
+	 * Get current connection
+	 * @return \StORM\Connection $connection
+	 */
+	public function getConnection(): Connection;
+
+	/**
+	 * Get array of modifiers: WHERE, FROM, SELECT, LIMIT, OFFSET, ORDER BY, GROUP BY, HAVING BY, JOIN
+	 * @return array<string>
+	 */
+	public function getModifiers(): array;
+
+	/**
+	 * Count internal array if loaded, otherwise call enum()
+	 */
+	public function count(): int;
+
+	/**
 	 * Fetch all collection and fill keys
 	 * @phpstan-return \StORM\ISearchableCollection<T>
 	 */

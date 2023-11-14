@@ -17,8 +17,9 @@ use StORM\Exception\NotFoundException;
  * @implements \ArrayAccess<string|int, T>
  * @implements \Iterator<string|int, T>
  * @implements \StORM\ICollection<T>
+ * @implements \StORM\ISearchableCollection<T>
  */
-class GenericCollection implements ICollection, IDumper, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
+class GenericCollection implements ICollection, ISearchableCollection, IDumper, \Iterator, \ArrayAccess, \JsonSerializable, \Countable
 {
 	protected const DEFAULT_JOIN = 'LEFT';
 	
