@@ -9,12 +9,15 @@ use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\MethodReflection;
 use PHPStan\Type\Constant\ConstantBooleanType;
 use StORM\ICollection;
+use StORM\ISearchableCollection;
 
 class FirstThrowType implements \PHPStan\Type\DynamicMethodThrowTypeExtension
 {
 	public function isMethodSupported(MethodReflection $methodReflection): bool
 	{
-		return \is_subclass_of($methodReflection->getDeclaringClass()->getName(), ICollection::class) && $methodReflection->getName() === 'first';
+		$class = $methodReflection->getDeclaringClass()->getName();
+
+		return \is_subclass_of($class, ICollection::class) || \is_subclass_of($class, ISearchableCollection::class) && $methodReflection->getName() === 'first';
 	}
 	
 	public function getThrowTypeFromMethodCall(MethodReflection $methodReflection, MethodCall $methodCall, Scope $scope): ?\PHPStan\Type\Type
