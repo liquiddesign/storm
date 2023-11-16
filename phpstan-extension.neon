@@ -8,6 +8,10 @@ services:
 		tags:
 			- phpstan.broker.dynamicMethodReturnTypeExtension
 	-
+		class: StORM\Bridges\PhpStan\FirstReturnTypeSearchable
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension
+	-
 		class: StORM\Bridges\PhpStan\FindRepositoryReturnType
 		tags:
 			- phpstan.broker.dynamicMethodReturnTypeExtension
