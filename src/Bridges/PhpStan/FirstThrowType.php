@@ -17,7 +17,7 @@ class FirstThrowType implements \PHPStan\Type\DynamicMethodThrowTypeExtension
 	{
 		$class = $methodReflection->getDeclaringClass()->getName();
 
-		return \is_subclass_of($class, ICollection::class) || \is_subclass_of($class, ISearchableCollection::class) && $methodReflection->getName() === 'first';
+		return (\is_subclass_of($class, ICollection::class) || \is_subclass_of($class, ISearchableCollection::class)) && $methodReflection->getName() === 'first';
 	}
 	
 	public function getThrowTypeFromMethodCall(MethodReflection $methodReflection, MethodCall $methodCall, Scope $scope): ?\PHPStan\Type\Type
