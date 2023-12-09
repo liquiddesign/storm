@@ -199,7 +199,15 @@ class Collection extends GenericCollection implements ICollection, ISearchableCo
 			if (!isset($values[$name])) {
 				continue;
 			}
-			
+
+			// rewriting relation to key name
+			if (\is_scalar($values[$name]) && $relation->isKeyHolder()) {
+				$values[$relation->getSourceKey()] = $values[$name];
+				unset($values[$name]);
+
+				continue;
+			}
+
 			$relations[$name] = [$relation, $values[$name]];
 			unset($values[$name]);
 		}
