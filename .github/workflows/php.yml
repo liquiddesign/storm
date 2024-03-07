@@ -29,7 +29,7 @@ jobs:
     - name: Setup PHP with PECL extension
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.2.13'
         extensions: pdo, pdo_mysql, json, tokenizer, mbstring
 
     - name: Check PHP Version
@@ -43,7 +43,7 @@ jobs:
       run: php -i
 
     - name: Check PHP locate
-      run: cat /etc/php/8.2/cli/conf.d/20-pdo_mysql.ini
+      run: cat /etc/php/8.2.13/cli/conf.d/20-pdo_mysql.ini
 
     - name: Validate composer.json and composer.lock
       run: composer validate
