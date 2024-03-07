@@ -43,7 +43,7 @@ jobs:
       run: php -i
 
     - name: Check PHP locate
-      run: cat /etc/php/8.0/cli/conf.d/20-pdo_mysql.ini
+      run: cat /etc/php/8.2/cli/conf.d/20-pdo_mysql.ini
 
     - name: Validate composer.json and composer.lock
       run: composer validate
