@@ -48,6 +48,9 @@ jobs:
     - name: Validate composer.json and composer.lock
       run: composer validate
 
+    - name: Run commit check
+      run: composer check-commit
+
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v2

@@ -43,9 +43,8 @@ interface ISearchableCollection
 	 * @param string|null $property
 	 * @param bool $needed
 	 * @param string|null $columnName
-	 * @return null|string|bool
 	 */
-	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null);
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): string|int|float|bool|null;
 
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
@@ -224,7 +223,7 @@ interface ISearchableCollection
 	 * which is a value of any type other than a resource.
 	 * @since 5.4.0
 	 */
-	public function jsonSerialize();
+	public function jsonSerialize(): mixed;
 
 	/**
 	 * Get real SQL string

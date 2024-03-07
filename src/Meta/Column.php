@@ -127,10 +127,7 @@ class Column extends AnnotationProperty
 		$this->mutations = $mutations;
 	}
 	
-	/**
-	 * @return string|int|null
-	 */
-	public function getLength()
+	public function getLength(): string|int|null
 	{
 		return $this->length;
 	}
@@ -163,10 +160,7 @@ class Column extends AnnotationProperty
 		$this->nullable = $nullable;
 	}
 	
-	/**
-	 * @return string|int|float|null
-	 */
-	public function getDefault()
+	public function getDefault(): string|int|float|null
 	{
 		return $this->default;
 	}

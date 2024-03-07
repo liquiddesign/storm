@@ -65,10 +65,9 @@ class ArrayWrapper implements \Iterator, \ArrayAccess, \Countable
 	
 	/**
 	 * Return the key of the current element
-	 * @return mixed
 	 */
 	#[\ReturnTypeWillChange]
-	public function key()
+	public function key(): int|null|string
 	{
 		return \key($this->source);
 	}

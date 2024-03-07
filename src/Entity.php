@@ -195,9 +195,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 	
 	/**
 	 * Get primary key value by parent structure, if not set return first element
-	 * @return string|int
 	 */
-	public function getPK()
+	public function getPK(): string|int
 	{
 		if (!$this->parent) {
 			$firstElement = \reset($this->properties);
@@ -261,9 +260,8 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * Get value from properties
 	 * @param string $property
 	 * @param string|null $mutation
-	 * @return mixed
 	 */
-	public function getValue(string $property, ?string $mutation = null)
+	public function getValue(string $property, ?string $mutation = null): mixed
 	{
 		if (\array_key_exists($property, $this->foreignKeys)) {
 			return $this->foreignKeys[$property];
@@ -500,7 +498,7 @@ abstract class Entity implements \JsonSerializable, IDumper
 	 * @return \StORM\RelationCollection<\StORM\Entity>|\StORM\Entity|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	protected function getRelation(Relation $relation)
+	protected function getRelation(Relation $relation): \StORM\RelationCollection|\StORM\Entity|null
 	{
 		if ($relation->isKeyHolder()) {
 			$name = $relation->getName();
@@ -623,10 +621,9 @@ abstract class Entity implements \JsonSerializable, IDumper
 	/**
 	 * Get property
 	 * @param string $name
-	 * @return mixed
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function __get(string $name)
+	public function __get(string $name): mixed
 	{
 		if (\array_key_exists($name, $this->properties)) {
 			return $this->properties[$name];

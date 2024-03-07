@@ -146,10 +146,9 @@ class Collection extends GenericCollection implements ICollection, ISearchableCo
 	 * @param string|null $property
 	 * @param string|null $columnName
 	 * @param bool $needed
-	 * @return bool|string|int|null
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
+	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false): bool|string|int|null
 	{
 		$orderByColumn = $columnName ?: $this->getRepository()->getStructure()->getPK()->getName();
 		

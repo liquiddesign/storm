@@ -2,16 +2,18 @@
 	"name": "liquiddesign/storm",
 	"description": "ϟ StORM is lightweight PHP ORM library based on PDO",
 	"license": "MIT",
+	"prefer-stable": true,
+	"minimum-stability": "dev",
 	"autoload": {
 		"psr-4": {"StORM\\": "src/"}
 	},
 	"require" :
 	{
-		"php": ">=7.4.0",
+		"php": "~8.0",
 		"ext-pdo": "*",
 		"ext-json": "*",
 		"nette/di":"~3.0",
-		"nette/utils":"~3.2",
+		"nette/utils":"~4.0",
 		"nette/caching":"~3.0",
 		"tracy/tracy":"~2.0",
 		"panique/pdo-debug": "~0.2"
@@ -20,7 +22,7 @@
 	{
 		"nette/tester":"^2.0",
 		"composer/composer": "^2.0",
-		"liquiddesign/codestyle": "^2.0",
+		"liquiddesign/codestyle": "^3.0",
 		"phpstan/phpstan": "^1.0",
 		"phpcompatibility/php-compatibility": "^9.0"
 	},
@@ -31,7 +33,13 @@
 		"phpcsfix": "phpcbf --standard=ruleset.xml src",
 		"phpcheck7": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 7.4",
 		"phpcheck8": "phpcs -p ./src --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --runtime-set testVersion 8.1",
-		"tester": "tester tests/*.phpt -c tests/php.ini --setup tests/setup.php"
+		"tester": "tester tests/*.phpt -c tests/php.ini --setup tests/setup.php",
+		"changelog": "conventional-changelog --config=./vendor/liquiddesign/codestyle/src/changelog/changelog-config.php",
+		"release": "@changelog --commit",
+		"release:patch": "@changelog --patch --commit",
+		"release:minor": "@changelog --minor --commit",
+		"release:major": "@changelog --major --commit",
+		"check-commit": "@php ./vendor/liquiddesign/codestyle/src/scripts/check-last-commit.php"
 	},
 	"config": {
 		"allow-plugins": {

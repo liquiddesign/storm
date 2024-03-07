@@ -56,17 +56,6 @@ abstract class Repository implements IEntityParent
 	private array $injectedArguments = [];
 	
 	/**
-	 * Repository constructor
-	 * @param \StORM\DIConnection $connection
-	 * @param \StORM\SchemaManager $schemaManager
-	 */
-	public function __construct(DIConnection $connection, SchemaManager $schemaManager)
-	{
-		$this->connection = $connection;
-		$this->schemaManager = $schemaManager;
-	}
-	
-	/**
 	 * Get entity class
 	 * @phpstan-return class-string<T>
 	 */
@@ -363,8 +352,8 @@ abstract class Repository implements IEntityParent
 	 * @param array<array<mixed>>|array<object> $manyValues
 	 * @param bool $filterByColumns
 	 * @param bool $ignore
-	 * @phpcs:ignore
-	 * @phpstan-param int<1,max> $chunkSize
+     * @phpcs:ignore
+     * @phpstan-param int<1,max> $chunkSize
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
 	 * @throws \StORM\Exception\NotFoundException
@@ -380,8 +369,8 @@ abstract class Repository implements IEntityParent
 	 * @param array<string>|array<\StORM\Literal>|null $updateProps
 	 * @param bool|null $filterByColumns
 	 * @param bool $ignore
-	 * @phpcs:ignore
-	 * @phpstan-param int<1,max> $chunkSize
+     * @phpcs:ignore
+     * @phpstan-param int<1,max> $chunkSize
 	 * @param int $chunkSize
 	 * @phpstan-return \StORM\Collection<T>
 	 * @throws \StORM\Exception\NotFoundException
@@ -495,6 +484,17 @@ abstract class Repository implements IEntityParent
 	final public function getSqlInsert(array $manyInserts, array &$vars, ?array $onDuplicateUpdate, bool $ignore = false, ?string $checkedKey = null, bool $checkedIgnore = true): string
 	{
 		return $this->connection->getSqlInsert($this->getStructure()->getTable()->getName(), $manyInserts, $vars, $onDuplicateUpdate, $ignore, $checkedKey, $checkedIgnore);
+	}
+
+	/**
+	 * Repository constructor
+	 * @param \StORM\DIConnection $connection
+	 * @param \StORM\SchemaManager $schemaManager
+	 */
+	public function __construct(DIConnection $connection, SchemaManager $schemaManager)
+	{
+		$this->connection = $connection;
+		$this->schemaManager = $schemaManager;
 	}
 	
 	/**

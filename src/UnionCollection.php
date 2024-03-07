@@ -124,10 +124,9 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 
 	/**
 	 * Return the key of the current element
-	 * @return mixed
 	 */
 	#[\ReturnTypeWillChange]
-	public function key()
+	public function key(): int|string|false
 	{
 		$this->load(false);
 
@@ -246,10 +245,9 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	 * Take 1, fetch the column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
-	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null)
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): string|int|bool|null
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -270,10 +268,9 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	 * Take 1, fetch the last column and close cursor
 	 * @param string|null $property
 	 * @param bool $needed
-	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false)
+	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false): string|int|bool|null
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -690,7 +687,7 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	 * @since 5.4.0
 	 */
 	#[\ReturnTypeWillChange]
-	public function jsonSerialize()
+	public function jsonSerialize(): mixed
 	{
 		$array = $this->toArray();
 
@@ -809,7 +806,7 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 				continue;
 			}
 
-			$type = \is_object($value) ? \get_class($value) : \gettype($value);
+			$type = \is_object($value) ? $value::class : \gettype($value);
 
 			throw new InvalidStateException($this, InvalidStateException::INVALID_BINDER_VAR, "$name of $type");
 		}
@@ -933,10 +930,9 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	}
 
 	/**
-	 * @return null|string|int|bool
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	private function getValue(?string $property, bool $needed, ?callable $callback = null)
+	private function getValue(?string $property, bool $needed, ?callable $callback = null): string|int|bool|null
 	{
 		$collection = clone $this;
 

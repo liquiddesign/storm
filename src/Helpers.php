@@ -27,9 +27,8 @@ class Helpers
 	
 	/**
 	 * @param mixed $input
-	 * @return mixed
 	 */
-	public static function toArrayRecursive($input)
+	public static function toArrayRecursive($input): mixed
 	{
 		return Json::decode(Json::encode($input), Json::FORCE_ARRAY);
 	}
@@ -103,7 +102,7 @@ class Helpers
 	 * @param bool $lower
 	 * @return string|array<string>|null
 	 */
-	public static function fancyString(string $s, bool $lower = true)
+	public static function fancyString(string $s, bool $lower = true): string|array|null
 	{
 		return \preg_replace('#[^a-z0-9]+#i', '_', Strings::trim(($lower ? Strings::lower($s) : $s), ' @'));
 	}
@@ -209,7 +208,7 @@ class Helpers
 			return;
 		}
 		
-		$type = \is_object($rawValue) ? \get_class($rawValue) : \gettype($rawValue);
+		$type = \is_object($rawValue) ? $rawValue::class : \gettype($rawValue);
 		
 		throw new InvalidStateException(null, InvalidStateException::INVALID_BINDER_VAR, "$property of $type");
 	}
@@ -245,9 +244,8 @@ class Helpers
 	/**
 	 * @param mixed $scalar
 	 * @param string $type
-	 * @return mixed
 	 */
-	public static function castScalar($scalar, string $type)
+	public static function castScalar($scalar, string $type): mixed
 	{
 		if ($type === 'boolean') {
 			return \boolval($scalar);
