@@ -42,9 +42,6 @@ jobs:
     - name: Check PHP info
       run: php -i
 
-    - name: Check PHP locate
-      run: cat /etc/php/8.2.13/cli/conf.d/20-pdo_mysql.ini
-
     - name: Validate composer.json and composer.lock
       run: composer validate
 
