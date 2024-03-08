@@ -14,7 +14,7 @@
         "ext-pdo": "*",
         "ext-json": "*",
         "nette/di": "~3.0",
-        "nette/utils": "~4.0",
+        "nette/utils": "~3.0 || ~4.0",
         "nette/caching": "~3.0",
         "tracy/tracy": "~2.0",
         "panique/pdo-debug": "~0.2"
