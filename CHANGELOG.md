@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.4](https://github.com/liquiddesign/storm/compare/v2.0.3...v2.0.4) (2024-03-08)
+
+### Builds
+
+* Support >=8.0 ([a082ac](https://github.com/liquiddesign/storm/commit/a082acc7afb4ba9092a96f7af11768c5b7259a4c))
+
+
+---
+
 ## [2.0.3](https://github.com/liquiddesign/storm/compare/v2.0.2...v2.0.3) (2024-03-07)
 
 
