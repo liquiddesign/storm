@@ -326,7 +326,7 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 	 * @param bool $needed
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): string|int|float|bool|null
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): mixed
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -349,7 +349,7 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 	 * @param bool $needed
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false): string|int|bool|null
+	public function lastValue(?string $property = null, ?string $columnName = null, bool $needed = false): mixed
 	{
 		if ($this->isLoaded()) {
 			throw new InvalidStateException($this, InvalidStateException::COLLECTION_ALREADY_LOADED);
@@ -1778,7 +1778,7 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 	/**
 	 * @throws \StORM\Exception\NotFoundException
 	 */
-	private function getValue(?string $property, bool $needed, ?callable $callback = null): string|int|bool|null
+	private function getValue(?string $property, bool $needed, ?callable $callback = null): mixed
 	{
 		$collection = clone $this;
 		

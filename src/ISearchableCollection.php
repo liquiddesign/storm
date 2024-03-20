@@ -44,7 +44,7 @@ interface ISearchableCollection
 	 * @param bool $needed
 	 * @param string|null $columnName
 	 */
-	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): string|int|float|bool|null;
+	public function firstValue(?string $property = null, bool $needed = false, ?string $columnName = null): mixed;
 
 	/**
 	 * Take 1, fetch and close cursor, if property is not null fetch the property
