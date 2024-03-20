@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.5](https://github.com/liquiddesign/storm/compare/v2.0.4...v2.0.5) (2024-03-20)
+
+### Bug Fixes
+
+* Return types ([241176](https://github.com/liquiddesign/storm/commit/241176f0c2c296c99e06b2e73681c6b13cc7ec62))
+
+
+---
+
 ## [2.0.4](https://github.com/liquiddesign/storm/compare/v2.0.3...v2.0.4) (2024-03-08)
 
 ### Builds
