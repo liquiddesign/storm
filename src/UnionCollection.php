@@ -89,11 +89,22 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	 */
 	public function __construct(array $collections, Connection $connection, string $index, string $class = \stdClass::class)
 	{
-
 		$this->collections = $collections;
 		$this->connection = $connection;
 		$this->class = $class;
 		$this->index = $index;
+
+		$this->init();
+	}
+
+	protected function init(): void
+	{
+		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
+		$this->modifiers[self::MODIFIER_LIMIT] = null;
+		$this->modifiers[self::MODIFIER_OFFSET] = null;
+
+		$this->vars = [];
+		$this->varsFlags = [];
 	}
 
 	public function getConnection(): Connection
