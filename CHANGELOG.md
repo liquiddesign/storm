@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.6](https://github.com/liquiddesign/storm/compare/v2.0.5...v2.0.6) (2024-06-21)
+
+### Bug Fixes
+
+* Fixed init union collection ([59cfaa](https://github.com/liquiddesign/storm/commit/59cfaa03c8a3873ccfa096b720751f8684de83b6))
+
+
+---
+
 ## [2.0.5](https://github.com/liquiddesign/storm/compare/v2.0.4...v2.0.5) (2024-03-20)
 
 ### Bug Fixes
