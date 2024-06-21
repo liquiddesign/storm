@@ -10,7 +10,6 @@ namespace StORM\Bridges;
 class StormTracy implements \Tracy\IBarPanel
 {
 	use \Nette\SmartObject;
-
 	protected \StORM\Connection $db;
 	
 	/**

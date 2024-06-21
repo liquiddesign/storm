@@ -97,16 +97,6 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 		$this->init();
 	}
 
-	protected function init(): void
-	{
-		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
-		$this->modifiers[self::MODIFIER_LIMIT] = null;
-		$this->modifiers[self::MODIFIER_OFFSET] = null;
-
-		$this->vars = [];
-		$this->varsFlags = [];
-	}
-
 	public function getConnection(): Connection
 	{
 		return $this->connection;
@@ -746,6 +736,16 @@ class UnionCollection implements ISearchableCollection, IDumper, \Iterator, \Arr
 	public function getModifiers(): array
 	{
 		return $this->modifiers;
+	}
+
+	protected function init(): void
+	{
+		$this->modifiers[self::MODIFIER_ORDER_BY] = [];
+		$this->modifiers[self::MODIFIER_LIMIT] = null;
+		$this->modifiers[self::MODIFIER_OFFSET] = null;
+
+		$this->vars = [];
+		$this->varsFlags = [];
 	}
 
 	/**
