@@ -38,6 +38,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 				'callback' => Expect::arrayOf('string')->min(2)->max(2),
 			]))->default([]),
 			'debug' => Expect::bool(false),
+			'debugThreshold' => Expect::float(null),
 		]);
 	}
 	
@@ -55,7 +56,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 				$config['autowired'] = $first;
 			}
 			
-			$this->setupDatabase($name, $config, $configuration->debug);
+			$this->setupDatabase($name, $config, $configuration->debug, $configuration->debugThreshold);
 			$first = false;
 		}
 		
@@ -102,7 +103,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 	 * @param array<mixed> $config
 	 * @param bool $debug
 	 */
-	private function setupDatabase(string $name, array $config, bool $debug): void
+	private function setupDatabase(string $name, array $config, bool $debug, float|null $debugThreshold): void
 	{
 		$driver = $config['driver'];
 		$databaseName = $config['dbname'];
@@ -124,8 +125,9 @@ class StormDI extends \Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$attributes = ['@container', $name, $dsn, $config['user'], $config['password'], $attributes];
 		$connection = $builder->addDefinition($this->prefix($name))->setFactory(DIConnection::class, $attributes)->setAutowired($config['autowired'])
-			->addSetup('setDebug', [$debug]);
-		
+			->addSetup('setDebug', [$debug])
+			->addSetup('setDebugThreshold', [$debugThreshold]);
+
 		if ($debug) {
 			$connection->addSetup('@Tracy\Bar::addPanel', [
 				new \Nette\DI\Definitions\Statement(StormTracy::class, ['name' => $name,]),

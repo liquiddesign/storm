@@ -3,25 +3,23 @@
         <div class="tracy-inner tracy-InfoPanel">
             <h1>StORM [<?= $this->name ?>] queries</h1>
                 <table>
-                    <tbody>
-                        <?php
-                            $logItems = $this->db->getLog();
-
-                            \uasort($logItems, function (StORM\LogItem $a, StORM\LogItem $b): int {
-                                return $b->getTotalTime() <=> $a->getTotalTime();
-                            });
-                        ?>
+                    <thead>
+                    <th>Query</th>
+                    <th>Time and trace <a onclick="sort()">Sort</a></th>
+                    <th>Vars</th>
+                    </thead>
+                    <tbody id="storm-queries">
                         <?php $i = 0; ?>
-                        <?php foreach ($logItems as $item): ?>
-<!--                        <tr style="--><?php //= $item->getTotalTime() > 0.1 ? 'background-color: #FF7074;' : '' ?><!--">-->
-                        <tr>
+                        <?php foreach ($this->db->getLog() as $item): ?>
+                        <tr style="<?= $this->db->getDebugThreshold() && $item->getTotalTime() > $this->db->getDebugThreshold() ? 'background-color: #FF7074;' : '' ?>"
+                            data-totalTime="<?= $item->getTotalTime() ?>" data-orig="<?= $i ?>">
                             <td>
                                 <span style="color: red;"><?= $item->hasError() ? '[ERROR!]':'' ?></span>
                                 <?= $item->getSql() ?>
                                 <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>">
                                 <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); navigator.clipboard.writeText(copyText.value);'>[copy]</a>
                             </td>
-                            <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)<br><?= $item->getLocation() ?></td>
+                            <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)<br><a onclick="toggle(<?= $i ?>)">Show trace</a> <div style="display: none;" id="toggle-<?= $i ?>"><?= $item->getLocation() ?></div></td>
                             <td><?= \Tracy\Debugger::dump($item->getVars(), true) ?></td>
                         </tr>
                         <?php $i++ ?>
@@ -31,3 +29,46 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggle(id) {
+        const element = document.getElementById("toggle-" + id)
+
+        if (element.style.display === 'block') {
+            element.style.display = 'none'
+        } else {
+            element.style.display = 'block'
+        }
+    }
+
+    let sortDir = 0;
+
+    function sort() {
+        // Select the table body that contains the <tr> elements
+        let tbody = document.querySelector('#storm-queries');
+
+        // Convert the NodeList of <tr> elements to an array
+        let rowsArray = Array.from(tbody.querySelectorAll('tr'));
+
+        if (sortDir === 0) {
+            rowsArray.sort((a, b) => {
+                let totalTimeA = parseFloat(a.getAttribute('data-totalTime'));
+                let totalTimeB = parseFloat(b.getAttribute('data-totalTime'));
+                return totalTimeB - totalTimeA; // For descending order
+            });
+
+            sortDir = 1
+        } else if (sortDir === 1) {
+            rowsArray.sort((a, b) => {
+                let totalTimeA = parseFloat(a.getAttribute('data-orig'));
+                let totalTimeB = parseFloat(b.getAttribute('data-orig'));
+                return totalTimeB - totalTimeA; // For descending order
+            });
+
+            sortDir = 0
+        }
+
+        // Append the sorted rows back to the tbody
+        rowsArray.forEach(row => tbody.appendChild(row));
+    }
+</script>

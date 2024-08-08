@@ -33,7 +33,9 @@ class Connection
 	private string $driver;
 	
 	private bool $debug = false;
-	
+
+	private float|null $debugThreshold = null;
+
 	/**
 	 * Restrict char
 	 **/
@@ -500,6 +502,11 @@ class Connection
 	{
 		return $this->debug;
 	}
+
+	public function getDebugThreshold(): ?float
+	{
+		return $this->debugThreshold;
+	}
 	
 	/**
 	 * Set primary key generator
@@ -528,6 +535,15 @@ class Connection
 	public function setDebug(bool $debug): void
 	{
 		$this->debug = $debug;
+	}
+
+	/**
+	 * Set threshold for debugging
+	 * @param float|null $debugThreshold
+	 */
+	public function setDebugThreshold(float|null $debugThreshold): void
+	{
+		$this->debugThreshold = $debugThreshold;
 	}
 	
 	/**
