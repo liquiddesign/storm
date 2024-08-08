@@ -590,7 +590,18 @@ class Connection
 	 */
 	private function log(string $sql, array $vars): LogItem
 	{
-		$item = new LogItem($sql, $vars);
+		$trace = \debug_backtrace();
+		$location = '';
+
+		foreach ($trace as $item) {
+			if (!isset($item['object']) || \str_starts_with(\get_class($item['object']), 'StORM') || !isset($item['file'])) {
+				continue;
+			}
+
+			$location .= $item['file'] . ':' . ($item['line'] ?? null) . '<br>';
+		}
+
+		$item = new LogItem($sql, $location, $vars);
 		
 		if (isset($this->log[$sql])) {
 			$item->setAmount($this->log[$sql]->getAmount() + 1);

@@ -4,16 +4,24 @@
             <h1>StORM [<?= $this->name ?>] queries</h1>
                 <table>
                     <tbody>
+                        <?php
+                            $logItems = $this->db->getLog();
+
+                            \uasort($logItems, function (StORM\LogItem $a, StORM\LogItem $b): int {
+                                return $b->getTotalTime() <=> $a->getTotalTime();
+                            });
+                        ?>
                         <?php $i = 0; ?>
-                        <?php foreach ($this->db->getLog() as $item): ?>
+                        <?php foreach ($logItems as $item): ?>
+<!--                        <tr style="--><?php //= $item->getTotalTime() > 0.1 ? 'background-color: #FF7074;' : '' ?><!--">-->
                         <tr>
                             <td>
                                 <span style="color: red;"><?= $item->hasError() ? '[ERROR!]':'' ?></span>
-                                <?= $item->getSql() ?>
-                                <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>" style="width:1px;">
-                                <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); copyText.select(); document.execCommand("copy"); alert("Copied the text: " + copyText.value);'>[copy]</a>
+                                <p><?= $item->getSql() ?></p>
+                                <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>">
+                                <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); navigator.clipboard.writeText(copyText.value);'>[copy]</a>
                             </td>
-                            <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)</td>
+                            <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)<br><?= $item->getLocation() ?></td>
                             <td><?= \Tracy\Debugger::dump($item->getVars(), true) ?></td>
                         </tr>
                         <?php $i++ ?>
