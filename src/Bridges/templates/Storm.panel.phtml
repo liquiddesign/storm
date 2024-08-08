@@ -17,7 +17,7 @@
                         <tr>
                             <td>
                                 <span style="color: red;"><?= $item->hasError() ? '[ERROR!]':'' ?></span>
-                                <p><?= $item->getSql() ?></p>
+                                <?= $item->getSql() ?>
                                 <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>">
                                 <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); navigator.clipboard.writeText(copyText.value);'>[copy]</a>
                             </td>
