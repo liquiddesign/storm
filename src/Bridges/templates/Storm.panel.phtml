@@ -16,8 +16,8 @@
                             <td>
                                 <span style="color: red;"><?= $item->hasError() ? '[ERROR!]':'' ?></span>
                                 <?= $item->getSql() ?>
-                                <input type="hidden" id="item-<?= $i ?>" value="<?= \PdoDebugger::show($item->getSql(), $item->getVars()) ?>">
-                                <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); navigator.clipboard.writeText(copyText.value);'>[copy]</a>
+                                <p style="display: none;" id="item-<?= $i ?>"><?= htmlspecialchars(\PdoDebugger::show($item->getSql(), $item->getVars()), ENT_NOQUOTES) ?></p>
+                                <a href="#" onclick='let copyText = document.getElementById("item-<?= $i ?>"); navigator.clipboard.writeText(copyText.textContent);'>[copy]</a>
                             </td>
                             <td><?= \round($item->getTotalTime(), 5) ?>s&nbsp;(<?= $item->getAmount() ?>x)<br><a onclick="toggle(<?= $i ?>)">Show trace</a> <div style="display: none;" id="toggle-<?= $i ?>"><?= $item->getLocation() ?></div></td>
                             <td><?= \Tracy\Debugger::dump($item->getVars(), true) ?></td>
