@@ -62,6 +62,7 @@ class Helpers
 		\preg_match_all('#^[ \t*]*@(\w+)([^\w\r\n].*)?#mi', $content[1], $matches, \PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
+			/** @var mixed $ref */
 			$ref = &$options[Strings::lower($match[1])];
 			
 			if (isset($ref)) {

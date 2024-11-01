@@ -33,7 +33,9 @@ class Connection
 	private string $driver;
 	
 	private bool $debug = false;
-	
+
+	private float|null $debugThreshold = null;
+
 	/**
 	 * Restrict char
 	 **/
@@ -500,6 +502,11 @@ class Connection
 	{
 		return $this->debug;
 	}
+
+	public function getDebugThreshold(): ?float
+	{
+		return $this->debugThreshold;
+	}
 	
 	/**
 	 * Set primary key generator
@@ -528,6 +535,15 @@ class Connection
 	public function setDebug(bool $debug): void
 	{
 		$this->debug = $debug;
+	}
+
+	/**
+	 * Set threshold for debugging
+	 * @param float|null $debugThreshold
+	 */
+	public function setDebugThreshold(float|null $debugThreshold): void
+	{
+		$this->debugThreshold = $debugThreshold;
 	}
 	
 	/**
@@ -590,7 +606,18 @@ class Connection
 	 */
 	private function log(string $sql, array $vars): LogItem
 	{
-		$item = new LogItem($sql, $vars);
+		$trace = \debug_backtrace();
+		$location = '';
+
+		foreach ($trace as $item) {
+			if (!isset($item['object']) || \str_starts_with(\get_class($item['object']), 'StORM') || !isset($item['file'])) {
+				continue;
+			}
+
+			$location .= $item['file'] . ':' . ($item['line'] ?? null) . '<br>';
+		}
+
+		$item = new LogItem($sql, $location, $vars);
 		
 		if (isset($this->log[$sql])) {
 			$item->setAmount($this->log[$sql]->getAmount() + 1);

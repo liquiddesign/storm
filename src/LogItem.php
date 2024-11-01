@@ -18,16 +18,25 @@ class LogItem
 	private float $totalTime = 0.0;
 	
 	private bool $error = false;
-	
+
+	private string $location;
+
 	/**
 	 * LogItem constructor.
 	 * @param string $sql
+	 * @param string $location
 	 * @param array<mixed> $vars
 	 */
-	public function __construct(string $sql, array $vars = [])
+	public function __construct(string $sql, string $location, array $vars = [])
 	{
 		$this->sql = $sql;
+		$this->location = $location;
 		$this->vars = $vars;
+	}
+
+	public function getLocation(): string
+	{
+		return $this->location;
 	}
 	
 	/**
