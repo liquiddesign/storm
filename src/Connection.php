@@ -366,7 +366,7 @@ class Connection
 			}
 			
 			if ($noInserts !== \count($inserts)) {
-				throw new \InvalidArgumentException('Columns count mismatch');
+				throw new \InvalidArgumentException('All data entries must have same number of columns');
 			}
 			
 			$binds = [];
