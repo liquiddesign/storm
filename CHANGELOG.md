@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.9](https://github.com/liquiddesign/storm/compare/v2.0.8...v2.0.9) (2025-01-11)
+
+### Features
+
+* SetLink for replace PDO connection id Storm Connection object ([6fe93d](https://github.com/liquiddesign/storm/commit/6fe93ddae83fb8957ca21218f37d4fe9caa30a1b))
+
+
+---
+
 ## [2.0.6](https://github.com/liquiddesign/storm/compare/v2.0.5...v2.0.6) (2024-06-21)
 
 ### Bug Fixes
