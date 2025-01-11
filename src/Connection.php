@@ -86,6 +86,14 @@ class Connection
 	{
 		return $this->link;
 	}
+
+	/**
+	 * Replace PDO object
+	 */
+	public function setLink(\PDO $link): void
+	{
+		$this->link = $link;
+	}
 	
 	/**
 	 * Get user of current connection
