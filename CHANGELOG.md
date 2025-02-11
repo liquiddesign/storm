@@ -4,6 +4,19 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.10](https://github.com/liquiddesign/storm/compare/v2.0.9...v2.0.10) (2025-02-11)
+
+### Features
+
+* Simplify trace location logging in Connection class ([e34bad](https://github.com/liquiddesign/storm/commit/e34bad4ada7b41b06e5a97ca0622bbe6607ca033))
+
+### Bug Fixes
+
+* Trigger_error is deprecated in PHP 8.4 ([7be5d5](https://github.com/liquiddesign/storm/commit/7be5d51c29d9ecba2b2386de32d3557b37423143))
+
+
+---
+
 ## [2.0.9](https://github.com/liquiddesign/storm/compare/v2.0.8...v2.0.9) (2025-01-11)
 
 ### Features
