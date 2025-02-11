@@ -618,7 +618,7 @@ class Connection
 		$location = '';
 
 		foreach ($trace as $item) {
-			$location .= ($item['file'] ?? '-' ). ':' . ($item['line'] ?? '-') . '<br>';
+			$location .= ($item['file'] ?? '-' ) . ':' . ($item['line'] ?? '-') . '<br>';
 		}
 
 		$item = new LogItem($sql, $location, $vars);
