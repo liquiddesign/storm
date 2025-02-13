@@ -568,22 +568,21 @@ class Connection
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, [], $prefix);
 	}
 
-	/**
-	 * @param string|null $namespace
-	 * @param string|null $string
-	 * @param int<4,7> $uuidType
-	 */
-	public static function generateUuid(?string $namespace = null, ?string $string = null, int $uuidType = 4): string
+	public static function generateUuid(?string $namespace = null, ?string $string = null): string
 	{
 		if ($namespace !== null && $string !== null) {
 			return \md5($namespace . '!._.!' . $string);
 		}
 
-		if ($uuidType === 4) {
-			return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./');
+		return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./');
+	}
+
+	public static function generateUuid7(?string $namespace = null, ?string $string = null): string
+	{
+		if ($namespace !== null && $string !== null) {
+			return \md5($namespace . '!._.!' . $string);
 		}
 
-		// generate uuid v7 with ramsey
 		$uuid = \Ramsey\Uuid\Uuid::uuid7();
 
 		return $uuid->toString();
