@@ -585,7 +585,7 @@ class Connection
 
 		$uuid = \Ramsey\Uuid\Uuid::uuid7();
 
-		return $uuid->toString();
+		return \str_replace('-', '', $uuid->toString());
 	}
 	
 	/**
