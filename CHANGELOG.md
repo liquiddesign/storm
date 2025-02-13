@@ -4,6 +4,21 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.11](https://github.com/liquiddesign/storm/compare/v2.0.10...v2.0.11) (2025-02-13)
+
+### Features
+
+* Add code quality check script and modify UUID format in Connection class ([e0efe7](https://github.com/liquiddesign/storm/commit/e0efe7cf07b97293a9c34086da287e85dea1fdcc))
+* Add UUID generation support using Ramsey library ([823c42](https://github.com/liquiddesign/storm/commit/823c42ca9b9526b0b05045b538ad6b38fcfd6430))
+* Refactor UUID generation methods for clarity and add UUID v7 support ([bf6257](https://github.com/liquiddesign/storm/commit/bf625793fc38a40e31e8ecb268dc21e580b21a8a))
+
+### Styles
+
+* Fix ([2610a1](https://github.com/liquiddesign/storm/commit/2610a151eaa385ce6993015da406c14b40c3fb49))
+
+
+---
+
 ## [2.0.10](https://github.com/liquiddesign/storm/compare/v2.0.9...v2.0.10) (2025-02-11)
 
 ### Features

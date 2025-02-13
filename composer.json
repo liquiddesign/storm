@@ -28,7 +28,10 @@
         "phpcompatibility/php-compatibility": "^9.0"
     },
     "scripts": {
-        "check-code": ["@phpcs", "@phpstan"],
+        "check-code": [
+            "@phpcs",
+            "@phpstan"
+        ],
         "phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
         "phpstan-clear": "phpstan clear-result-cache",
         "phpcs": "phpcs --standard=ruleset.xml src",
@@ -48,5 +51,5 @@
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
-    "version": "2.0.10"
+    "version": "2.0.11"
 }
