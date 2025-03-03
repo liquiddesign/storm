@@ -567,14 +567,25 @@ class Connection
 	{
 		Helpers::bindVariables($property, $rawValue, $values, $binds, $varPrefix, $varPostfix, [], $prefix);
 	}
-	
+
 	public static function generateUuid(?string $namespace = null, ?string $string = null): string
 	{
 		if ($namespace !== null && $string !== null) {
 			return \md5($namespace . '!._.!' . $string);
 		}
-		
+
 		return Strings::replace(\uniqid('', true) . \rand(10, 99), '/\./');
+	}
+
+	public static function generateUuid7(?string $namespace = null, ?string $string = null): string
+	{
+		if ($namespace !== null && $string !== null) {
+			return \md5($namespace . '!._.!' . $string);
+		}
+
+		$uuid = \Ramsey\Uuid\Uuid::uuid7();
+
+		return \str_replace('-', '', $uuid->toString());
 	}
 	
 	/**
