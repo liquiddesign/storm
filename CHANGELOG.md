@@ -4,6 +4,19 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.13](https://github.com/liquiddesign/storm/compare/v2.0.12...v2.0.13) (2025-03-19)
+
+### Bug Fixes
+
+* Revert types ([de3c8f](https://github.com/liquiddesign/storm/commit/de3c8f8ad1b1bd57ab1341be38753769685015e6))
+
+### Builds
+
+* Fix github action ([083fc7](https://github.com/liquiddesign/storm/commit/083fc7d0e318d2c8ddd6ea0e8fc838d3f40c9e06))
+
+
+---
+
 ## [2.0.12](https://github.com/liquiddesign/storm/compare/v2.0.11...v2.0.12) (2025-03-19)
 
 ### Features
