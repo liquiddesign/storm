@@ -29,8 +29,9 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Default value of column
+	 * @var string|int|float|null
 	 */
-	protected string|int|null|float $default;
+	protected $default;
 	
 	/**
 	 * Nullable true | false
@@ -44,8 +45,9 @@ class Column extends AnnotationProperty
 	
 	/**
 	 * Mysql length of column
+	 * @var string|int|null
 	 */
-	protected string|int|null $length;
+	protected $length;
 	
 	/**
 	 * Mutations true | false
