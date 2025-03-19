@@ -254,6 +254,13 @@ interface ICollection
 	 * @return static
 	 */
 	public function where(string $expression, $values = null): self;
+
+	/**
+	 * Add WHERE condition with "AND" glue
+	 * @param \StORM\Expression $expression
+	 * @return static
+	 */
+	public function whereExpression(Expression $expression): self;
 	
 	/**
 	 * Call multiple where

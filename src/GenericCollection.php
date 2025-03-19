@@ -1485,7 +1485,12 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 		unset($this->keys[\array_search($offset, $this->keys)]);
 		unset($this->items[$offset]);
 	}
-	
+
+	public function whereExpression(Expression $expression): static
+	{
+		return $this->where("({$expression->getSql()})", $expression->getVars() ?: null);
+	}
+
 	/**
 	 * @param int $fetchMode
 	 * @param string|null $fetchClass
