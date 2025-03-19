@@ -4,6 +4,19 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.12](https://github.com/liquiddesign/storm/compare/v2.0.11...v2.0.12) (2025-03-19)
+
+### Features
+
+* Enhance type declarations and add whereExpression method to collections ([7fd696](https://github.com/liquiddesign/storm/commit/7fd69696a8d4a37c6d92b01028aaf91e56a2f336))
+
+### Code Refactoring
+
+* Fixing unclear error message in connection ([5af579](https://github.com/liquiddesign/storm/commit/5af579c7fc953528a6e8143c3ef4c1b84a982018))
+
+
+---
+
 ## [2.0.11](https://github.com/liquiddesign/storm/compare/v2.0.10...v2.0.11) (2025-02-13)
 
 ### Features
