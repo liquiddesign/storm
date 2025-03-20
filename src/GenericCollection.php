@@ -1488,7 +1488,7 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 
 	public function whereExpression(Expression $expression): static
 	{
-		return $this->where("({$expression->getSql()})", $expression->getVars() ?: null);
+		return $this->where($expression->getSql(), $expression->getVars() ?: null);
 	}
 
 	/**
