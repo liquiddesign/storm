@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.14](https://github.com/liquiddesign/storm/compare/v2.0.13...v2.0.14) (2025-03-20)
+
+### Features
+
+* Remove unnecessary brackets ([f51f64](https://github.com/liquiddesign/storm/commit/f51f64a941ed48cf8124b42001d5b595c3d974f8))
+
+
+---
+
 ## [2.0.13](https://github.com/liquiddesign/storm/compare/v2.0.12...v2.0.13) (2025-03-19)
 
 ### Bug Fixes
