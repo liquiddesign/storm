@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.16](https://github.com/liquiddesign/storm/compare/v2.0.15...v2.0.16) (2025-05-02)
+
+### Bug Fixes
+
+* Remove unnecessary parameter from fetchGenerator method ([624f5c](https://github.com/liquiddesign/storm/commit/624f5cb4322beac4b0a745113bb3518c05b5f8cd))
+
+
+---
+
 ## [2.0.15](https://github.com/liquiddesign/storm/compare/v2.0.14...v2.0.15) (2025-05-02)
 
 ### Features
