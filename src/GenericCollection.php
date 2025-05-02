@@ -6,6 +6,7 @@ namespace StORM;
 
 use Nette\Utils\Arrays;
 use Nette\Utils\Strings;
+use StORM\Attributes\SelectAttribute;
 use StORM\Exception\AlreadyExistsException;
 use StORM\Exception\GeneralException;
 use StORM\Exception\InvalidStateException;
@@ -216,7 +217,7 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 	{
 		return $this->modifiers;
 	}
-	
+
 	/**
 	 * @param bool|null $bufferedQuery
 	 * @return static
@@ -645,6 +646,41 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 		
 		return $toArrayValues ? \array_values($return) : $return;
 	}
+
+	/**
+	 * Fetch as generator of class types $class
+	 * @template X of object
+	 * @param class-string<X> $class
+	 * @param array<mixed> $classArgs
+	 * @return \Generator<int|string, X>
+	 */
+	public function fetchGenerator(string $class, array $classArgs = [], bool $keepIndex = false): \Generator
+	{
+		$pkName = null;
+
+		if ($keepIndex || $this->index) {
+			$pkName = $this->prefixIndex && $this->index ? (\explode('.', $this->index)[1] ?? null) : $this->index;
+
+			if (!$pkName) {
+				throw new \Exception('Primary key of collection could not be determined.');
+			}
+
+			if (!\is_a($class, \stdClass::class, true) && !\property_exists($class, $pkName)) {
+				throw new \InvalidArgumentException('Class must be instance of stdClass or have a public property named "' . $pkName . '".');
+			}
+		}
+
+		$i = 0;
+
+		while ($row = $this->fetch($class, $classArgs)) {
+			// phpcs:ignore
+			/** @var X $row */
+
+			yield ($pkName ? $row->$pkName : $i) => $row;
+
+			$i++;
+		}
+	}
 	
 	/**
 	 * Create grouped array indexed by property (using PDO::FETCH_GROUP), you can change FETCH mode to FETCH_COLUMN by 2nd. param
@@ -1013,6 +1049,50 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 		}
 		
 		return $this;
+	}
+
+	/**
+	 * Add SELECT clause from class and merge with previous
+	 * @param class-string $class
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function selectFromClass(string $class, array $values = []): self
+	{
+		$properties = (new \ReflectionClass($class))->getProperties(\ReflectionProperty::IS_PUBLIC);
+		$select = [];
+
+		foreach ($properties as $property) {
+			$selectAttributes = $property->getAttributes(SelectAttribute::class);
+
+			foreach ($selectAttributes as $selectAttribute) {
+				$select[$property->getName()] = $selectAttribute->getArguments()[0];
+			}
+		}
+
+		return $this->select($select, $values);
+	}
+
+	/**
+	 * Add SELECT clause from class and merge with previous
+	 * @param class-string $class
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function setSelectFromClass(string $class, array $values = [], bool $keepIndex = false): self
+	{
+		$properties = (new \ReflectionClass($class))->getProperties(\ReflectionProperty::IS_PUBLIC);
+		$select = [];
+
+		foreach ($properties as $property) {
+			$selectAttributes = $property->getAttributes(SelectAttribute::class);
+
+			foreach ($selectAttributes as $selectAttribute) {
+				$select[$property->getName()] = $selectAttribute->getArguments()[0];
+			}
+		}
+
+		return $this->setSelect($select, $values, $keepIndex);
 	}
 	
 	/**
