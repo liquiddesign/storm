@@ -654,12 +654,12 @@ class GenericCollection implements ICollection, ISearchableCollection, IDumper, 
 	 * @param array<mixed> $classArgs
 	 * @return \Generator<int|string, X>
 	 */
-	public function fetchGenerator(string $class, array $classArgs = [], bool $keepIndex = false): \Generator
+	public function fetchGenerator(string $class, array $classArgs = []): \Generator
 	{
 		$pkName = null;
 
-		if ($keepIndex || $this->index) {
-			$pkName = $this->prefixIndex && $this->index ? (\explode('.', $this->index)[1] ?? null) : $this->index;
+		if ($this->index) {
+			$pkName = $this->prefixIndex ? (\explode('.', $this->index)[1] ?? null) : $this->index;
 
 			if (!$pkName) {
 				throw new \Exception('Primary key of collection could not be determined.');
