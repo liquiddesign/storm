@@ -87,6 +87,39 @@ class Connection
 		return $this->link;
 	}
 
+	public function beginTransaction(): bool
+	{
+		if ($this->getLink()->inTransaction()) {
+			return false;
+		}
+
+		$this->getLink()->beginTransaction();
+
+		return true;
+	}
+
+	public function commit(): bool
+	{
+		if (!$this->getLink()->inTransaction()) {
+			return false;
+		}
+
+		$this->getLink()->commit();
+
+		return true;
+	}
+
+	public function rollBack(): bool
+	{
+		if (!$this->getLink()->inTransaction()) {
+			return false;
+		}
+
+		$this->getLink()->rollBack();
+
+		return true;
+	}
+
 	/**
 	 * Replace PDO object
 	 */
