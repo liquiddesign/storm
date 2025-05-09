@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.15](https://github.com/liquiddesign/storm/compare/v2.0.14...v2.0.15) (2025-05-09)
+
+### Features
+
+* Add transaction management methods to Connection class ([9f9ca9](https://github.com/liquiddesign/storm/commit/9f9ca9b8922925af4f2894e4c69053b80ee24c80))
+
+
+---
+
 ## [2.0.14](https://github.com/liquiddesign/storm/compare/v2.0.13...v2.0.14) (2025-03-20)
 
 ### Features
