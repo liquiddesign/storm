@@ -4,11 +4,26 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
-## [2.0.15](https://github.com/liquiddesign/storm/compare/v2.0.14...v2.0.15) (2025-05-09)
+## [2.0.16](https://github.com/liquiddesign/storm/compare/v2.0.15...v2.0.16) (2025-05-02)
+
+### Bug Fixes
+
+* Remove unnecessary parameter from fetchGenerator method ([624f5c](https://github.com/liquiddesign/storm/commit/624f5cb4322beac4b0a745113bb3518c05b5f8cd))
+
+
+---
+
+## [2.0.15](https://github.com/liquiddesign/storm/compare/v2.0.14...v2.0.15) (2025-05-02)
 
 ### Features
 
-* Add transaction management methods to Connection class ([9f9ca9](https://github.com/liquiddesign/storm/commit/9f9ca9b8922925af4f2894e4c69053b80ee24c80))
+* Add SelectAttribute and methods for dynamic SELECT clause generation ([4b3b6b](https://github.com/liquiddesign/storm/commit/4b3b6b33e9e73c224880498cbf2083e6ee4bd07f))
+* Better tracy ([9cc1c2](https://github.com/liquiddesign/storm/commit/9cc1c2c5988ce95b2b9f1a9d424c0148a8c49faf), [724170](https://github.com/liquiddesign/storm/commit/724170e7b71716cb288a7f23d06511d567c72aa9), [a7c7f5](https://github.com/liquiddesign/storm/commit/a7c7f596c4b915be78be16106a839da5cc431fc9), [466633](https://github.com/liquiddesign/storm/commit/466633dfab04e017757ed43cf954ed3fee104978))
+
+### Styles
+
+* Fix ([2c7f5d](https://github.com/liquiddesign/storm/commit/2c7f5d2bad7233c1ae46f99c33a93b64d32a308c))
+* Fix phpstan ([6b09f4](https://github.com/liquiddesign/storm/commit/6b09f4195528b605e6dbfe394904c20376bc0c4b))
 
 
 ---

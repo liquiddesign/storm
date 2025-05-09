@@ -333,6 +333,22 @@ interface ICollection
 	 * @return static
 	 */
 	public function select(array $select, array $values = []): self;
+
+	/**
+	 * Add SELECT clause and merge with previous
+	 * @param class-string $class
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function selectFromClass(string $class, array $values = []): self;
+
+	/**
+	 * Set SELECT clause and replace previous
+	 * @param class-string $class
+	 * @param array<mixed> $values
+	 * @return static
+	 */
+	public function setSelectFromClass(string $class, array $values = []): self;
 	
 	/**
 	 * Add LIMIT clause
