@@ -183,6 +183,20 @@ abstract class Repository implements IEntityParent
 			->whereMatch($condition, self::DEFAULT_ALIAS . '.')
 			->first($needed);
 	}
+
+	/**
+	 * Get entity object by condition
+	 * @param array<string|int|float>|string|int $condition
+	 * @param array<string>|null $select
+	 * @param string|null $mutation
+	 * @throws \StORM\Exception\NotFoundException
+	 * @phpstan-return T
+	 * @return T
+	 */
+	final public function oneOrFail(array|string|int $condition, ?array $select = null, ?string $mutation = null): Entity
+	{
+		return $this->one($condition, true, $select, $mutation);
+	}
 	
 	/**
 	 * @return static
