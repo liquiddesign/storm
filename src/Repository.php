@@ -195,7 +195,10 @@ abstract class Repository implements IEntityParent
 	 */
 	final public function oneOrFail(array|string|int $condition, ?array $select = null, ?string $mutation = null): Entity
 	{
-		return $this->one($condition, true, $select, $mutation);
+		/** @var T $entity */
+		$entity = $this->one($condition, true, $select, $mutation);
+
+		return $entity;
 	}
 	
 	/**
