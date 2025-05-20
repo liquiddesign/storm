@@ -4,6 +4,23 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.18](https://github.com/liquiddesign/storm/compare/v2.0.17...v2.0.18) (2025-05-20)
+
+### Features
+
+* Add oneOrFail method to retrieve entity object by condition ([f88f3b](https://github.com/liquiddesign/storm/commit/f88f3bd0c8699d515c256e4f6388b8660a5b1b67))
+
+### Bug Fixes
+
+* Ensure entity is properly typed in oneOrFail method ([bd5d8f](https://github.com/liquiddesign/storm/commit/bd5d8faf15457c6ae9bdc777a5ca7d0a7d6d51cb))
+
+### Chores
+
+* Update actions/checkout to version 4 ([1d4182](https://github.com/liquiddesign/storm/commit/1d418239f164ee715a36bcdd4f5d650957a04c27))
+
+
+---
+
 ## [2.0.17](https://github.com/liquiddesign/storm/compare/v2.0.16...v2.0.17) (2025-05-09)
 
 ### Features
