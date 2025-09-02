@@ -4,8 +4,10 @@ declare(strict_types = 1);
 
 namespace StORM;
 
+use Nette\Utils\Json;
 use Nette\Utils\Strings;
 use StORM\Exception\GeneralException;
+use Tracy\Debugger;
 
 class Connection
 {
@@ -236,6 +238,10 @@ class Connection
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
 			$item->setError(false);
+
+			if ($this->getDebugThreshold() && $item->getTotalTime() > $this->getDebugThreshold()) {
+				$this->logToSlowLog($item);
+			}
 		}
 		
 		if (!$sth instanceof \PDOStatement) {
@@ -500,6 +506,10 @@ class Connection
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
 			$item->setError(false);
+
+			if ($this->getDebugThreshold() && $item->getTotalTime() > $this->getDebugThreshold()) {
+				$this->logToSlowLog($item);
+			}
 		}
 		
 		if ($return === false) {
@@ -508,7 +518,7 @@ class Connection
 		
 		return $return;
 	}
-	
+
 	/**
 	 * Get all logged items if debug mode is on
 	 * @return array<\StORM\LogItem>
@@ -619,6 +629,22 @@ class Connection
 		$uuid = \Ramsey\Uuid\Uuid::uuid7();
 
 		return \str_replace('-', '', $uuid->toString());
+	}
+
+	protected function logToSlowLog(LogItem $item): void
+	{
+		Debugger::log(
+			Json::encode(
+				[
+					'query' => $item->getSql(),
+					'vars' => $item->getVars(),
+					'time' => $item->getTotalTime(),
+					'location' => $item->getLocation(),
+				],
+				true,
+			),
+			'storm-slow-query--' . $this->getName()
+		);
 	}
 	
 	/**
