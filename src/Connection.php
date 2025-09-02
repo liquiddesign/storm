@@ -31,6 +31,10 @@ class Connection
 	private array $attributes;
 	
 	private string $user;
+
+	private string $password;
+
+	private string $dsn;
 	
 	private string $driver;
 	
@@ -68,6 +72,8 @@ class Connection
 		$this->driver = $parsedDsn[0];
 		\parse_str(Strings::replace($parsedDsn[1], '/;/', '&'), $matches);
 		$this->user = $user;
+		$this->password = $password;
+		$this->dsn = $dsn;
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
 		$this->link = new \PDO($dsn, $user, $password, $attributes);
@@ -217,28 +223,48 @@ class Connection
 			$item = $this->log($sql, $vars);
 			$item->setError(true);
 		}
-		
-		if (\count($vars) > 0) {
-			$sth = $this->getLink()->prepare($sql);
-			
-			if ($bufferedQuery !== null) {
-				$tmpValue = $this->getLink()->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-				$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $bufferedQuery);
+
+		$attempt = 1;
+
+		while (true) {
+			try {
+				if (\count($vars) > 0) {
+					$sth = $this->getLink()->prepare($sql);
+
+					if ($bufferedQuery !== null) {
+						$tmpValue = $this->getLink()->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+						$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $bufferedQuery);
+					}
+
+					$sth->execute($vars);
+
+					if (isset($tmpValue)) {
+						$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $tmpValue);
+					}
+				} else {
+					$sth = $this->getLink()->query($sql);
+				}
+
+				break;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				$this->reconnect();
 			}
-			
-			$sth->execute($vars);
-			
-			if (isset($tmpValue)) {
-				$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $tmpValue);
-			}
-		} else {
-			$sth = $this->getLink()->query($sql);
+
+			$attempt++;
 		}
-		
+
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
 			$item->setError(false);
-
+		
 			if ($this->getDebugThreshold() && $item->getTotalTime() > $this->getDebugThreshold()) {
 				$this->logToSlowLog($item);
 			}
@@ -500,8 +526,29 @@ class Connection
 			
 			$sql = \vsprintf($sql, $quoted);
 		}
-		
-		$return = $this->getLink()->exec($sql);
+
+		$attempt = 1;
+		$return = false;
+
+		while (true) {
+			try {
+				$return = $this->getLink()->exec($sql);
+
+				break;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				$this->reconnect();
+			}
+
+			$attempt++;
+		}
 		
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
@@ -645,6 +692,24 @@ class Connection
 			),
 			'storm-slow-query--' . $this->getName()
 		);
+	}
+
+	private function reconnect(): void
+	{
+		$this->link = new \PDO($this->dsn, $this->user, $this->password, $this->attributes);
+	}
+	
+	private function isGoneAway(\Throwable $e): bool
+	{
+		$message = Strings::lower($e->getMessage());
+
+		if (\str_contains($message, 'server has gone away') || \str_contains($message, 'lost connection')) {
+			return true;
+		}
+
+		$code = $e->getCode();
+
+		return \is_string($code) && ($code === '2006' || $code === '2013' || $code === '08S01' || Strings::upper($code) === 'HY000');
 	}
 	
 	/**
