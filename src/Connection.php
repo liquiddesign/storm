@@ -101,9 +101,27 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->beginTransaction();
+		$attempt = 1;
 
-		return true;
+		while (true) {
+			try {
+				$this->getLink()->beginTransaction();
+
+				return true;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				$this->reconnect();
+			}
+
+			$attempt++;
+		}
 	}
 
 	public function commit(): bool
