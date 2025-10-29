@@ -220,7 +220,7 @@ class Connection
 	 * @param bool|null $bufferedQuery
 	 * @param bool|null $debug
 	 */
-	public function query(string $sql, array $vars = [], array $identifiers = [], ?bool $bufferedQuery = null, ?bool $debug = null): \PDOStatement
+	public function query(string $sql, array $vars = [], array $identifiers = [], ?bool $bufferedQuery = null, ?bool $debug = null, bool $debugDump = false): \PDOStatement
 	{
 		if ($debug === null) {
 			$debug = $this->debug;
@@ -290,6 +290,75 @@ class Connection
 		
 		if (!$sth instanceof \PDOStatement) {
 			throw new GeneralException('Query failed:' . \implode(':', $this->getLink()->errorInfo()));
+		}
+
+		if ($debugDump) {
+			\ob_start();
+			$sth->debugDumpParams();
+			$text = \ob_get_clean();
+
+			if ($text === false) {
+				$text = '';
+			}
+
+			$result = [
+				'sql' => null,
+				'sql_length' => null,
+				'params' => 0,
+				'bindings' => [],
+			];
+
+			if (\preg_match('/^SQL:\s*\[(\d+)\]\s*(.+)$/m', $text, $m)) {
+				$result['sql_length'] = (int) $m[1];
+				$result['sql'] = $m[2];
+			}
+
+			if (\preg_match('/^Params:\s*(\d+)/m', $text, $m)) {
+				$result['params'] = (int) $m[1];
+			}
+
+			// rozdělíme na bloky začínající "Key:" až do dalšího "Key:" nebo konce dokumentu
+			$blockPattern = '/(?ms)^Key:\s*(.+?)\R(.*?)(?=^Key:|\z)/';
+
+			if (\preg_match_all($blockPattern, $text, $blocks, \PREG_SET_ORDER)) {
+				foreach ($blocks as $blk) {
+					// např. "Name: [3] :id" nebo "Position: 1"
+					$keyLabel = Strings::trim($blk[1]);
+					// zbytek bloku (paramno, name, ...)
+					$body = $blk[2];
+
+					// vytažení jednotlivých položek v bloku (pokud existují)
+					$param = ['key' => $keyLabel, 'paramno' => null, 'name' => null, 'name_len' => null, 'is_param' => null, 'param_type' => null];
+
+					if (\preg_match('/paramno=(\-?\d+)/m', $body, $m)) {
+						$param['paramno'] = (int) $m[1];
+					}
+
+					if (\preg_match('/name=\[(-?\d+)\]\s*"([^"]+)"/m', $body, $m)) {
+						$param['name_len'] = (int) $m[1];
+						$param['name'] = $m[2];
+					} elseif (\preg_match('/name=\[(-?\d+)\]\s*([^"\s].*)/m', $body, $m)) {
+						// alternativa pokud není uvozovka
+						$param['name_len'] = (int) $m[1];
+						$param['name'] = Strings::trim($m[2]);
+					}
+
+					if (\preg_match('/is_param=(\d+)/m', $body, $m)) {
+						$param['is_param'] = (int) $m[1];
+					}
+
+					if (\preg_match('/param_type=(\d+)/m', $body, $m)) {
+						$param['param_type'] = (int) $m[1];
+					}
+
+					$result['bindings'][] = $param;
+				}
+			}
+
+			Debugger::barDump(Json::encode([
+				'trace' => \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS),
+				'sql' => $result,
+			]));
 		}
 		
 		return $sth;
