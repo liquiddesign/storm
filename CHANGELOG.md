@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.19](https://github.com/liquiddesign/storm/compare/v2.0.18...v2.0.19) (2025-11-17)
+
+### Features
+
+* Log slow queries exceeding a debug threshold in Connection class ([b838ac](https://github.com/liquiddesign/storm/commit/b838ac5227e8802530e309c2d0bf06a978ba45ff))
+
+
+---
+
 ## [2.0.18](https://github.com/liquiddesign/storm/compare/v2.0.17...v2.0.18) (2025-05-20)
 
 ### Features

@@ -33,7 +33,7 @@
             "@phpstan"
         ],
         "fix-code": [
-          "@phpcsfix"
+            "@phpcsfix"
         ],
         "phpstan": "phpstan analyse --memory-limit 1G -c phpstan.neon",
         "phpstan-clear": "phpstan clear-result-cache",
@@ -54,5 +54,5 @@
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
-    "version": "2.0.18"
+    "version": "2.0.19"
 }
