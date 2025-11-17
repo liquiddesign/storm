@@ -117,7 +117,8 @@ class Connection
 					throw $e;
 				}
 
-				$this->reconnect();
+				// Not in transaction yet, safe to reconnect
+				$this->reconnect(false);
 			}
 
 			$attempt++;
@@ -130,9 +131,19 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->commit();
+		try {
+			$this->getLink()->commit();
 
-		return true;
+			return true;
+		} catch (\Exception $e) {
+			if ($this->isGoneAway($e)) {
+				// Connection lost during commit - this is critical!
+				// We cannot safely retry as we don't know if commit succeeded before connection was lost
+				throw new GeneralException('Connection lost during commit. Transaction state is unknown.', 0, $e);
+			}
+
+			throw $e;
+		}
 	}
 
 	public function rollBack(): bool
@@ -141,9 +152,73 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->rollBack();
+		try {
+			$this->getLink()->rollBack();
 
-		return true;
+			return true;
+		} catch (\Exception $e) {
+			if ($this->isGoneAway($e)) {
+				// Connection lost during rollback
+				// In this case, the transaction is likely rolled back by the server anyway
+				// But we throw an exception to make it explicit
+				throw new GeneralException('Connection lost during rollback. Transaction was likely rolled back by server.', 0, $e);
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * Execute a callback within a transaction with automatic retry on connection loss or deadlock
+	 * @template T
+	 * @param callable(\StORM\Connection): T $callback
+	 * @param int $maxRetries Maximum number of retry attempts (default: 3)
+	 * @return T The result returned by the callback
+	 * @throws \StORM\Exception\GeneralException
+	 */
+	public function transactional(callable $callback, int $maxRetries = 3): mixed
+	{
+		if ($maxRetries < 1) {
+			throw new \InvalidArgumentException('Maximum retries must be at least 1');
+		}
+
+		$attempt = 0;
+		$lastException = null;
+
+		while ($attempt < $maxRetries) {
+			try {
+				$this->beginTransaction();
+
+				$result = $callback($this);
+
+				$this->commit();
+
+				return $result;
+			} catch (\Exception $e) {
+				$lastException = $e;
+
+				// Try to rollback, but don't fail if rollback fails
+				try {
+					$this->rollBack();
+				} catch (\Exception $rollbackException) {
+					// Rollback failed, transaction likely already rolled back by server
+					// or connection is lost - this is expected in some cases
+				}
+
+				$attempt++;
+
+				// Only retry if the exception is retryable and we haven't exhausted attempts
+				if ($attempt >= $maxRetries || !$this->isRetryable($e)) {
+					throw $e;
+				}
+
+				// Exponential backoff: 100ms, 200ms, 400ms, 800ms...
+				\usleep(100000 * (2 ** ($attempt - 1)));
+			}
+		}
+
+		// This should never be reached, but just in case
+		throw new GeneralException('Transaction failed after ' . $maxRetries . ' attempts', 0, $lastException);
 	}
 
 	/**
@@ -273,7 +348,9 @@ class Connection
 					throw $e;
 				}
 
-				$this->reconnect();
+				// Check if we were in a transaction - if so, we cannot safely reconnect
+				$wasInTransaction = $this->getLink()->inTransaction();
+				$this->reconnect($wasInTransaction);
 			}
 
 			$attempt++;
@@ -631,7 +708,9 @@ class Connection
 					throw $e;
 				}
 
-				$this->reconnect();
+				// Check if we were in a transaction - if so, we cannot safely reconnect
+				$wasInTransaction = $this->getLink()->inTransaction();
+				$this->reconnect($wasInTransaction);
 			}
 
 			$attempt++;
@@ -781,8 +860,12 @@ class Connection
 		);
 	}
 
-	private function reconnect(): void
+	private function reconnect(bool $wasInTransaction = false): void
 	{
+		if ($wasInTransaction) {
+			throw new GeneralException('Cannot reconnect during active transaction. Transaction state would be lost.');
+		}
+
 		$this->link = new \PDO($this->dsn, $this->user, $this->password, $this->attributes);
 	}
 	
@@ -790,13 +873,49 @@ class Connection
 	{
 		$message = Strings::lower($e->getMessage());
 
-		if (\str_contains($message, 'server has gone away') || \str_contains($message, 'lost connection')) {
+		// Check for specific MySQL connection loss messages
+		if (\str_contains($message, 'server has gone away')
+			|| \str_contains($message, 'lost connection')
+			|| \str_contains($message, 'connection was killed')
+			|| \str_contains($message, 'error while sending')
+			|| \str_contains($message, 'broken pipe')
+			|| \str_contains($message, 'no connection to the server')
+		) {
 			return true;
 		}
 
 		$code = $e->getCode();
 
-		return \is_string($code) && ($code === '2006' || $code === '2013' || $code === '08S01' || Strings::upper($code) === 'HY000');
+		// Only check for specific MySQL error codes that definitively indicate connection loss
+		// 2006: MySQL server has gone away
+		// 2013: Lost connection to MySQL server during query
+		// 08S01: Communication link failure (SQLSTATE)
+		// Note: Removed HY000 as it's too generic and could match other errors
+		return \is_string($code) && ($code === '2006' || $code === '2013' || $code === '08S01');
+	}
+
+	/**
+	 * Check if an exception is retryable (connection loss, deadlock, or lock timeout)
+	 */
+	private function isRetryable(\Throwable $e): bool
+	{
+		// Connection loss is always retryable
+		if ($this->isGoneAway($e)) {
+			return true;
+		}
+
+		$message = Strings::lower($e->getMessage());
+		$code = $e->getCode();
+
+		// MySQL deadlock detection
+		// Error code 1213 or SQLSTATE 40001
+		if ($code === '1213' || $code === 1213 || $code === '40001' || \str_contains($message, 'deadlock')) {
+			return true;
+		}
+
+		// MySQL lock wait timeout
+		// Error code 1205
+		return $code === '1205' || $code === 1205 || \str_contains($message, 'lock wait timeout');
 	}
 	
 	/**
