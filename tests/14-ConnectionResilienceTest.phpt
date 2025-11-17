@@ -278,13 +278,13 @@ class ConnectionResilienceTest extends \Tester\TestCase // @codingStandardsIgnor
 	{
 		$connection = $container->getByType(DIConnection::class);
 
-		// Foreign key violation should throw exception
-		$connection->query("CREATE TEMPORARY TABLE IF NOT EXISTS test_parent (id INT PRIMARY KEY)");
-		$connection->query("CREATE TEMPORARY TABLE IF NOT EXISTS test_child (id INT, parent_id INT, FOREIGN KEY (parent_id) REFERENCES test_parent(id))");
+		// Create table with unique constraint
+		$connection->query("CREATE TEMPORARY TABLE IF NOT EXISTS test_constraint (id INT PRIMARY KEY, value VARCHAR(50))");
+		$connection->query("INSERT INTO test_constraint VALUES (1, 'test')");
 
 		Assert::exception(function() use ($connection) {
-			// This should fail due to foreign key constraint
-			$connection->query("INSERT INTO test_child VALUES (1, 999)");
+			// This should fail due to duplicate primary key
+			$connection->query("INSERT INTO test_constraint VALUES (1, 'duplicate')");
 		}, \PDOException::class);
 	}
 
