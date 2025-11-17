@@ -31,6 +31,10 @@ class Connection
 	private array $attributes;
 	
 	private string $user;
+
+	private string $password;
+
+	private string $dsn;
 	
 	private string $driver;
 	
@@ -68,6 +72,8 @@ class Connection
 		$this->driver = $parsedDsn[0];
 		\parse_str(Strings::replace($parsedDsn[1], '/;/', '&'), $matches);
 		$this->user = $user;
+		$this->password = $password;
+		$this->dsn = $dsn;
 		$this->quoteChar = $this->driver === 'mysql' ? self::QUOTE_CHAR_MYSQL : self::QUOTE_CHAR_OTHER;
 		$this->attributes = $attributes;
 		$this->link = new \PDO($dsn, $user, $password, $attributes);
@@ -95,9 +101,28 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->beginTransaction();
+		$attempt = 1;
 
-		return true;
+		while (true) {
+			try {
+				$this->getLink()->beginTransaction();
+
+				return true;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				// Not in transaction yet, safe to reconnect
+				$this->reconnect(false);
+			}
+
+			$attempt++;
+		}
 	}
 
 	public function commit(): bool
@@ -106,9 +131,19 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->commit();
+		try {
+			$this->getLink()->commit();
 
-		return true;
+			return true;
+		} catch (\Exception $e) {
+			if ($this->isGoneAway($e)) {
+				// Connection lost during commit - this is critical!
+				// We cannot safely retry as we don't know if commit succeeded before connection was lost
+				throw new GeneralException('Connection lost during commit. Transaction state is unknown.', 0, $e);
+			}
+
+			throw $e;
+		}
 	}
 
 	public function rollBack(): bool
@@ -117,9 +152,73 @@ class Connection
 			return false;
 		}
 
-		$this->getLink()->rollBack();
+		try {
+			$this->getLink()->rollBack();
 
-		return true;
+			return true;
+		} catch (\Exception $e) {
+			if ($this->isGoneAway($e)) {
+				// Connection lost during rollback
+				// In this case, the transaction is likely rolled back by the server anyway
+				// But we throw an exception to make it explicit
+				throw new GeneralException('Connection lost during rollback. Transaction was likely rolled back by server.', 0, $e);
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * Execute a callback within a transaction with automatic retry on connection loss or deadlock
+	 * @template T
+	 * @param callable(\StORM\Connection): T $callback
+	 * @param int $maxRetries Maximum number of retry attempts (default: 3)
+	 * @return T The result returned by the callback
+	 * @throws \StORM\Exception\GeneralException
+	 */
+	public function transactional(callable $callback, int $maxRetries = 3): mixed
+	{
+		if ($maxRetries < 1) {
+			throw new \InvalidArgumentException('Maximum retries must be at least 1');
+		}
+
+		$attempt = 0;
+		$lastException = null;
+
+		while ($attempt < $maxRetries) {
+			try {
+				$this->beginTransaction();
+
+				$result = $callback($this);
+
+				$this->commit();
+
+				return $result;
+			} catch (\Exception $e) {
+				$lastException = $e;
+
+				// Try to rollback, but don't fail if rollback fails
+				try {
+					$this->rollBack();
+				} catch (\Exception $rollbackException) {
+					// Rollback failed, transaction likely already rolled back by server
+					// or connection is lost - this is expected in some cases
+				}
+
+				$attempt++;
+
+				// Only retry if the exception is retryable and we haven't exhausted attempts
+				if ($attempt >= $maxRetries || !$this->isRetryable($e)) {
+					throw $e;
+				}
+
+				// Exponential backoff: 100ms, 200ms, 400ms, 800ms...
+				\usleep(100000 * (2 ** ($attempt - 1)));
+			}
+		}
+
+		// This should never be reached, but just in case
+		throw new GeneralException('Transaction failed after ' . $maxRetries . ' attempts', 0, $lastException);
 	}
 
 	/**
@@ -196,7 +295,7 @@ class Connection
 	 * @param bool|null $bufferedQuery
 	 * @param bool|null $debug
 	 */
-	public function query(string $sql, array $vars = [], array $identifiers = [], ?bool $bufferedQuery = null, ?bool $debug = null): \PDOStatement
+	public function query(string $sql, array $vars = [], array $identifiers = [], ?bool $bufferedQuery = null, ?bool $debug = null, bool $debugDump = false): \PDOStatement
 	{
 		if ($debug === null) {
 			$debug = $this->debug;
@@ -217,28 +316,50 @@ class Connection
 			$item = $this->log($sql, $vars);
 			$item->setError(true);
 		}
-		
-		if (\count($vars) > 0) {
-			$sth = $this->getLink()->prepare($sql);
-			
-			if ($bufferedQuery !== null) {
-				$tmpValue = $this->getLink()->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-				$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $bufferedQuery);
+
+		$attempt = 1;
+
+		while (true) {
+			try {
+				if (\count($vars) > 0) {
+					$sth = $this->getLink()->prepare($sql);
+
+					if ($bufferedQuery !== null) {
+						$tmpValue = $this->getLink()->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+						$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $bufferedQuery);
+					}
+
+					$sth->execute($vars);
+
+					if (isset($tmpValue)) {
+						$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $tmpValue);
+					}
+				} else {
+					$sth = $this->getLink()->query($sql);
+				}
+
+				break;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				// Check if we were in a transaction - if so, we cannot safely reconnect
+				$wasInTransaction = $this->getLink()->inTransaction();
+				$this->reconnect($wasInTransaction);
 			}
-			
-			$sth->execute($vars);
-			
-			if (isset($tmpValue)) {
-				$this->getLink()->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $tmpValue);
-			}
-		} else {
-			$sth = $this->getLink()->query($sql);
+
+			$attempt++;
 		}
-		
+
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
 			$item->setError(false);
-
+		
 			if ($this->getDebugThreshold() && $item->getTotalTime() > $this->getDebugThreshold()) {
 				$this->logToSlowLog($item);
 			}
@@ -246,6 +367,75 @@ class Connection
 		
 		if (!$sth instanceof \PDOStatement) {
 			throw new GeneralException('Query failed:' . \implode(':', $this->getLink()->errorInfo()));
+		}
+
+		if ($debugDump) {
+			\ob_start();
+			$sth->debugDumpParams();
+			$text = \ob_get_clean();
+
+			if ($text === false) {
+				$text = '';
+			}
+
+			$result = [
+				'sql' => null,
+				'sql_length' => null,
+				'params' => 0,
+				'bindings' => [],
+			];
+
+			if (\preg_match('/^SQL:\s*\[(\d+)\]\s*(.+)$/m', $text, $m)) {
+				$result['sql_length'] = (int) $m[1];
+				$result['sql'] = $m[2];
+			}
+
+			if (\preg_match('/^Params:\s*(\d+)/m', $text, $m)) {
+				$result['params'] = (int) $m[1];
+			}
+
+			// rozdělíme na bloky začínající "Key:" až do dalšího "Key:" nebo konce dokumentu
+			$blockPattern = '/(?ms)^Key:\s*(.+?)\R(.*?)(?=^Key:|\z)/';
+
+			if (\preg_match_all($blockPattern, $text, $blocks, \PREG_SET_ORDER)) {
+				foreach ($blocks as $blk) {
+					// např. "Name: [3] :id" nebo "Position: 1"
+					$keyLabel = Strings::trim($blk[1]);
+					// zbytek bloku (paramno, name, ...)
+					$body = $blk[2];
+
+					// vytažení jednotlivých položek v bloku (pokud existují)
+					$param = ['key' => $keyLabel, 'paramno' => null, 'name' => null, 'name_len' => null, 'is_param' => null, 'param_type' => null];
+
+					if (\preg_match('/paramno=(\-?\d+)/m', $body, $m)) {
+						$param['paramno'] = (int) $m[1];
+					}
+
+					if (\preg_match('/name=\[(-?\d+)\]\s*"([^"]+)"/m', $body, $m)) {
+						$param['name_len'] = (int) $m[1];
+						$param['name'] = $m[2];
+					} elseif (\preg_match('/name=\[(-?\d+)\]\s*([^"\s].*)/m', $body, $m)) {
+						// alternativa pokud není uvozovka
+						$param['name_len'] = (int) $m[1];
+						$param['name'] = Strings::trim($m[2]);
+					}
+
+					if (\preg_match('/is_param=(\d+)/m', $body, $m)) {
+						$param['is_param'] = (int) $m[1];
+					}
+
+					if (\preg_match('/param_type=(\d+)/m', $body, $m)) {
+						$param['param_type'] = (int) $m[1];
+					}
+
+					$result['bindings'][] = $param;
+				}
+			}
+
+			Debugger::barDump(Json::encode([
+				'trace' => \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS),
+				'sql' => $result,
+			]));
 		}
 		
 		return $sth;
@@ -500,8 +690,31 @@ class Connection
 			
 			$sql = \vsprintf($sql, $quoted);
 		}
-		
-		$return = $this->getLink()->exec($sql);
+
+		$attempt = 1;
+		$return = false;
+
+		while (true) {
+			try {
+				$return = $this->getLink()->exec($sql);
+
+				break;
+			} catch (\Exception $e) {
+				if ($attempt === 2) {
+					throw $e;
+				}
+
+				if (!$this->isGoneAway($e)) {
+					throw $e;
+				}
+
+				// Check if we were in a transaction - if so, we cannot safely reconnect
+				$wasInTransaction = $this->getLink()->inTransaction();
+				$this->reconnect($wasInTransaction);
+			}
+
+			$attempt++;
+		}
 		
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
@@ -645,6 +858,64 @@ class Connection
 			),
 			'storm-slow-query--' . $this->getName()
 		);
+	}
+
+	private function reconnect(bool $wasInTransaction = false): void
+	{
+		if ($wasInTransaction) {
+			throw new GeneralException('Cannot reconnect during active transaction. Transaction state would be lost.');
+		}
+
+		$this->link = new \PDO($this->dsn, $this->user, $this->password, $this->attributes);
+	}
+	
+	private function isGoneAway(\Throwable $e): bool
+	{
+		$message = Strings::lower($e->getMessage());
+
+		// Check for specific MySQL connection loss messages
+		if (\str_contains($message, 'server has gone away')
+			|| \str_contains($message, 'lost connection')
+			|| \str_contains($message, 'connection was killed')
+			|| \str_contains($message, 'error while sending')
+			|| \str_contains($message, 'broken pipe')
+			|| \str_contains($message, 'no connection to the server')
+		) {
+			return true;
+		}
+
+		$code = $e->getCode();
+
+		// Only check for specific MySQL error codes that definitively indicate connection loss
+		// 2006: MySQL server has gone away
+		// 2013: Lost connection to MySQL server during query
+		// 08S01: Communication link failure (SQLSTATE)
+		// Note: Removed HY000 as it's too generic and could match other errors
+		return \is_string($code) && ($code === '2006' || $code === '2013' || $code === '08S01');
+	}
+
+	/**
+	 * Check if an exception is retryable (connection loss, deadlock, or lock timeout)
+	 */
+	private function isRetryable(\Throwable $e): bool
+	{
+		// Connection loss is always retryable
+		if ($this->isGoneAway($e)) {
+			return true;
+		}
+
+		$message = Strings::lower($e->getMessage());
+		$code = $e->getCode();
+
+		// MySQL deadlock detection
+		// Error code 1213 or SQLSTATE 40001
+		if ($code === '1213' || $code === 1213 || $code === '40001' || \str_contains($message, 'deadlock')) {
+			return true;
+		}
+
+		// MySQL lock wait timeout
+		// Error code 1205
+		return $code === '1205' || $code === 1205 || \str_contains($message, 'lock wait timeout');
 	}
 	
 	/**
