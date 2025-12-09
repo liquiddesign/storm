@@ -4,6 +4,11 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.21](https://github.com/liquiddesign/storm/compare/v2.0.20...v2.0.21) (2025-12-09)
+
+
+---
+
 ## [2.0.19](https://github.com/liquiddesign/storm/compare/v2.0.18...v2.0.19) (2025-11-17)
 
 ### Features
