@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.23](https://github.com/liquiddesign/storm/compare/v2.0.22...v2.0.23) (2026-02-13)
+
+### Bug Fixes
+
+* Use constant() for PHP 8.5 PDO MySQL attributes to avoid compile-time resolution errors ([05ef49](https://github.com/liquiddesign/storm/commit/05ef496713c1e9bee9dc4a48db0b9b67c11107ca))
+
+
+---
+
 ## [2.0.22](https://github.com/liquiddesign/storm/compare/v2.0.21...v2.0.22) (2026-02-13)
 
 ### Bug Fixes
