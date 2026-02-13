@@ -323,7 +323,7 @@ class Connection
 			try {
 				if (\count($vars) > 0) {
 					$sth = $this->getLink()->prepare($sql);
-					$bufferedQueryAttr = \defined('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY') ? \Pdo\Mysql::ATTR_USE_BUFFERED_QUERY : \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY;
+					$bufferedQueryAttr = \defined('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY') ? \constant('Pdo\Mysql::ATTR_USE_BUFFERED_QUERY') : \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY;
 
 					if ($bufferedQuery !== null) {
 						$tmpValue = $this->getLink()->getAttribute($bufferedQueryAttr);

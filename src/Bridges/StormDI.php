@@ -114,7 +114,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 		$dsn = "$driver:dbname=$databaseName;host=$host";
 		
 		// PHP 8.5+ deprecates PDO::MYSQL_ATTR_INIT_COMMAND in favor of Pdo\Mysql::ATTR_INIT_COMMAND
-		$mysqlInitCommandAttr = \defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
+		$mysqlInitCommandAttr = \defined('Pdo\Mysql::ATTR_INIT_COMMAND') ? \constant('Pdo\Mysql::ATTR_INIT_COMMAND') : \PDO::MYSQL_ATTR_INIT_COMMAND;
 
 		$attributes = [
 			$mysqlInitCommandAttr => "SET NAMES $charset COLLATE $collate",
