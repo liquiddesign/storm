@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.22](https://github.com/liquiddesign/storm/compare/v2.0.21...v2.0.22) (2026-02-13)
+
+### Bug Fixes
+
+* Use defined() check for PHP 8.5 PDO MySQL attribute constants compatibility ([e1039f](https://github.com/liquiddesign/storm/commit/e1039f882b1648243380f4f46e5f444b36ab117a))
+
+
+---
+
 ## [2.0.21](https://github.com/liquiddesign/storm/compare/v2.0.20...v2.0.21) (2025-12-09)
 
 
