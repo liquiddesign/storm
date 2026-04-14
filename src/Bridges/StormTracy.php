@@ -20,11 +20,6 @@ class StormTracy implements \Tracy\IBarPanel
 
 	protected int $panelLimit;
 
-	/**
-	 * @var array{totalTime: float, totalAmount: int, uniqueCount: int, errorCount: int, slowest: array<\StORM\LogItem>, frequent: array<\StORM\LogItem>, errors: array<\StORM\LogItem>}|null
-	 */
-	private array|null $aggregated = null;
-
 	public function __construct(\StORM\Connection $db, string $name, int $panelLimit = 50)
 	{
 		$this->name = $name;
@@ -33,15 +28,11 @@ class StormTracy implements \Tracy\IBarPanel
 	}
 
 	/**
-	 * Compute all aggregated data in a single pass + two sorts
-	 * @return array{totalTime: float, totalAmount: int, uniqueCount: int, errorCount: int, slowest: array<\StORM\LogItem>, frequent: array<\StORM\LogItem>, errors: array<\StORM\LogItem>}
+	 * Compute all aggregated data in a single pass + two sorts + file export
+	 * @return array{totalTime: float, totalAmount: int, uniqueCount: int, errorCount: int, slowest: array<\StORM\LogItem>, frequent: array<\StORM\LogItem>, errors: array<\StORM\LogItem>, exportPath: string|null}
 	 */
 	public function getAggregated(): array
 	{
-		if ($this->aggregated !== null) {
-			return $this->aggregated;
-		}
-
 		$log = $this->db->getLog();
 		$totalTime = 0.0;
 		$totalAmount = 0;
@@ -66,7 +57,7 @@ class StormTracy implements \Tracy\IBarPanel
 		$byAmount = $log;
 		\usort($byAmount, static fn(\StORM\LogItem $a, \StORM\LogItem $b): int => $b->getAmount() <=> $a->getAmount());
 
-		$this->aggregated = [
+		return [
 			'totalTime' => $totalTime,
 			'totalAmount' => $totalAmount,
 			'uniqueCount' => \count($log),
@@ -74,28 +65,39 @@ class StormTracy implements \Tracy\IBarPanel
 			'slowest' => \array_slice($byTime, 0, $this->panelLimit),
 			'frequent' => \array_slice($byAmount, 0, $this->panelLimit),
 			'errors' => $errors,
+			'exportPath' => $this->exportFullLog($log),
 		];
-
-		return $this->aggregated;
 	}
 
 	public function getTotalTime(): float
 	{
-		return $this->getAggregated()['totalTime'];
+		$totalTime = 0.0;
+
+		foreach ($this->db->getLog() as $item) {
+			$totalTime += $item->getTotalTime();
+		}
+
+		return $totalTime;
 	}
 
 	public function getTotalQueries(): int
 	{
-		return $this->getAggregated()['totalAmount'];
+		$totalAmount = 0;
+
+		foreach ($this->db->getLog() as $item) {
+			$totalAmount += $item->getAmount();
+		}
+
+		return $totalAmount;
 	}
 
 	/**
-	 * Export full query log to JSON file (called on demand, not during render)
+	 * Export full query log to JSON file
+	 *
+	 * @param array<\StORM\LogItem> $log
 	 */
-	public function exportFullLog(): string|null
+	public function exportFullLog(array $log): string|null
 	{
-		$log = $this->db->getLog();
-
 		if (\count($log) === 0) {
 			return null;
 		}

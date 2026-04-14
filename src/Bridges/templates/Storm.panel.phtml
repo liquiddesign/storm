@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 $agg = $this->getAggregated();
 $panelId = 'storm_' . \preg_replace('/[^a-zA-Z0-9_]/', '_', $this->name);
-$exportPath = $agg['uniqueCount'] > 0 ? $this->exportFullLog() : null;
+$exportPath = $agg['exportPath'];
 
 $tabs = [
 	'slowest' => ['label' => 'Slowest', 'items' => $agg['slowest']],
@@ -53,7 +53,7 @@ $sqlMaxLen = 150;
 	<?php if ($exportPath !== null): ?>
 	<?php $editorUri = \Tracy\Helpers::editorUri($exportPath, 1); ?>
 	<p style="margin: 0 0 8px; font-size: 12px; padding: 4px 8px; background: #f0f0f0; border-radius: 3px;">
-		Full log: <?php if ($editorUri !== null): ?><a href="<?= \htmlspecialchars($editorUri) ?>"><?= \htmlspecialchars($exportPath) ?></a><?php else: ?><code style="font-size: 11px; user-select: all;"><?= \htmlspecialchars($exportPath) ?></code><?php endif ?>
+		Full log (<?= $agg['uniqueCount'] ?> unique, <?= $agg['totalAmount'] ?> exec): <?php if ($editorUri !== null): ?><a href="<?= \htmlspecialchars($editorUri) ?>"><?= \htmlspecialchars($exportPath) ?></a><?php else: ?><code style="font-size: 11px; user-select: all;"><?= \htmlspecialchars($exportPath) ?></code><?php endif ?>
 	</p>
 	<?php endif ?>
 
