@@ -143,7 +143,9 @@ class Relation extends AnnotationProperty
 				continue;
 			}
 			
-			$this->target = Strings::substring($target, 0, 1) === '\\' ? Strings::substring($target, 1) : $target;
+			/** @var class-string<\StORM\Entity> $resolvedTarget */
+			$resolvedTarget = Strings::substring($target, 0, 1) === '\\' ? Strings::substring($target, 1) : $target;
+			$this->target = $resolvedTarget;
 			$this->isKeyHolder = $keyHolder;
 			
 			$found = true;

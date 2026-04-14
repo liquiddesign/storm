@@ -39,6 +39,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 			]))->default([]),
 			'debug' => Expect::bool(false),
 			'debugThreshold' => Expect::float(null),
+			'panelLimit' => Expect::int(50),
 		]);
 	}
 	
@@ -56,7 +57,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 				$config['autowired'] = $first;
 			}
 			
-			$this->setupDatabase($name, $config, $configuration->debug, $configuration->debugThreshold);
+			$this->setupDatabase($name, $config, $configuration->debug, $configuration->debugThreshold, $configuration->panelLimit);
 			$first = false;
 		}
 		
@@ -72,11 +73,11 @@ class StormDI extends \Nette\DI\CompilerExtension
 				if ($e instanceof IContextException && $e->getContext()) {
 					return [
 						'tab' => \get_class($e->getContext()),
-						'panel' => $e->getContext()->dump(true),
+						'panel' => $e->getContext()->dump(true) ?? '',
 					];
 				}
-				
-				return [];
+
+				return null;
 			});
 		}
 		
@@ -103,7 +104,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 	 * @param array<mixed> $config
 	 * @param bool $debug
 	 */
-	private function setupDatabase(string $name, array $config, bool $debug, float|null $debugThreshold): void
+	private function setupDatabase(string $name, array $config, bool $debug, float|null $debugThreshold, int $panelLimit): void
 	{
 		$driver = $config['driver'];
 		$databaseName = $config['dbname'];
@@ -133,7 +134,7 @@ class StormDI extends \Nette\DI\CompilerExtension
 
 		if ($debug) {
 			$connection->addSetup('@Tracy\Bar::addPanel', [
-				new \Nette\DI\Definitions\Statement(StormTracy::class, ['name' => $name,]),
+				new \Nette\DI\Definitions\Statement(StormTracy::class, ['name' => $name, 'panelLimit' => $panelLimit]),
 			]);
 		}
 		
