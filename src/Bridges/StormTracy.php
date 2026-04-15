@@ -20,16 +20,28 @@ class StormTracy implements \Tracy\IBarPanel
 
 	protected int $panelLimit;
 
-	public function __construct(\StORM\Connection $db, string $name, int $panelLimit = 50)
+	protected int $exportFilesLimit;
+
+	public function __construct(\StORM\Connection $db, string $name, int $panelLimit = 50, int $exportFilesLimit = 50)
 	{
 		$this->name = $name;
 		$this->db = $db;
 		$this->panelLimit = $panelLimit;
+		$this->exportFilesLimit = $exportFilesLimit;
 	}
 
 	/**
 	 * Compute all aggregated data in a single pass + two sorts + file export
-	 * @return array{totalTime: float, totalAmount: int, uniqueCount: int, errorCount: int, slowest: array<\StORM\LogItem>, frequent: array<\StORM\LogItem>, errors: array<\StORM\LogItem>, exportPath: string|null}
+	 * @return array{
+	 *     totalTime: float,
+	 *     totalAmount: int,
+	 *     uniqueCount: int,
+	 *     errorCount: int,
+	 *     slowest: array<\StORM\LogItem>,
+	 *     frequent: array<\StORM\LogItem>,
+	 *     errors: array<\StORM\LogItem>,
+	 *     exportPath: string|null
+	 * }
 	 */
 	public function getAggregated(): array
 	{
@@ -93,7 +105,6 @@ class StormTracy implements \Tracy\IBarPanel
 
 	/**
 	 * Export full query log to JSON file
-	 *
 	 * @param array<\StORM\LogItem> $log
 	 */
 	public function exportFullLog(array $log): string|null
@@ -108,9 +119,11 @@ class StormTracy implements \Tracy\IBarPanel
 			return null;
 		}
 
-		$sessionId = \session_id() ?: 'nosession';
-		$filename = "storm-queries-{$this->name}-{$sessionId}.json";
+		$requestId = \Nette\Utils\Strings::substring(\md5(\uniqid('', true)), 0, 8);
+		$filename = "storm-queries-{$this->name}-{$requestId}.json";
 		$filepath = $logDir . '/' . $filename;
+
+		$this->pruneOldExports($logDir);
 
 		$handle = \fopen($filepath, 'w');
 
@@ -184,6 +197,33 @@ class StormTracy implements \Tracy\IBarPanel
 			\ob_end_clean();
 
 			throw $e;
+		}
+	}
+
+	/**
+	 * Keep only the $exportFilesLimit newest export files, delete older ones
+	 */
+	protected function pruneOldExports(string $logDir): void
+	{
+		if ($this->exportFilesLimit <= 0) {
+			return;
+		}
+
+		$pattern = $logDir . '/storm-queries-' . $this->name . '-*.json';
+		$files = \glob($pattern);
+
+		if ($files === false || \count($files) <= $this->exportFilesLimit) {
+			return;
+		}
+
+		\usort($files, static fn(string $a, string $b): int => \filemtime($b) <=> \filemtime($a));
+
+		foreach (\array_slice($files, $this->exportFilesLimit) as $old) {
+			try {
+				\Nette\Utils\FileSystem::delete($old);
+			} catch (\Nette\IOException) {
+				// race condition — another request already deleted it
+			}
 		}
 	}
 }
