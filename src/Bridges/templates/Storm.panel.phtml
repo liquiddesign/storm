@@ -73,13 +73,17 @@ $sqlMaxLen = 150;
 			<thead><tr><th>Query</th><th>Time</th><th>Vars</th></tr></thead>
 			<tbody>
 			<?php foreach ($tab['items'] as $item): ?>
-				<?php $sql = $item->getSql(); ?>
-				<tr<?= $this->db->getDebugThreshold() !== null && $item->getTotalTime() > $this->db->getDebugThreshold() ? ' class="slow-row"' : '' ?>>
+				<?php
+					$sql = $item->getSql();
+					$itemTime = $item->getTotalTime();
+					$percent = $agg['totalTime'] > 0 ? ($itemTime / $agg['totalTime']) * 100 : 0.0;
+				?>
+				<tr<?= $this->db->getDebugThreshold() !== null && $itemTime > $this->db->getDebugThreshold() ? ' class="slow-row"' : '' ?>>
 					<td>
 						<?php if ($item->hasError()): ?><span style="color:red">[ERR]</span> <?php endif ?>
 						<span class="sql-text"><?= \htmlspecialchars(\mb_strlen($sql) > $sqlMaxLen ? \mb_substr($sql, 0, $sqlMaxLen) . ' …' : $sql) ?></span>
 					</td>
-					<td><?= \round($item->getTotalTime(), 5) ?>s (<?= $item->getAmount() ?>x)</td>
+					<td><?= \round($itemTime, 5) ?>s (<?= $item->getAmount() ?>x) <span style="color:#888"><?= \number_format($percent, 1) ?>%</span></td>
 					<td><?= \count($item->getVars()) ?> vars</td>
 				</tr>
 			<?php endforeach ?>
