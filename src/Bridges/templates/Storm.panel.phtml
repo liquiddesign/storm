@@ -23,15 +23,19 @@ $sqlMaxLen = 150;
 <style>
 #<?= $panelId ?> table { table-layout: fixed; width: 100%; border-collapse: collapse; }
 #<?= $panelId ?> th, #<?= $panelId ?> td { padding: 3px 5px; border: 1px solid #e0e0e0; vertical-align: top; font-size: 12px; }
-#<?= $panelId ?> .col-sql { width: 75%; }
-#<?= $panelId ?> .col-time { width: 12%; white-space: nowrap; }
-#<?= $panelId ?> .col-vars { width: 13%; white-space: nowrap; }
+#<?= $panelId ?> .col-sql { width: auto; }
+#<?= $panelId ?> .col-time { width: 150px; white-space: nowrap; }
+#<?= $panelId ?> .col-vars { width: 70px; white-space: nowrap; }
+#<?= $panelId ?> .col-copy { width: 75px; white-space: nowrap; text-align: center; }
 #<?= $panelId ?> .sql-text { font: 11px/1.3 monospace; word-break: break-all; white-space: pre-wrap; }
 #<?= $panelId ?> .tab-btn { padding: 4px 12px; cursor: pointer; border: 1px solid #ccc; background: #eee; border-radius: 3px 3px 0 0; border-bottom: none; font-size: 12px; }
 #<?= $panelId ?> .tab-btn.active { background: #fff; font-weight: bold; }
 #<?= $panelId ?> .tab-pane { display: none; }
 #<?= $panelId ?> .tab-pane.active { display: block; }
 #<?= $panelId ?> .slow-row { background-color: #FF7074; }
+#<?= $panelId ?> .copy-btn { padding: 1px 8px; font-size: 11px; cursor: pointer; border: 1px solid #bbb; background: #f5f5f5; border-radius: 2px; font-family: inherit; }
+#<?= $panelId ?> .copy-btn:hover { background: #e5e5e5; }
+#<?= $panelId ?> .copy-btn.copied { background: #c8e6c9; border-color: #4caf50; color: #1b5e20; }
 </style>
 
 <div id="<?= $panelId ?>">
@@ -69,8 +73,8 @@ $sqlMaxLen = 150;
 	<?php foreach ($tabs as $tabKey => $tab): ?>
 	<div class="tab-pane<?= $firstTab ? ' active' : '' ?>" data-tab="<?= $tabKey ?>">
 		<table>
-			<colgroup><col class="col-sql"><col class="col-time"><col class="col-vars"></colgroup>
-			<thead><tr><th>Query</th><th>Time</th><th>Vars</th></tr></thead>
+			<colgroup><col class="col-sql"><col class="col-time"><col class="col-vars"><col class="col-copy"></colgroup>
+			<thead><tr><th>Query</th><th>Time</th><th>Vars</th><th></th></tr></thead>
 			<tbody>
 			<?php foreach ($tab['items'] as $item): ?>
 				<?php
@@ -85,6 +89,7 @@ $sqlMaxLen = 150;
 					</td>
 					<td><?= \round($itemTime, 5) ?>s (<?= $item->getAmount() ?>x) <span style="color:#888"><?= \number_format($percent, 1) ?>%</span></td>
 					<td><?= \count($item->getVars()) ?> vars</td>
+					<td><button type="button" class="copy-btn" data-sql="<?= \htmlspecialchars($sql, \ENT_QUOTES) ?>" onclick="<?= $panelId ?>_copy(this)">Copy</button></td>
 				</tr>
 			<?php endforeach ?>
 			</tbody>
@@ -102,5 +107,35 @@ function <?= $panelId ?>_tab(btn, name) {
 	r.querySelectorAll('.tab-btn').forEach(function(e) { e.classList.remove('active'); });
 	r.querySelector('.tab-pane[data-tab="' + name + '"]').classList.add('active');
 	btn.classList.add('active');
+}
+function <?= $panelId ?>_copy(btn) {
+	var sql = btn.getAttribute('data-sql') || '';
+	var flash = function () {
+		var original = btn.textContent;
+		btn.textContent = 'Copied!';
+		btn.classList.add('copied');
+		setTimeout(function () {
+			btn.textContent = original;
+			btn.classList.remove('copied');
+		}, 1200);
+	};
+	var fallback = function () {
+		var ta = document.createElement('textarea');
+		ta.value = sql;
+		ta.style.position = 'fixed';
+		ta.style.top = '0';
+		ta.style.left = '0';
+		ta.style.opacity = '0';
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		try { document.execCommand('copy'); flash(); } catch (e) { btn.textContent = 'Failed'; }
+		document.body.removeChild(ta);
+	};
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		navigator.clipboard.writeText(sql).then(flash, fallback);
+	} else {
+		fallback();
+	}
 }
 </script>
