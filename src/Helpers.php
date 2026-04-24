@@ -190,15 +190,31 @@ class Helpers
 		}
 		
 		if ($rawValue instanceof Literal) {
-			$binds[(string) $rawValue] = $prefix . $property;
-			
+			$key = (string) $rawValue;
+
+			// Distinct properties may share an identical literal SQL (e.g. same ROUND() expression).
+			// Raw literal string as $binds key would then collide (second write overwrites the first),
+			// losing one of the property→literal mappings. Append a SQL comment with the property name
+			// to make the key unique; the comment is a no-op for the database parser.
+			if (isset($binds[$key])) {
+				$key .= " /* $property */";
+			}
+
+			$binds[$key] = $prefix . $property;
+
 			return;
 		}
-		
+
 		if ($rawValue instanceof ICollection) {
-			$binds[(string) $rawValue] = $prefix . $property;
+			$key = (string) $rawValue;
+
+			if (isset($binds[$key])) {
+				$key .= " /* $property */";
+			}
+
+			$binds[$key] = $prefix . $property;
 			$values += $rawValue->getVars();
-			
+
 			return;
 		}
 		
