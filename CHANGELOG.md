@@ -4,6 +4,19 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.24](https://github.com/liquiddesign/storm/compare/v2.0.23...v2.0.24) (2026-04-24)
+
+### Features
+
+* Add Copy button to SQL query panel rows ([e8bb7f](https://github.com/liquiddesign/storm/commit/e8bb7fdcbe9caf0bb3a51d497d3f2c3bd8d41d83))
+
+### Bug Fixes
+
+* Avoid bind key collision for duplicate SQL literals in bindVariables ([f90e1d](https://github.com/liquiddesign/storm/commit/f90e1d55b164813332d948bc253df96cc308cb0e))
+
+
+---
+
 ## [2.0.23](https://github.com/liquiddesign/storm/compare/v2.0.22...v2.0.23) (2026-02-13)
 
 ### Bug Fixes
