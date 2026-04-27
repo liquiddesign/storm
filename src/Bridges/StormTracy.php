@@ -229,7 +229,7 @@ class StormTracy implements \Tracy\IBarPanel
 		}
 
 		if (\is_array($value)) {
-			return '(' . \implode(', ', \array_map(self::formatLiteral(...), $value)) . ')';
+			return '(' . \implode(', ', \array_map([self::class, 'formatLiteral'], $value)) . ')';
 		}
 
 		$string = (string) $value;
