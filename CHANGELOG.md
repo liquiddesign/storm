@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.26](https://github.com/liquiddesign/storm/compare/v2.0.25...v2.0.26) (2026-04-27)
+
+### Bug Fixes
+
+* Replace first-class callable with array callable for PHP 8.0 compat ([362ec3](https://github.com/liquiddesign/storm/commit/362ec39))
+
+
+---
+
 ## [2.0.25](https://github.com/liquiddesign/storm/compare/v2.0.24...v2.0.25) (2026-04-27)
 
 ### Features
