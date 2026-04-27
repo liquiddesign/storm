@@ -181,6 +181,63 @@ class StormTracy implements \Tracy\IBarPanel
 	}
 
 	/**
+	 * Substitute bound variables (`:name`) in SQL with their literal values.
+	 * Sorts placeholder keys by length DESC so that `:__var20380` is replaced
+	 * before `:__var2038` and prefix collisions don't corrupt the output.
+	 * @param array<mixed> $vars
+	 */
+	public static function interpolateSql(string $sql, array $vars): string
+	{
+		if (\count($vars) === 0) {
+			return $sql;
+		}
+
+		$keys = \array_keys($vars);
+		\usort($keys, static fn(string|int $a, string|int $b): int => \strlen((string) $b) <=> \strlen((string) $a));
+
+		foreach ($keys as $key) {
+			$placeholder = \str_starts_with((string) $key, ':') ? (string) $key : ':' . $key;
+			$sql = \str_replace($placeholder, self::formatLiteral($vars[$key]), $sql);
+		}
+
+		return $sql;
+	}
+
+	/**
+	 * Format a PHP value as a SQL literal for the copy-to-clipboard panel.
+	 */
+	public static function formatLiteral(mixed $value): string
+	{
+		if ($value === null) {
+			return 'NULL';
+		}
+
+		if (\is_bool($value)) {
+			return $value ? '1' : '0';
+		}
+
+		if (\is_int($value) || \is_float($value)) {
+			return (string) $value;
+		}
+
+		if ($value instanceof \BackedEnum) {
+			return self::formatLiteral($value->value);
+		}
+
+		if ($value instanceof \DateTimeInterface) {
+			return "'" . $value->format('Y-m-d H:i:s') . "'";
+		}
+
+		if (\is_array($value)) {
+			return '(' . \implode(', ', \array_map(self::formatLiteral(...), $value)) . ')';
+		}
+
+		$string = (string) $value;
+
+		return "'" . \str_replace(['\\', "'"], ['\\\\', "''"], $string) . "'";
+	}
+
+	/**
 	 * Captures PHP output into a string.
 	 * @param callable $func
 	 * @throws \Throwable

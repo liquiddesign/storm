@@ -79,6 +79,7 @@ $sqlMaxLen = 150;
 			<?php foreach ($tab['items'] as $item): ?>
 				<?php
 					$sql = $item->getSql();
+					$copySql = \StORM\Bridges\StormTracy::interpolateSql($sql, $item->getVars());
 					$itemTime = $item->getTotalTime();
 					$percent = $agg['totalTime'] > 0 ? ($itemTime / $agg['totalTime']) * 100 : 0.0;
 				?>
@@ -89,7 +90,7 @@ $sqlMaxLen = 150;
 					</td>
 					<td><?= \round($itemTime, 5) ?>s (<?= $item->getAmount() ?>x) <span style="color:#888"><?= \number_format($percent, 1) ?>%</span></td>
 					<td><?= \count($item->getVars()) ?> vars</td>
-					<td><button type="button" class="copy-btn" data-sql="<?= \htmlspecialchars($sql, \ENT_QUOTES) ?>" onclick="<?= $panelId ?>_copy(this)">Copy</button></td>
+					<td><button type="button" class="copy-btn" data-sql="<?= \htmlspecialchars($copySql, \ENT_QUOTES) ?>" onclick="<?= $panelId ?>_copy(this)">Copy</button></td>
 				</tr>
 			<?php endforeach ?>
 			</tbody>
