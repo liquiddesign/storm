@@ -193,7 +193,7 @@ class StormTracy implements \Tracy\IBarPanel
 		}
 
 		$keys = \array_keys($vars);
-		\usort($keys, static fn(string|int $a, string|int $b): int => \strlen((string) $b) <=> \strlen((string) $a));
+		\usort($keys, static fn(string|int $a, string|int $b): int => \Nette\Utils\Strings::length((string) $b) <=> \Nette\Utils\Strings::length((string) $a));
 
 		foreach ($keys as $key) {
 			$placeholder = \str_starts_with((string) $key, ':') ? (string) $key : ':' . $key;
