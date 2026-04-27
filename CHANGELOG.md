@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.25](https://github.com/liquiddesign/storm/compare/v2.0.24...v2.0.25) (2026-04-27)
+
+### Features
+
+* Interpolate SQL with bound variables for accurate Copy button output ([bec98b](https://github.com/liquiddesign/storm/commit/bec98b7be4ec80a6f33790a0a89ce088ba4dbab9))
+
+
+---
+
 ## [2.0.24](https://github.com/liquiddesign/storm/compare/v2.0.23...v2.0.24) (2026-04-24)
 
 ### Features
