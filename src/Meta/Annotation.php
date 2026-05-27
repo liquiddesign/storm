@@ -67,9 +67,7 @@ abstract class Annotation implements \JsonSerializable
 		$array = [];
 		
 		foreach ($reflectionClass->getProperties() as $property) {
-			$property->setAccessible(true);
 			$array[$property->getName()] = $property->getValue($this);
-			$property->setAccessible(false);
 		}
 		
 		return $array;
