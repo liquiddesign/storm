@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.27](https://github.com/liquiddesign/storm/compare/v2.0.26...v2.0.27) (2026-05-27)
+
+### Bug Fixes
+
+* Remove deprecated ReflectionProperty::setAccessible() in Annotation::jsonSerialize ([38acf3](https://github.com/liquiddesign/storm/commit/38acf33))
+
+
+---
+
 ## [2.0.26](https://github.com/liquiddesign/storm/compare/v2.0.25...v2.0.26) (2026-04-27)
 
 ### Bug Fixes
