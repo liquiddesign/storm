@@ -4,6 +4,15 @@
 All notable changes to this project will be documented in this file.
 <!--- END HEADER -->
 
+## [2.0.28](https://github.com/liquiddesign/storm/compare/v2.0.27...v2.0.28) (2026-07-10)
+
+### Bug Fixes
+
+* Retry reconnect with exponential backoff on transient connection loss ([c84e11](https://github.com/liquiddesign/storm/commit/c84e118))
+
+
+---
+
 ## [2.0.27](https://github.com/liquiddesign/storm/compare/v2.0.26...v2.0.27) (2026-05-27)
 
 ### Bug Fixes
