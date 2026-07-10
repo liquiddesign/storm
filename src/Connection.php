@@ -867,7 +867,25 @@ class Connection
 			throw new GeneralException('Cannot reconnect during active transaction. Transaction state would be lost.');
 		}
 
-		$this->link = new \PDO($this->dsn, $this->user, $this->password, $this->attributes);
+		$maxRetries = 3;
+		$attempt = 0;
+
+		while ($attempt < $maxRetries) {
+			try {
+				$this->link = new \PDO($this->dsn, $this->user, $this->password, $this->attributes);
+
+				return;
+			} catch (\Exception $e) {
+				$attempt++;
+
+				if ($attempt >= $maxRetries) {
+					throw $e;
+				}
+
+				// Exponential backoff before next reconnect attempt: 100ms, 200ms, ...
+				\usleep(100000 * (2 ** ($attempt - 1)));
+			}
+		}
 	}
 	
 	private function isGoneAway(\Throwable $e): bool
