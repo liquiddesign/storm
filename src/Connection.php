@@ -56,6 +56,12 @@ class Connection
 	 * @var callable|null
 	 */
 	private $primaryKeyGenerator;
+
+	/**
+	 * Lightweight query observer for performance telemetry, see setQueryObserver()
+	 * @var \Closure(string, int, bool): void|null
+	 */
+	private ?\Closure $queryObserver = null;
 	
 	/**
 	 * Connection constructor.
@@ -317,6 +323,7 @@ class Connection
 			$item->setError(true);
 		}
 
+		$observerStart = $this->queryObserver !== null ? (int) \hrtime(true) : 0;
 		$attempt = 1;
 
 		while (true) {
@@ -341,11 +348,9 @@ class Connection
 
 				break;
 			} catch (\Exception $e) {
-				if ($attempt === 2) {
-					throw $e;
-				}
+				if ($attempt === 2 || !$this->isGoneAway($e)) {
+					$this->notifyQueryObserver($sql, $observerStart, true);
 
-				if (!$this->isGoneAway($e)) {
 					throw $e;
 				}
 
@@ -356,6 +361,8 @@ class Connection
 
 			$attempt++;
 		}
+
+		$this->notifyQueryObserver($sql, $observerStart, !$sth instanceof \PDOStatement);
 
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
@@ -692,6 +699,7 @@ class Connection
 			$sql = \vsprintf($sql, $quoted);
 		}
 
+		$observerStart = $this->queryObserver !== null ? (int) \hrtime(true) : 0;
 		$attempt = 1;
 		$return = false;
 
@@ -701,11 +709,9 @@ class Connection
 
 				break;
 			} catch (\Exception $e) {
-				if ($attempt === 2) {
-					throw $e;
-				}
+				if ($attempt === 2 || !$this->isGoneAway($e)) {
+					$this->notifyQueryObserver($sql, $observerStart, true);
 
-				if (!$this->isGoneAway($e)) {
 					throw $e;
 				}
 
@@ -717,6 +723,8 @@ class Connection
 			$attempt++;
 		}
 		
+		$this->notifyQueryObserver($sql, $observerStart, $return === false);
+
 		if (isset($item) && isset($ts)) {
 			$item->addTime(\microtime(true) - $ts);
 			$item->setError(false);
@@ -810,6 +818,23 @@ class Connection
 	{
 		$this->debugThreshold = $debugThreshold;
 	}
+
+	/**
+	 * Set observer called after every query() and exec() with SQL, duration in nanoseconds and error flag.
+	 * Meant for performance telemetry: unlike debug mode it keeps nothing in memory, so it is safe for
+	 * long-running CLI processes. Duration covers execution (and the retry after "gone away"), not fetching
+	 * of unbuffered results. Pass null to remove the observer.
+	 * @param \Closure(string, int, bool): void|null $observer
+	 */
+	public function setQueryObserver(?\Closure $observer): void
+	{
+		$this->queryObserver = $observer;
+	}
+
+	public function getQueryObserver(): ?\Closure
+	{
+		return $this->queryObserver;
+	}
 	
 	/**
 	 * @param string $property
@@ -888,6 +913,20 @@ class Connection
 		}
 	}
 	
+	private function notifyQueryObserver(string $sql, int $start, bool $error): void
+	{
+		if ($this->queryObserver === null) {
+			return;
+		}
+
+		try {
+			($this->queryObserver)($sql, (int) \hrtime(true) - $start, $error);
+		} catch (\Throwable $e) {
+			// Telemetry must never break a query — drop the observer for the rest of the process
+			$this->queryObserver = null;
+		}
+	}
+
 	private function isGoneAway(\Throwable $e): bool
 	{
 		$message = Strings::lower($e->getMessage());
