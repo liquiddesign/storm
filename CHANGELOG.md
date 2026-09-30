@@ -2,7 +2,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-<!--- END HEADER -->
+<!-- END HEADER -->
+
+## [2.1.0](https://github.com/liquiddesign/storm/compare/v2.0.28...v2.1.0) (2026-09-30)
+
+### Features
+
+
+##### Connection
+
+* Add lightweight query observer for performance telemetry ([069a05](https://github.com/liquiddesign/storm/commit/069a05e8ec0cb7c8e52847b23c09ea26024f3b4c))
+
+
+---
 
 ## [2.0.28](https://github.com/liquiddesign/storm/compare/v2.0.27...v2.0.28) (2026-07-10)
 
