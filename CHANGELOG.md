@@ -4,6 +4,18 @@
 All notable changes to this project will be documented in this file.
 <!-- END HEADER -->
 
+## [2.1.1](https://github.com/liquiddesign/storm/compare/v2.1.0...v2.1.1) (2026-10-22)
+
+### Performance Improvements
+
+
+##### Meta
+
+* Remember `Structure::getColumnsSelect()` per arguments and mutation, opt-in via `SchemaManager::setColumnsSelectCache(true)` ([0c8d11](https://github.com/liquiddesign/storm/commit/0c8d115afe1a829c45700d134ff213505baef59a))
+
+
+---
+
 ## [2.1.0](https://github.com/liquiddesign/storm/compare/v2.0.28...v2.1.0) (2026-09-30)
 
 ### Features
