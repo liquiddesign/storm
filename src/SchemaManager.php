@@ -30,6 +30,8 @@ class SchemaManager
 	 */
 	private array $dataModels = [];
 	
+	private bool $columnsSelectCache = false;
+	
 	/**
 	 * SchemaManager constructor.
 	 * @param \StORM\DIConnection $connection
@@ -142,6 +144,23 @@ class SchemaManager
 	public function getCustomAnnotations(): array
 	{
 		return $this->customAnnotations;
+	}
+	
+	/**
+	 * Let Structure::getColumnsSelect() remember its result per argument combination and mutation.
+	 *
+	 * Without it the select is rebuilt for every new collection (`Repository::many()` → `getDefaultSelect()`)
+	 * although it never changes for a given entity and mutation — milliseconds on a page with dozens of
+	 * collections. Disabled by default, which keeps the previous behaviour.
+	 */
+	public function setColumnsSelectCache(bool $columnsSelectCache): void
+	{
+		$this->columnsSelectCache = $columnsSelectCache;
+	}
+	
+	public function isColumnsSelectCache(): bool
+	{
+		return $this->columnsSelectCache;
 	}
 	
 	/**

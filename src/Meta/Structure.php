@@ -69,6 +69,11 @@ class Structure
 	private ?Column $defaultPK;
 	
 	/**
+	 * @var array<string, array<string>>
+	 */
+	private array $columnsSelect = [];
+	
+	/**
 	 * @var array<mixed>
 	 */
 	private array $classDocComment;
@@ -180,42 +185,14 @@ class Structure
 	 */
 	public function getColumnsSelect(string $expressionPrefix = '', string $aliasPrefix = '', ?string $mutation = null, ?array $fallbackColumns = null, bool $rawKeys = true): array
 	{
-		if (!$this->getColumns()) {
-			return ["$expressionPrefix*"];
+		if (!$this->schemaManager->isColumnsSelectCache()) {
+			return $this->buildColumnsSelect($expressionPrefix, $aliasPrefix, $mutation, $fallbackColumns, $rawKeys);
 		}
 		
-		$select = [];
-		$locales = [];
-		$connection = $this->schemaManager->getConnection();
+		$mutation = $mutation ?: $this->schemaManager->getConnection()->getMutation();
+		$key = \implode("\0", [$expressionPrefix, $aliasPrefix, $mutation, $fallbackColumns === null ? "\1" : \implode(',', $fallbackColumns), (int) $rawKeys]);
 		
-		$pk = $this->getPK();
-		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
-		$mutation = $mutation ?: $connection->getMutation();
-		$mutationSuffix = $connection->getAvailableMutations()[$mutation];
-		$fallbackMutationSuffix = isset($connection->getFallbackMutations()[$mutation]) ? $connection->getAvailableMutations()[$connection->getFallbackMutations()[$mutation]] : null;
-		
-		foreach ($this->getColumns() as $column) {
-			if ($column->hasMutations()) {
-				$rawName = $expressionPrefix . $column->getName();
-				
-				$condition = $fallbackMutationSuffix && ($fallbackColumns === null || Arrays::contains($fallbackColumns, $column->getPropertyName()));
-				$select[$aliasPrefix . $column->getPropertyName()] = $condition ? "COALESCE($rawName$mutationSuffix,$rawName$fallbackMutationSuffix)" : "$rawName$mutationSuffix";
-				
-				$locales[] = $column;
-			} else {
-				$select[$aliasPrefix . ($column->isForeignKey() && $rawKeys ? $column->getName() : $column->getPropertyName())] = $expressionPrefix . $column->getName();
-			}
-		}
-		
-		foreach ($locales as $column) {
-			foreach ($this->schemaManager->getConnection()->getAvailableMutations() as $suffix) {
-				$localeColumn = $column->getName() . $suffix;
-				$localeProperty = $column->getPropertyName() . $suffix;
-				$select[$aliasPrefix . $localeProperty] = $expressionPrefix . $localeColumn;
-			}
-		}
-		
-		return $select;
+		return $this->columnsSelect[$key] ??= $this->buildColumnsSelect($expressionPrefix, $aliasPrefix, $mutation, $fallbackColumns, $rawKeys);
 	}
 	
 	/**
@@ -679,6 +656,54 @@ class Structure
 		}
 		
 		return $table;
+	}
+	
+	/**
+	 * @param string $expressionPrefix
+	 * @param string $aliasPrefix
+	 * @param string|null $mutation
+	 * @param array<string>|null $fallbackColumns
+	 * @param bool $rawKeys
+	 * @return array<string>
+	 */
+	private function buildColumnsSelect(string $expressionPrefix, string $aliasPrefix, ?string $mutation, ?array $fallbackColumns, bool $rawKeys): array
+	{
+		if (!$this->getColumns()) {
+			return ["$expressionPrefix*"];
+		}
+		
+		$select = [];
+		$locales = [];
+		$connection = $this->schemaManager->getConnection();
+		
+		$pk = $this->getPK();
+		$select[$aliasPrefix . $pk->getPropertyName()] = $expressionPrefix . $pk->getName();
+		$mutation = $mutation ?: $connection->getMutation();
+		$mutationSuffix = $connection->getAvailableMutations()[$mutation];
+		$fallbackMutationSuffix = isset($connection->getFallbackMutations()[$mutation]) ? $connection->getAvailableMutations()[$connection->getFallbackMutations()[$mutation]] : null;
+		
+		foreach ($this->getColumns() as $column) {
+			if ($column->hasMutations()) {
+				$rawName = $expressionPrefix . $column->getName();
+				
+				$condition = $fallbackMutationSuffix && ($fallbackColumns === null || Arrays::contains($fallbackColumns, $column->getPropertyName()));
+				$select[$aliasPrefix . $column->getPropertyName()] = $condition ? "COALESCE($rawName$mutationSuffix,$rawName$fallbackMutationSuffix)" : "$rawName$mutationSuffix";
+				
+				$locales[] = $column;
+			} else {
+				$select[$aliasPrefix . ($column->isForeignKey() && $rawKeys ? $column->getName() : $column->getPropertyName())] = $expressionPrefix . $column->getName();
+			}
+		}
+		
+		foreach ($locales as $column) {
+			foreach ($this->schemaManager->getConnection()->getAvailableMutations() as $suffix) {
+				$localeColumn = $column->getName() . $suffix;
+				$localeProperty = $column->getPropertyName() . $suffix;
+				$select[$aliasPrefix . $localeProperty] = $expressionPrefix . $localeColumn;
+			}
+		}
+		
+		return $select;
 	}
 	
 	/**
